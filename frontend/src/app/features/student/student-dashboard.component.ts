@@ -24,6 +24,13 @@ interface FocusOverview {
   encouragement: string;
 }
 
+interface PendingBinding {
+  bindingId: string;
+  parentDisplayName: string;
+  relation: string;
+  createdAt: string | null;
+}
+
 /**
  * 学生控制台 — ADHD 友好硬性规范：
  * 每个视口只突出一个核心主任务（迫近课程 + 进入课堂）；
@@ -82,6 +89,11 @@ export class StudentDashboardComponent implements OnInit {
   readonly classroomMsg = signal<{ type: 'info' | 'error'; text: string } | null>(null);
   readonly classroomLink = signal<string | null>(null);
 
+  // ---------- 监护绑定申请（G3） ----------
+  readonly pendingBindings = signal<PendingBinding[]>([]);
+  readonly bindingBusy = signal(false);
+  readonly bindingMsg = signal<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
+
   constructor() {
     this.load();
   }
@@ -101,6 +113,36 @@ export class StudentDashboardComponent implements OnInit {
         const mine = (data ?? []).filter((r) => r.direction === 'STUDENT_TO_TEACHER').map((r) => r.bookingId);
         this.reviewedBookings.set(new Set(mine));
       } });
+    // 监护绑定申请（G3）
+    this.loadPendingBindings();
+  }
+
+  loadPendingBindings(): void {
+    this.http.get<PendingBinding[]>(API.student.pendingBindings).subscribe({
+      next: (data) => this.pendingBindings.set(data ?? []),
+      error: () => this.pendingBindings.set([]),
+    });
+  }
+
+  /** 确认监护绑定：结果以服务端响应为准，成功后重新拉取待确认列表。 */
+  confirmBinding(): void {
+    if (this.bindingBusy()) {
+      return;
+    }
+    this.bindingBusy.set(true);
+    this.bindingMsg.set(null);
+    this.http.post<{ status: string }>(API.student.confirmBinding, {}).subscribe({
+      next: () => {
+        this.bindingBusy.set(false);
+        this.bindingMsg.set({ type: 'success', text: '已确认绑定：对方现在可以为你的课程代付下单，并查看你的学习周报。' });
+        this.loadPendingBindings();
+      },
+      error: (err) => {
+        this.bindingBusy.set(false);
+        const detail = err?.error?.detail ?? err?.error?.message ?? '确认未成功，请稍后重试。';
+        this.bindingMsg.set({ type: 'error', text: detail });
+      },
+    });
   }
 
   private refreshSchedule(): void {

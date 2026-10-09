@@ -45,3 +45,7 @@ $RECYCLE.BIN/
 # ---- 测试覆盖率产物 ----
 coverage/
 frontend/coverage/
+
+# 运行期上传文件与本地缓存（已跟踪的历史文件不受影响）
+backend/data/files/
+__pycache__/

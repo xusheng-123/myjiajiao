@@ -245,6 +245,44 @@ def main():
     active = isinstance(kids, list) and any(k.get("status") == "ACTIVE" for k in kids)
     check("监护绑定生效(ACTIVE)", active, f"{st} {kids}")
 
+    print("== 8.3 监护绑定申请全链路（G3：学生查看/确认入口） ==")
+    st, gs_body, _ = register_or_login("student", "STUDENT", "13900000021", "Student#2026",
+        {"displayName": "绑定确认学生", "phone": "13900000021", "password": "Student#2026"})
+    check("G3 学生对照账号注册或登录", st == 200 and gs_body.get("accessToken"), f"{st}")
+    st, gp_body, _ = register_or_login("parent", "PARENT", "13900000022", "Parent#2026",
+        {"displayName": "G3对照家长", "phone": "13900000022", "password": "Parent#2026"})
+    check("G3 家长对照账号注册或登录", st == 200 and gp_body.get("accessToken"), f"{st}")
+    t_gs, t_gp = gs_body.get("accessToken", ""), gp_body.get("accessToken", "")
+    st, _, pend_t = http("GET", "/parent/me/children:pending", token=t_teacher)
+    check("G3 教师读取学生申请列表被拒(403)", st == 403, f"{st}")
+    st, _, gprof = http("GET", "/student/me/profile", token=t_gs)
+    gstu_no = gprof.get("studentNo") if st == 200 else None
+    if gstu_no:
+        st, _, gb = http("POST", "/parent/me/children", {"studentNo": gstu_no, "relation": "母亲"},
+            token=t_gp, idem=str(uuid.uuid4()))
+        if st in (200, 201):
+            check("G3 家长发起绑定(PENDING)", gb.get("status") == "PENDING", f"{st} {gb}")
+            st, _, pend = http("GET", "/parent/me/children:pending", token=t_gs)
+            has_pend = st == 200 and isinstance(pend, list) and len(pend) >= 1 and pend[0].get("relation") == "母亲"
+            check("G3 学生可见本人待确认申请(含申请方)", has_pend, f"{st} {str(pend)[:160]}")
+            other_bid = pend[0].get("bindingId") if has_pend else ""
+            st, _, pend_other = http("GET", "/parent/me/children:pending", token=t_student)
+            leak = isinstance(pend_other, list) and any(p.get("bindingId") == other_bid for p in pend_other)
+            check("G3 其他学生的申请列表不含该申请", not leak, f"{st} {str(pend_other)[:120]}")
+            st, _, gconf = http("POST", "/parent/me/children:confirm", {}, token=t_gs, idem=str(uuid.uuid4()))
+            check("G3 学生确认绑定→ACTIVE", st == 200 and gconf.get("status") == "ACTIVE", f"{st} {gconf}")
+            st, _, pend2 = http("GET", "/parent/me/children:pending", token=t_gs)
+            check("G3 确认后待确认列表清空", st == 200 and pend2 == [], f"{st} {pend2}")
+        else:
+            # 重跑容忍：上一轮已绑定(409)，直接核验生效状态
+            check("G3 重复发起绑定被拒(409)", st == 409, f"{st} {gb}")
+            st, _, gkids = http("GET", "/parent/me/children", token=t_gp)
+            check("G3 重跑核验：家长侧孩子仍为 ACTIVE", st == 200 and any(k.get("status") == "ACTIVE" for k in gkids or []), f"{st} {str(gkids)[:160]}")
+        st, _, gkids2 = http("GET", "/parent/me/children", token=t_gp)
+        check("G3 家长侧孩子列表含 ACTIVE", st == 200 and any(k.get("status") == "ACTIVE" for k in gkids2 or []), f"{st}")
+    else:
+        check("G3 学生档案获取", False, f"{st} {gprof}")
+
     st, _, before_topup = http("GET", "/parent/me/wallet", token=t_parent)
     base_balance = before_topup.get("balanceCents", 0) if st == 200 else 0
     st, _, topup = http("POST", "/parent/me/wallet/topup", {"amountCents": 50000, "memo": "家庭充值"},

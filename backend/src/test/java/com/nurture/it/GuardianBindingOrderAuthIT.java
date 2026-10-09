@@ -104,4 +104,70 @@ class GuardianBindingOrderAuthIT {
                         .content(om.writeValueAsBytes(new java.util.HashMap<>() {{ put("bookingId", bookingId); }})))
                 .andExpect(status().isConflict());
     }
+
+    /** G3：学生查看/确认本人的待确认监护绑定申请——对象级隔离与幂等。 */
+    @Test
+    void 学生待确认申请_仅本人可见_确认幂等且无越权副作用() throws Exception {
+        var parent = Support.register(mvc, om, "parent", "PARENT", phone(), "ItParent#02");
+        var studentA = Support.register(mvc, om, "student", "STUDENT", phone(), "ItStudent#3");
+        var studentB = Support.register(mvc, om, "student", "STUDENT", phone(), "ItStudent#4");
+        var teacher = Support.register(mvc, om, "teacher", "TEACHER", phone(), "ItTeacher#2");
+
+        // 家长向 A 发起绑定
+        var studentNoA = Support.getJson(mvc, om, "/api/v1/student/me/profile", studentA.accessToken())
+                .get("studentNo").asText();
+        var bind = Support.postJson(mvc, om, "/api/v1/parent/me/children", parent.accessToken(),
+                new java.util.HashMap<>() {{ put("studentNo", studentNoA); put("relation", "父亲"); }});
+        assertThat(bind.get("status").asText()).isEqualTo("PENDING");
+
+        // A 可见本人申请（含申请方称呼），B 的列表为空（对象级隔离）
+        var pendingA = Support.getJson(mvc, om, "/api/v1/parent/me/children:pending", studentA.accessToken());
+        assertThat(pendingA.isArray()).isTrue();
+        assertThat(pendingA.size()).isGreaterThanOrEqualTo(1);
+        assertThat(pendingA.get(0).has("parentDisplayName")).isTrue();
+        var pendingB = Support.getJson(mvc, om, "/api/v1/parent/me/children:pending", studentB.accessToken());
+        assertThat(pendingB.isArray()).isTrue();
+        assertThat(pendingB.size()).isEqualTo(0);
+
+        // 教师无权访问学生侧申请列表（角色护栏）→ 403
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/v1/parent/me/children:pending")
+                        .header("Authorization", "Bearer " + teacher.accessToken()))
+                .andExpect(status().isForbidden());
+
+        // 无关学生 B 尝试确认：无待确认申请 → 业务拒绝，且不消耗 A 的申请
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/v1/parent/me/children:confirm")
+                        .header("Authorization", "Bearer " + studentB.accessToken())
+                        .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
+
+        // A 确认 → ACTIVE；确认后列表清空；家长侧 children 出现 ACTIVE
+        var confirmed = Support.postJson(mvc, om, "/api/v1/parent/me/children:confirm", studentA.accessToken(),
+                new java.util.HashMap<>());
+        assertThat(confirmed.get("status").asText()).isEqualTo("ACTIVE");
+        var pendingAfter = Support.getJson(mvc, om, "/api/v1/parent/me/children:pending", studentA.accessToken());
+        assertThat(pendingAfter.size()).isEqualTo(0);
+        var kids = Support.getJson(mvc, om, "/api/v1/parent/me/children", parent.accessToken());
+        assertThat(kids.isArray()).isTrue();
+        assertThat(kids.size()).isGreaterThanOrEqualTo(1);
+
+        // 重复确认：已无 PENDING → 业务拒绝，无重复副作用
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .post("/api/v1/parent/me/children:confirm")
+                        .header("Authorization", "Bearer " + studentA.accessToken())
+                        .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().is4xxClientError());
+        // 家长侧 ACTIVE 恰好 1 条（无重复激活）
+        var kidsAgain = Support.getJson(mvc, om, "/api/v1/parent/me/children", parent.accessToken());
+        long activeCount = 0;
+        for (var k : kidsAgain) {
+            if ("ACTIVE".equals(k.get("status").asText())) {
+                activeCount++;
+            }
+        }
+        assertThat(activeCount).isEqualTo(1);
+    }
 }

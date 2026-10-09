@@ -22,6 +22,8 @@ export const API = {
     profile: `${API_BASE}/student/me/profile`,
     upcomingLessons: `${API_BASE}/student/me/upcoming-lessons`,
     lessonHistory: `${API_BASE}/student/me/lesson-history`,
+    pendingBindings: `${API_BASE}/parent/me/children:pending`,
+    confirmBinding: `${API_BASE}/parent/me/children:confirm`,
     preparationTasks: (lessonId: string) => `${API_BASE}/student/me/lessons/${lessonId}/preparation-tasks`,
     completeTask: (taskId: string) => `${API_BASE}/student/me/preparation-tasks/${taskId}:complete`,
     focusOverview: `${API_BASE}/student/me/focus-overview`,

@@ -1,6 +1,6 @@
 package com.nurture.parent.app;
 
-import com.nurture.parent.app.ParentApplicationService;
+import com.nurture.identity.app.IdentityApplicationService;
 import com.nurture.parent.domain.GuardianBinding;
 import com.nurture.parent.domain.ParentProfile;
 import com.nurture.parent.infra.FamilyWalletRepository;
@@ -41,6 +41,7 @@ class ParentApplicationServiceTest {
     @Mock WalletTransactionRepository txnRepository;
     @Mock GuardianBindingRepository bindingRepository;
     @Mock StudentApplicationService studentService;
+    @Mock IdentityApplicationService identityService;
 
     private ParentApplicationService service;
     private final UUID parentAccountId = UUID.randomUUID();
@@ -51,7 +52,7 @@ class ParentApplicationServiceTest {
     @BeforeEach
     void setUp() {
         service = new ParentApplicationService(parentProfileRepository, walletRepository,
-                txnRepository, bindingRepository, studentService);
+                txnRepository, bindingRepository, studentService, identityService);
         parentProfile = new ParentProfile(parentAccountId, "PAR0001");
         lenient().when(parentProfileRepository.findByAccountId(parentAccountId))
                 .thenReturn(Optional.of(parentProfile));

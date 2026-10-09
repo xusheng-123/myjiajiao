@@ -52,6 +52,15 @@ public class ParentController {
         return new BindingResponse(b.getId(), b.getStudentId(), null, b.getStatus().name(), b.getRelation());
     }
 
+    /** 学生查看本人收到的待确认监护绑定申请（G3，与确认端点同一对象级语义）。 */
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/children:pending")
+    @Operation(summary = "我的待确认监护绑定申请",
+            description = "仅返回当前学生本人收到的 PENDING 申请；确认后从列表消失并转为 ACTIVE")
+    public List<ParentApplicationService.PendingBindingView> pendingBindings() {
+        return parentService.pendingBindingsFor(CallerContext.require().accountId());
+    }
+
     @PostMapping("/children")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "绑定子女", description = "依据学生编号发起监护绑定，学生侧确认后生效")

@@ -66,6 +66,26 @@
 
     <!-- 专注模式收起的内容：次要信息弱化呈现 -->
     @if (!focusMode()) {
+      <!-- 监护绑定申请（G3）：仅在有申请或需展示结果时出现 -->
+      @if (pendingBindings().length > 0 || bindingMsg()) {
+        <section class="secondary-row">
+          <div class="nur-card secondary-card">
+            <h3>监护绑定申请</h3>
+            @for (req of pendingBindings(); track req.bindingId) {
+              <p>
+                「{{ req.parentDisplayName }}」{{ req.relation ? '（' + req.relation + '）' : '' }}申请与你建立监护关系。
+              </p>
+              <p class="quiet-note">确认后，对方可以为你的课程代付下单，并查看你的学习周报。</p>
+              <button type="button" class="btn-primary-sm" [disabled]="bindingBusy()" (click)="confirmBinding()">
+                {{ bindingBusy() ? '确认中…' : '确认绑定' }}
+              </button>
+            }
+            @if (bindingMsg(); as bm) {
+              <p class="reschedule-msg reschedule-msg--{{ bm.type }}" role="status">{{ bm.text }}</p>
+            }
+          </div>
+        </section>
+      }
       <!-- 我的课程表 -->
       <section class="secondary-row">
         <div class="nur-card secondary-card schedule-card">

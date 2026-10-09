@@ -8,6 +8,7 @@ import com.nurture.parent.infra.ParentProfileRepository;
 import com.nurture.parent.infra.WalletTransactionRepository;
 import com.nurture.parent.domain.GuardianBinding;
 import com.nurture.parent.infra.GuardianBindingRepository;
+import com.nurture.identity.app.IdentityApplicationService;
 import com.nurture.student.app.StudentApplicationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,17 +29,20 @@ public class ParentApplicationService {
     private final WalletTransactionRepository txnRepository;
     private final GuardianBindingRepository bindingRepository;
     private final StudentApplicationService studentService;
+    private final IdentityApplicationService identityService;
 
     public ParentApplicationService(ParentProfileRepository parentProfileRepository,
                                     FamilyWalletRepository walletRepository,
                                     WalletTransactionRepository txnRepository,
                                     GuardianBindingRepository bindingRepository,
-                                    StudentApplicationService studentService) {
+                                    StudentApplicationService studentService,
+                                    IdentityApplicationService identityService) {
         this.parentProfileRepository = parentProfileRepository;
         this.walletRepository = walletRepository;
         this.txnRepository = txnRepository;
         this.bindingRepository = bindingRepository;
         this.studentService = studentService;
+        this.identityService = identityService;
     }
 
     @Transactional
@@ -69,6 +73,31 @@ public class ParentApplicationService {
                 .orElseThrow(() -> new IllegalStateException("暂无待确认的监护绑定申请"));
         binding.activate();
         return binding;
+    }
+
+    /** 学生侧待确认监护绑定申请视图（G3）：仅必要信息，不暴露家长手机号等敏感字段。 */
+    public record PendingBindingView(UUID bindingId, String parentDisplayName, String relation,
+                                     java.time.Instant createdAt) {
+    }
+
+    /** 当前学生本人收到的 PENDING 监护绑定申请（按调用者档案查询，无伪造 ID 向量；无档案视为空）。 */
+    @Transactional(readOnly = true)
+    public List<PendingBindingView> pendingBindingsFor(UUID studentAccountId) {
+        var student = studentService.refByAccountId(studentAccountId);
+        if (student.isEmpty()) {
+            return List.of();
+        }
+        return bindingRepository.findByStudentId(student.get().profileId()).stream()
+                .filter(b -> b.getStatus() == GuardianBinding.BindingStatus.PENDING)
+                .map(b -> new PendingBindingView(b.getId(), parentDisplayNameOf(b.getParentId()),
+                        b.getRelation(), b.getCreatedAt()))
+                .toList();
+    }
+
+    private String parentDisplayNameOf(UUID parentProfileId) {
+        return parentProfileRepository.findById(parentProfileId)
+                .flatMap(p -> identityService.displayNameOf(p.getAccountId()))
+                .orElse("家长用户");
     }
 
     @Transactional(readOnly = true)
