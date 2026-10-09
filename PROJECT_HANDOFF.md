@@ -30,17 +30,24 @@
 | `docs/FEATURE_ROADMAP.md` | 功能增补路线图（缺口复核 / A-F 新功能评估 / 四阶段顺序） | 规划下一批功能时 |
 | `README.md`（功能根目录） | 构建与启动命令速查 | 启动环境时 |
 
-## 3. 当前开发进度总表（2026-10-09 核实）
+## 3. 当前开发进度总表（2026-10-09 第二轮核实）
 
 状态图例：✅已完成且已验证 · 🟡已实现未充分验证 · 🔶部分实现 · 🔵规划中 · ⛔阻塞
+
+### 版本保护（2026-10-09 新增）
+| 项 | 状态 | 说明 |
+|---|---|---|
+| 本地 Git 仓库 | ✅ | 基线 `9631f8d`（480 文件）+ G3 `7979522` + G7 `3f6da7d`；identity 本地署名，**无远程仓库**（恢复能力=commit 历史本身） |
+| .gitignore | ✅ | 排除 node_modules/dist/target/日志/deploy 备份与部署包/.env（.env.example 反排除保留）/运行期上传文件 backend/data/files/（历史已跟踪文件不受影响）/__pycache__ |
+| 凭据核查 | ✅ | application.yml 密钥全部 `${VAR:dev默认}` 注入，仓库内仅开发占位值；无硬编码真实凭据 |
 
 ### 交易与履约闭环（第一梯队，全部 ✅）
 | 功能 | 状态 | 验证依据 |
 |---|---|---|
 | 认证（注册/登录/Cookie/令牌轮换/锁定零窗口） | ✅ | IT + E2E；HttpOnly 实测 |
 | 预约/改期/两阶段取消 | ✅ | BookingRescheduleIT + E2E |
-| 监护绑定授权下单 | ✅ | GuardianBindingOrderAuthIT |
-| 订单/支付（沙箱 + 模式 B 线下收款） | ✅ | OfflinePaymentStateMachineIT 8 例 + ConcurrencyIT（6 并发恰 1 成功） |
+| 监护绑定授权下单（含学生确认绑定入口 G3） | ✅ | GuardianBindingOrderAuthIT（含 G3 越权/幂等用例）+ E2E §8.3 + 浏览器全链路走查 |
+| 订单/支付（沙箱 + 模式 B 线下收款；双端下单支付界面 G7） | ✅ | OfflinePaymentStateMachineIT 8 例 + ConcurrencyIT + **OrderPaymentFlowIT**（可下单视图/越权/一课一单/payer 隔离/无余额回滚/支付联动/防重复）+ E2E §8.4 + 浏览器全链路走查 + 生产模式冒烟（sandbox=false） |
 | 退款/结算/评价/站内信/课程提醒 | ✅ | E2E 覆盖 |
 | 课堂（外部会议链接 + 结课考勤） | ✅ | E2E 课堂链路 |
 
@@ -70,7 +77,7 @@
 | 功能 | 状态 | 验证依据 |
 |---|---|---|
 | 授权漏洞修复 | ✅ 19 项 | probe_authz.py 多轮 0 漏洞 |
-| 六层测试体系 | ✅ | 单元 35 / 集成 28 / E2E 124 / 探针 / ArchUnit 空基线 / 配置门禁 24 项 |
+| 六层测试体系 | ✅ | 单元 35 / 集成 30 / E2E 160 / 探针 / ArchUnit 空基线 / 配置门禁 24 项 |
 | 备份恢复 | ✅ 实弹演练 | RTO 实测 55 秒（deploy/backup.sh + restore.sh） |
 | 健康检查 | ✅ | actuator + probes + compose healthcheck + cloudflared 依赖 |
 | 答辩 PPT / 计划书 / 小白指南 | ✅ | E:\线上家教平台\ 下三份 docx + pptx |
@@ -82,14 +89,14 @@
 🔵 教育合规（ICP / 协议 / 未成年人条款）——正式运营最大前置
 🔵 生产备份调度、AI 上层能力（均规划中）
 
-## 4. 当前工作现场（2026-10-09 快照）
+## 4. 当前工作现场（2026-10-09 第二轮快照）
 
-- **最近完成**：阶段一收口——G9 `LearningGrowthIT`（9 用例）+ G1/G2/G4/G8 四个功能入口；全程抓出并修复 4 个真实缺陷（周报 ID 语义、评价历史课断点、收款列表漏渲染、评价 tags 懒加载 500）。测试基线：单元 35 + IT 28 全绿、E2E 124/124、探针 0、生产构建 ✓。
-- **已知未收口**：G3/G5/G6/G7/G10（界面层缺口，见 ROADMAP）；课堂记录重复创建 409 与推荐价格过滤的专属断言；Staging 等外部资源。
-- **运行状态**：本轮结束时后端（8080）/前端（4200）/PostgreSQL 均在运行中。
+- **最近完成**：版本保护（git 基线 9631f8d + 分阶段提交）+ G3 学生确认监护绑定入口 + G7 学生/家长下单支付界面；新增 `OrderPaymentFlowIT`（IT 28→30）与 E2E §8.3/§8.4（124→160）；G3/G7 浏览器全链路走查通过；生产模式冒烟（NURTURE_PAYMENT_SANDBOX_ENABLED=false → config=false、沙箱端点下线）。
+- **已知未收口**：G5/G6/G10（界面层缺口，见 ROADMAP）；Staging 等外部资源；学生自建订单只能经运营线下确认收款（学生钱包无充值通道，设计如此）。
+- **运行状态**：本轮结束时后端（8080，沙箱模式）/前端（4200）/PostgreSQL 均在运行中。
 - **产物新鲜度**：jar 与前端 dist 均为 2026-10-09 本轮重建（晚于全部源码修改）✓。
-- **未提交修改**：项目**无 git 仓库**——所有进度只存在于文件系统，**严禁 reset/clean 类操作，误删即永久丢失**。
-- **无失败测试遗留**：最近一次 verify 全绿。
+- **版本管理**：**本地 git 仓库已建立**（identity 署名 NURTURE Dev，无远程）。恢复基线=`git log`/`git checkout <commit>`；仍严禁 reset --hard/clean -fd/强制推送；不加远程不推送。
+- **无失败测试遗留**：最近一次 verify 全绿（单元 35 + IT 30）。
 
 ## 5. 当前运行与验证方式（全部已验证）
 
@@ -108,7 +115,7 @@ cd ../frontend && npm start -- --host 0.0.0.0
 #           教师 13900000001/Teacher#2026 · 运营 13800000000/Admin#2026（仅本机）
 # 全量回归（先杀 java：taskkill //F //IM java.exe）
 mvn -B -s C:/Users/lxs/apps/maven-settings.xml -Pintegration verify   # 单元+ArchUnit+IT
-python3 tools/e2e_test.py        # 124 项 E2E（需服务已启动）
+python3 tools/e2e_test.py        # 160 项 E2E（需服务已启动）
 python3 tools/probe_authz.py     # 越权探针
 python3 deploy/verify_config.py  # 24+ 项配置门禁
 npx ng build --configuration production   # 前端生产构建（frontend/ 下）
@@ -125,14 +132,14 @@ npx ng build --configuration production   # 前端生产构建（frontend/ 下�
 | 优先 | 任务 | 为什么 | 首查文件 | 验收 |
 |---|---|---|---|---|
 | ~~P0-1~~ | ~~learning 专属 IT~~ ✅ 2026-10-09 完成（LearningGrowthIT 9 用例） | — | — | — |
-| **P1-1** | ROADMAP G7：学生/家长「下单 + 支付」界面 | 资金闭环最后一块可见缺口；运营确认端已就绪 | `parent-dashboard.component.html`、`endpoints.ts` | E2E 新增界面链路 + 走查截图 |
-| P1-2 | ROADMAP G3：学生「确认监护绑定」提示卡 | 新家庭自助闭环必经步骤（需小后端只读端点） | `student-dashboard.component.html`、`parent` 模块 | E2E：发起→确认→ACTIVE→下单 |
-| P1-3 | ROADMAP G5/G6：教师资质上传 + 定价管理界面 | 教师自助入驻与经营 | `teacher-dashboard.component.html` | 走查 + E2E |
-| P2 | 首页五步模块、匹配页收藏/时间筛选（G10）、附件上传、课堂记录 409 断言 | 体验补全与测试细网 | 见 ROADMAP | 各项验收标准 |
+| ~~P1-1~~ | ~~G7 下单支付界面~~ ✅ 2026-10-09 完成（commit 3f6da7d） | — | — | — |
+| ~~P1-2~~ | ~~G3 学生确认绑定入口~~ ✅ 2026-10-09 完成（commit 7979522） | — | — | — |
+| **P1-3** | ROADMAP G5/G6：教师资质上传 + 定价管理界面 | 教师自助入驻与经营 | `teacher-dashboard.component.html` | 走查 + E2E |
+| P2 | 首页五步模块、匹配页收藏/时间筛选（G10）、附件上传 | 体验补全 | 见 ROADMAP | 各项验收标准 |
 | ⛔ | Staging 部署 | 等外部资源（VM/域名/CF） | `deploy/RUNBOOK.md` | 14 项验收全过 |
 
 ## 8. 风险与限制
 
-- **无版本控制**是最大结构性风险：任何误删不可恢复。建议用户尽快 `git init`（需用户授权，本轮未执行）。
+- ~~无版本控制~~ **已解决（2026-10-09）**：本地 git 仓库已建立（9631f8d 起三个 commit）。仍存风险：**无远程仓库**，机器盘故障仍会丢失全部历史——如需异地备份由用户决定是否添加远程（未经授权不得擅自添加/推送）。
 - learning 模块在 ArchUnit 空基线下新增——若模块间出现违规依赖，verify 会红灯（这是设计行为）。
-- 本文档核实时间 2026-09-30；此后若有会话修改代码而未回写本文档，以实际代码为准并**补记差异**。
+- 本文档核实时间 2026-10-09（第二轮）；此后若有会话修改代码而未回写本文档，以实际代码为准并**补记差异**。
