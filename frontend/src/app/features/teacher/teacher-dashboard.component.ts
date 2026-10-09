@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient } from '@angular/common/http';
@@ -11,6 +11,13 @@ interface VerificationStatus {
   submittedAt: string | null;
   decidedAt: string | null;
   guidance: string;
+}
+
+/** G5 已选择的待上传材料（仅文件名/大小用于展示，不上传前不离开浏览器）。 */
+interface PickedFile {
+  file: File;
+  name: string;
+  sizeLabel: string;
 }
 
 interface TodayLesson {
@@ -84,6 +91,26 @@ export class TeacherDashboardComponent implements OnInit {
   readonly notice = signal('');
   readonly loaded = signal(false);
 
+  // ---------- 资质材料上传（G5）----------
+  // 服务端真实限制：单个文件 ≤20MB（multipart 硬限制）；服务端当前不限文件类型，
+  // 前端只做大小与必填校验（体验优化），最终以服务端校验为准。
+  private static readonly MAX_FILE_BYTES = 20 * 1024 * 1024;
+  readonly idDocumentFile = signal<PickedFile | null>(null);
+  readonly degreeCertFile = signal<PickedFile | null>(null);
+  readonly verificationBusy = signal(false);
+  readonly verificationMessage = signal<{ type: 'info' | 'error' | 'success'; text: string } | null>(null);
+  /** 未提交或被驳回时可（重新）提交材料；审核中/已通过不再展示表单。 */
+  readonly canSubmitVerification = computed(() =>
+    this.idDocumentFile() !== null && this.degreeCertFile() !== null && !this.verificationBusy());
+  /** 未提交或被驳回时可（重新）提交材料；审核中/已通过不再展示表单。状态加载完成前不展示，避免闪现。 */
+  readonly showVerificationForm = computed(() => {
+    if (!this.loaded()) {
+      return false;
+    }
+    const status = this.verification()?.status;
+    return status === undefined || status === 'NOT_SUBMITTED' || status === 'REJECTED';
+  });
+
   // ---------- 改期（D11）：候选时段来自自己的开放档期 ----------
   readonly rescheduleBookingId = signal<string | null>(null);
   readonly rescheduleCandidates = signal<AvailabilitySlot[]>([]);
@@ -128,6 +155,69 @@ export class TeacherDashboardComponent implements OnInit {
     this.http
       .get<AvailabilitySlot[]>(`${API.teacher.availabilityCalendar}?from=${from.toISOString()}&to=${to.toISOString()}`)
       .subscribe({ next: (data) => this.slots.set(data) });
+  }
+
+  // ---------- 资质材料上传（G5）----------
+
+  /** 选择材料文件：前端只做大小与必填校验（体验优化），最终以服务端校验为准。 */
+  onVerificationFilePick(part: 'idDocument' | 'degreeCert', event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (!file) {
+      return;
+    }
+    if (file.size > TeacherDashboardComponent.MAX_FILE_BYTES) {
+      this.verificationMessage.set({ type: 'error', text: `「${file.name}」超过 20MB 限制，请压缩后重新选择。` });
+      input.value = '';
+      return;
+    }
+    this.verificationMessage.set(null);
+    const picked: PickedFile = { file, name: file.name, sizeLabel: formatBytes(file.size) };
+    if (part === 'idDocument') {
+      this.idDocumentFile.set(picked);
+    } else {
+      this.degreeCertFile.set(picked);
+    }
+    input.value = '';
+  }
+
+  removeVerificationFile(part: 'idDocument' | 'degreeCert'): void {
+    if (part === 'idDocument') {
+      this.idDocumentFile.set(null);
+    } else {
+      this.degreeCertFile.set(null);
+    }
+  }
+
+  /** 提交资质材料：multipart 双必填；成功后直接采用服务端返回的最新审核状态，不在前端臆造。 */
+  submitVerification(): void {
+    const idDoc = this.idDocumentFile();
+    const degree = this.degreeCertFile();
+    if (!idDoc || !degree || this.verificationBusy()) {
+      return;
+    }
+    const form = new FormData();
+    form.append('idDocument', idDoc.file, idDoc.name);
+    form.append('degreeCert', degree.file, degree.name);
+    this.verificationBusy.set(true);
+    this.verificationMessage.set(null);
+    this.http.post<VerificationStatus>(API.teacher.verificationSubmit, form).subscribe({
+      next: (v) => {
+        this.verification.set(v);
+        this.idDocumentFile.set(null);
+        this.degreeCertFile.set(null);
+        this.verificationBusy.set(false);
+        this.verificationMessage.set({ type: 'success', text: '材料已提交，以下为服务端返回的最新审核状态。' });
+      },
+      error: (err) => {
+        this.verificationBusy.set(false);
+        const detail = err?.error?.detail;
+        this.verificationMessage.set({
+          type: 'error',
+          text: detail ?? '提交未成功，请确认两个材料文件都已选择后重试；多次失败请联系运营。',
+        });
+      },
+    });
   }
 
   /** 发布可用时段：快捷模板按钮（次日/后天固定时段）。 */
@@ -307,4 +397,14 @@ export class TeacherDashboardComponent implements OnInit {
   yuan(cents: number): string {
     return (cents / 100).toFixed(2);
   }
+}
+
+function formatBytes(size: number): string {
+  if (size >= 1024 * 1024) {
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  if (size >= 1024) {
+    return `${Math.round(size / 1024)} KB`;
+  }
+  return `${size} B`;
 }

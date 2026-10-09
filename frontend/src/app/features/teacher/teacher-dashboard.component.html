@@ -115,18 +115,70 @@
     }
   </section>
 
-  <!-- 资质认证状态流 -->
+  <!-- 资质认证（G5）：服务端真实状态 + 材料上传 -->
   <section class="nur-card nur-enter" style="--stagger-index: 2" aria-labelledby="verify-title">
-    <h2 id="verify-title" class="nur-serif">资质认证审核状态</h2>
+    <h2 id="verify-title" class="nur-serif">资质认证</h2>
     @if (verification(); as v) {
       <p class="verify-status">
         <span class="status-pill" [attr.data-status]="v.status" aria-hidden="true">
-          {{ v.status === 'APPROVED' ? '✔ 已通过' : v.status === 'UNDER_REVIEW' ? '◷ 审核中' : v.status === 'REJECTED' ? '↺ 需补充' : '◔ 已提交' }}
+          {{ v.status === 'APPROVED' ? '✔ 已通过' : v.status === 'UNDER_REVIEW' ? '◷ 审核中' : v.status === 'REJECTED' ? '↺ 需补充' : v.status === 'SUBMITTED' ? '◔ 已提交' : '○ 未提交' }}
         </span>
+        @if (v.submittedAt) {
+          <span class="quiet-note">材料提交于 {{ v.submittedAt | date: 'M月d日 HH:mm' }}</span>
+        }
       </p>
+      @if (v.status === 'REJECTED' && v.decisionNote) {
+        <p class="verify-decision" role="note">审核意见：{{ v.decisionNote }}</p>
+      }
       <p class="quiet-note">{{ v.guidance }}</p>
-    } @else {
-      <p class="quiet-note">尚未提交认证材料。上传身份证明与学历证明后，运营将进入审核流程。</p>
+    } @else if (loaded()) {
+      <p class="quiet-note">暂时读不到认证状态，可直接在下方重新提交材料；若多次失败请联系运营。</p>
+    }
+    @if (showVerificationForm()) {
+      <form class="verify-upload" (submit)="$event.preventDefault(); submitVerification()" aria-label="资质材料上传">
+        <p class="reschedule-hint">请上传两项材料：身份证明与学历证明（清晰照片或扫描件均可）。</p>
+        <div class="verify-file-row">
+          <label class="verify-file-label" for="verify-id-input">身份证明</label>
+          <input
+            id="verify-id-input"
+            type="file"
+            [disabled]="verificationBusy()"
+            (change)="onVerificationFilePick('idDocument', $event)"
+          />
+          @if (idDocumentFile(); as f) {
+            <span class="verify-file-chip">
+              {{ f.name }}（{{ f.sizeLabel }}）
+              <button type="button" class="btn-ghost-sm" (click)="removeVerificationFile('idDocument')">移除</button>
+            </span>
+          }
+        </div>
+        <div class="verify-file-row">
+          <label class="verify-file-label" for="verify-degree-input">学历证明</label>
+          <input
+            id="verify-degree-input"
+            type="file"
+            [disabled]="verificationBusy()"
+            (change)="onVerificationFilePick('degreeCert', $event)"
+          />
+          @if (degreeCertFile(); as f) {
+            <span class="verify-file-chip">
+              {{ f.name }}（{{ f.sizeLabel }}）
+              <button type="button" class="btn-ghost-sm" (click)="removeVerificationFile('degreeCert')">移除</button>
+            </span>
+          }
+        </div>
+        <p class="reschedule-hint">单个文件不超过 20MB；平台当前不限文件格式，PDF/JPG/PNG 等常见格式均可。最终以服务端校验为准。</p>
+        <button
+          type="submit"
+          class="nur-btn nur-btn--primary nur-btn--sm"
+          [disabled]="!canSubmitVerification()"
+        >
+          {{ verificationBusy() ? '正在提交…' : '提交资质材料' }}
+        </button>
+        @if (verificationMessage(); as msg) {
+          <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+        }
+      </form>
     }
   </section>
 
