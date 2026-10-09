@@ -390,6 +390,10 @@ def main():
         {"teacherId": found["teacherId"], "slotId": slot_g7b["slotId"], "subject": "物理", "bookingType": "TRIAL"},
         token=t_g7s, idem=str(uuid.uuid4()))
     check("G7 第二节课预约确认", st == 201 and bk_g7b.get("status") == "CONFIRMED", f"{st} {bk_g7b}")
+    # 充值前先读余额：固定手机号账号跨轮次复用，钱包可能带有历史轮次余额，断言不能假设从 0 起步
+    st, _, g7wallet0 = http("GET", "/parent/me/wallet", token=t_g7p)
+    check("G7 充值前钱包余额可读", st == 200 and isinstance(g7wallet0.get("balanceCents"), int), f"{st} {g7wallet0}")
+    g7bal_before = g7wallet0.get("balanceCents", 0) if st == 200 else 0
     st, _, topup7 = http("POST", "/parent/me/wallet/topup", {"amountCents": 100000, "memo": "G7家庭充值"},
         token=t_g7p, idem=str(uuid.uuid4()))
     check("G7 家长钱包充值", st in (200, 201), f"{st} {topup7}")
@@ -406,7 +410,7 @@ def main():
     st, _, pafter = http("GET", "/order/orders/%s" % pord["orderId"], token=t_g7p)
     check("G7 订单状态=PAID", st == 200 and pafter.get("status") == "PAID", f"{st} {pafter}")
     st, _, g7wallet = http("GET", "/parent/me/wallet", token=t_g7p)
-    expect_bal = 100000 - pord.get("amountCents", 0)
+    expect_bal = g7bal_before + 100000 - pord.get("amountCents", 0)
     check("G7 钱包扣减=订单金额", st == 200 and g7wallet.get("balanceCents") == expect_bal, f"{g7wallet.get('balanceCents')} vs {expect_bal}")
     st, _, repay = http("POST", "/payment/payments:initiate", {"orderId": pord["orderId"], "channel": "MOCK"},
         token=t_g7p, idem=str(uuid.uuid4()))
@@ -483,8 +487,16 @@ def main():
     st, _, audit = http("GET", "/admin/audit-logs?page=0&size=10", token=t_admin)
     check("审计日志非空", st == 200 and audit.get("totalElements", 0) > 0, f"{st} {str(audit)[:120]}")
     st, _, accounts = http("GET", "/admin/accounts?page=0&size=100", token=t_admin)
-    # 精确锚定测试账号：列表里还有其他轮次注册的学生（如限频测试牺牲账号），不能取第一个
-    stu = next((a for a in accounts.get("content", []) if a["role"] == "STUDENT" and a.get("phone") == "13900000002"), None) if st == 200 else None
+    # 精确锚定测试账号：多轮累计后账户总数可能超过单页（如 108>100），必须翻页查找而非只看第一页
+    stu = None
+    if st == 200:
+        for _pg in range(max(1, accounts.get("totalPages", 1))):
+            stu = next((a for a in accounts.get("content", []) if a["role"] == "STUDENT" and a.get("phone") == "13900000002"), None)
+            if stu is not None or _pg + 1 >= max(1, accounts.get("totalPages", 1)):
+                break
+            st, _, accounts = http("GET", "/admin/accounts?page=%d&size=100" % (_pg + 1), token=t_admin)
+            if st != 200:
+                break
     check("账户管理列表", stu is not None, f"{st}")
     if stu:
         st, _, _ = http("POST", "/admin/accounts/%s:lock" % stu["accountId"], {"note": "测试锁定"}, token=t_admin, idem=str(uuid.uuid4()))
