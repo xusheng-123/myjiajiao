@@ -483,6 +483,56 @@ def main():
         token=t_g7p, idem=str(uuid.uuid4()))
     check("G7 已支付订单不可再发起支付(4xx)", 400 <= st < 500, f"{st} {repay}")
 
+    print("== 8.6 G6 课程定价与在售管理（复用 §3.5 已认证教师：新增/调价/快照/下架/越权） ==")    # booking/档期的 teacherId 与 matching 检索结果一致，都是账户 ID（非 teacher profile ID）
+    g6_tid = jwt_sub(t_g5)
+    check("G6 教师账户ID可读(teacherId)", bool(g6_tid), f"{g6_tid}")
+    st, _, g6add = http("POST", "/teacher/me/subjects",
+        {"subject": "化学", "gradeBand": "高一", "pricePerHourCents": 15000}, token=t_g5, idem=str(uuid.uuid4()))
+    check("G6 新增开课条目(在售)", st in (200, 201) and g6add.get("active") is True and g6add.get("pricePerHourCents") == 15000, f"{st} {g6add}")
+    st, _, g6dup = http("POST", "/teacher/me/subjects",
+        {"subject": "化学", "gradeBand": "高一", "pricePerHourCents": 15000}, token=t_g5, idem=str(uuid.uuid4()))
+    check("G6 D9 幂等：重复添加返回既有条目", st in (200, 201) and g6dup.get("offeringId") == g6add.get("offeringId"), f"{st} {g6dup}")
+    st, _, g6bad = http("PUT", "/teacher/me/subjects/%s/pricing" % g6add["offeringId"],
+        {"pricePerHourCents": 0}, token=t_g5, idem=str(uuid.uuid4()))
+    check("G6 非法价格被拒(4xx)", 400 <= st < 500, f"{st} {g6bad}")
+    st, _, g6rp = http("PUT", "/teacher/me/subjects/%s/pricing" % g6add["offeringId"],
+        {"pricePerHourCents": 18000}, token=t_g5, idem=str(uuid.uuid4()))
+    check("G6 调价以服务端返回为准", st == 200 and g6rp.get("pricePerHourCents") == 18000, f"{st} {g6rp}")
+    st, _, g6deny_rp = http("PUT", "/teacher/me/subjects/%s/pricing" % g6add["offeringId"],
+        {"pricePerHourCents": 1}, token=t_teacher, idem=str(uuid.uuid4()))
+    check("G6 他人调价被拒(403)", st == 403, f"{st} {g6deny_rp}")
+    st, _, g6deny_dl = http("DELETE", "/teacher/me/subjects/%s" % g6add["offeringId"], token=t_teacher, idem=str(uuid.uuid4()))
+    check("G6 他人下架被拒(403)", st == 403, f"{st} {g6deny_dl}")
+    # 快照一致性：调价后新订单按新价；再次调价不改已生成订单
+    st, g6s_body, = register_or_login("student", "STUDENT", "13" + str(random.randint(0, 999999999)).zfill(9), "Student#2026")[:2]
+    t_g6s = g6s_body.get("accessToken", "")
+    check("G6 走查学生注册", st == 200 and t_g6s, f"{st}")
+    slot_g6, _at_g6 = publish_slot_retry(t_g5, None, 56, 57)
+    st, _, bk_g6 = http("POST", "/booking/bookings",
+        {"teacherId": g6_tid, "slotId": slot_g6["slotId"], "subject": "化学", "bookingType": "TRIAL"},
+        token=t_g6s, idem=str(uuid.uuid4()))
+    check("G6 预约化学试听自动确认", st == 201 and bk_g6.get("status") == "CONFIRMED", f"{st} {bk_g6}")
+    st, _, ord_g6 = http("POST", "/order/orders", {"bookingId": bk_g6["bookingId"]}, token=t_g6s, idem=str(uuid.uuid4()))
+    check("G6 新订单按调价后金额(18000)", st == 201 and ord_g6.get("amountCents") == 18000, f"{st} {ord_g6}")
+    st, _, _ = http("PUT", "/teacher/me/subjects/%s/pricing" % g6add["offeringId"],
+        {"pricePerHourCents": 25000}, token=t_g5, idem=str(uuid.uuid4()))
+    check("G6 再次调价成功", st == 200, f"{st}")
+    st, _, odet_g6 = http("GET", "/order/orders/%s" % ord_g6["orderId"], token=t_g6s)
+    check("G6 已生成订单金额快照不变(18000)", st == 200 and odet_g6.get("amountCents") == 18000, f"{st} {odet_g6}")
+    # 下架（停止销售）：列表消失 + 检索不可见 + 新订单回落默认价
+    st, _, _ = http("DELETE", "/teacher/me/subjects/%s" % g6add["offeringId"], token=t_g5, idem=str(uuid.uuid4()))
+    check("G6 下架成功", st in (200, 204), f"{st}")
+    st, _, g6list = http("GET", "/teacher/me/subjects", token=t_g5)
+    check("G6 下架后从我的在售列表消失", st == 200 and not any(s.get("offeringId") == g6add["offeringId"] for s in g6list or []), f"{st} {g6list}")
+    st, _, g6sr = http("GET", "/matching/teachers:search?subject=化学", token=t_g6s)
+    check("G6 下架后检索不可见", st == 200 and not any(t.get("teacherId") == g6_tid for t in g6sr or []), f"{st} {str(g6sr)[:160]}")
+    slot_g6b, _at_g6b = publish_slot_retry(t_g5, None, 58, 59)
+    st, _, bk_g6b = http("POST", "/booking/bookings",
+        {"teacherId": g6_tid, "slotId": slot_g6b["slotId"], "subject": "化学", "bookingType": "TRIAL"},
+        token=t_g6s, idem=str(uuid.uuid4()))
+    st, _, ord_g6b = http("POST", "/order/orders", {"bookingId": bk_g6b["bookingId"]}, token=t_g6s, idem=str(uuid.uuid4()))
+    check("G6 下架后新订单回落服务端默认价(30000)", st == 201 and ord_g6b.get("amountCents") == 30000, f"{st} {ord_g6b}")
+
     print("== 8.5 改期（D11：参与双方可改期，冲突原子回滚） ==")
     reschedule_ok = False
     for _try in range(10):
@@ -698,7 +748,13 @@ def main():
     st, _, pend_deny = http("GET", "/admin/orders/pending-payment?page=0&size=20", token=t_teacher)
     check("非运营读取待收款列表被拒(403)", st == 403, f"{st}")
     st, _, pend = http("GET", "/admin/orders/pending-payment?page=0&size=20", token=t_admin)
-    pend_hit = isinstance(pend, dict) and any(o.get("orderId") == ord4["orderId"] for o in pend.get("content", []))
+    # 多轮累计后待支付订单可能超过单页，翻页查找本轮订单（历史轮次残留的 PENDING_PAYMENT 会占位）
+    pend_hit = False
+    for _pg in range(20):
+        pend_hit = isinstance(pend, dict) and any(o.get("orderId") == ord4["orderId"] for o in pend.get("content", []))
+        if pend_hit or not isinstance(pend, dict) or _pg + 1 >= max(1, pend.get("totalPages", 1)):
+            break
+        st, _, pend = http("GET", "/admin/orders/pending-payment?page=%d&size=20" % (_pg + 1), token=t_admin)
     check("运营待收款列表包含待支付订单(G1 入口)", pend_hit, f"{st} {str(pend)[:200]}")
     st, _, deny = http("POST", "/admin/orders/%s:confirm-offline-payment" % ord4["orderId"], {}, token=t_teacher, idem=str(uuid.uuid4()))
     check("非运营确认线下收款被拒(403)", st == 403, f"{st}")
