@@ -1,0 +1,29 @@
+# 润物细无声 · Nurture — 前端 CI（Git Push/PR 自动构建；生产与 Preview 由 Cloudflare Pages 托管）
+name: frontend-ci
+
+on:
+  push:
+    paths: ["frontend/**", ".github/workflows/frontend-ci.yml"]
+  pull_request:
+    paths: ["frontend/**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 安装依赖
+        working-directory: frontend
+        run: npm ci
+
+      - name: 生产构建（PR 阶段即验证可发布性，Pages Preview 环境用于 UI 联调）
+        working-directory: frontend
+        run: npx ng build

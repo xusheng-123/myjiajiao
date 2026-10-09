@@ -1,0 +1,65 @@
+<article class="teacher-card nur-card nur-card--interactive">
+  <header class="tc-head">
+    <span class="nur-avatar" aria-hidden="true">{{ initial() }}</span>
+    <div class="tc-id">
+      <h3 class="tc-name nur-serif">{{ teacher().displayName }}</h3>
+      <p class="tc-school">{{ teacher().school }} · {{ teacher().highestDegree }}</p>
+    </div>
+    @if (teacher().verificationApproved) {
+      <span class="nur-cert nur-cert--ok">
+        <span aria-hidden="true">✓</span>
+        已认证
+      </span>
+    } @else {
+      <span class="nur-cert nur-cert--pending">
+        <span aria-hidden="true">◔</span>
+        审核中
+      </span>
+    }
+  </header>
+
+  <div class="tc-meta">
+    <span class="nur-tag">{{ teacher().subject }}</span>
+    <span class="nur-tag">{{ teacher().gradeBand }}</span>
+    <span class="tc-years">{{ teacher().yearsOfTeaching }} 年教龄</span>
+  </div>
+
+  <ul class="tc-tags" aria-label="教学风格">
+    @for (tag of styleTags(); track tag) {
+      <li>{{ tag }}</li>
+    }
+  </ul>
+
+  <footer class="tc-foot">
+    @if (teacher().averageRating !== null) {
+      <span class="tc-rating">
+        <span class="tc-star" aria-hidden="true">★</span>
+        {{ teacher().averageRating | number: '1.1-1' }}
+        <span class="tc-count">{{ teacher().reviewCount }} 条评价</span>
+      </span>
+    } @else {
+      <span class="tc-rating tc-rating--new">
+        <span class="tc-star" aria-hidden="true">✿</span>
+        新入驻
+      </span>
+    }
+    <span class="tc-price">
+      ¥{{ priceYuan() | number: '1.0-0' }}<small>/课时</small>
+    </span>
+  </footer>
+
+  @if (teacher().nextOpenSlotAt) {
+    <p class="tc-slot">
+      <span aria-hidden="true">◔</span>
+      最近可约 {{ teacher().nextOpenSlotAt | date: 'M月d日 EEEE HH:mm' }}
+    </p>
+  }
+
+  <a
+    class="nur-btn nur-btn--ghost nur-btn--sm tc-cta"
+    routerLink="/auth"
+    [attr.aria-label]="'咨询导师 ' + teacher().displayName"
+  >
+    咨询该导师
+  </a>
+</article>

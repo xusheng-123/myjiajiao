@@ -1,0 +1,192 @@
+/* 吸顶导航 — 米白半透明 + 滚动后描边加深，克制不抢戏 */
+
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.site-header {
+  position: relative;
+  background: color-mix(in srgb, var(--bg-page) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--duration-enter) var(--ease-nurture),
+    background-color var(--duration-enter) var(--ease-nurture);
+}
+
+.site-header--scrolled {
+  background: color-mix(in srgb, var(--bg-page) 96%, transparent);
+  border-bottom-color: var(--border-subtle);
+}
+
+.sh-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  height: var(--header-height);
+}
+
+/* ---------- 品牌标 ---------- */
+.sh-brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  text-decoration: none;
+}
+
+.sh-brand-cn {
+  font-family: var(--font-brand);
+  font-size: 1.2rem;
+  letter-spacing: 0.14em;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.sh-brand-en {
+  color: var(--color-secondary);
+  font-size: 0.6rem;
+  letter-spacing: 0.42em;
+  line-height: 1.2;
+}
+
+/* ---------- 桌面导航 ---------- */
+.sh-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sh-link {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-3);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border-radius: var(--radius-control);
+  transition: color var(--duration-enter) var(--ease-nurture);
+}
+
+.sh-link:hover {
+  color: var(--color-primary);
+}
+
+/* 悬停墨线：一笔极淡的细线从中心向两侧展开（像宣纸上的淡墨，而非下划线） */
+.sh-link::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 62%;
+  height: 1px;
+  background: currentColor;
+  opacity: 0;
+  transform: translateX(-50%) scaleX(0);
+  transition: transform 190ms var(--ease-nurture), opacity 190ms var(--ease-nurture);
+}
+
+.sh-link:hover::after,
+.sh-link:focus-visible::after {
+  opacity: 0.5;
+  transform: translateX(-50%) scaleX(1);
+}
+
+.sh-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ---------- 汉堡按钮（移动端） ---------- */
+.sh-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  padding: 10px;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--bg-card);
+}
+
+.sh-burger-bar {
+  display: block;
+  height: 2px;
+  width: 100%;
+  border-radius: 1px;
+  background: var(--text-main);
+  transition: transform var(--duration-enter) var(--ease-nurture),
+    opacity var(--duration-enter) var(--ease-nurture);
+}
+
+.sh-burger--open .sh-burger-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.sh-burger--open .sh-burger-bar:nth-child(2) {
+  opacity: 0;
+}
+
+.sh-burger--open .sh-burger-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ---------- 移动端下拉面板 ---------- */
+.sh-mobile {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: none;
+  flex-direction: column;
+  padding: var(--space-3) var(--space-5) var(--space-5);
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-hover);
+}
+
+.sh-mobile-link {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+.sh-mobile-link:last-of-type {
+  border-bottom: none;
+}
+
+.sh-mobile-login {
+  margin-top: var(--space-4);
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 860px) {
+  .sh-nav,
+  .sh-login {
+    display: none;
+  }
+
+  .sh-burger {
+    display: flex;
+  }
+
+  .sh-mobile {
+    display: flex;
+  }
+}

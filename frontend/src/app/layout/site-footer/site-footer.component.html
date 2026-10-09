@@ -1,0 +1,34 @@
+<footer class="site-footer">
+  <div class="sf-grid nur-container">
+    <div class="sf-brand">
+      <p class="sf-logo">润物细无声</p>
+      <p class="sf-slogan">因材施以微雨，静候学海生花</p>
+      <p class="sf-en" aria-hidden="true">— N U R T U R E —</p>
+    </div>
+
+    <nav class="sf-col" aria-label="页脚站点导航">
+      <h3 class="sf-col-title">站点</h3>
+      <ul class="sf-list">
+        @for (a of anchors; track a.fragment) {
+          <li><a class="sf-link" [href]="'#' + a.fragment">{{ a.label }}</a></li>
+        }
+      </ul>
+    </nav>
+
+    <div class="sf-col">
+      <h3 class="sf-col-title">联络</h3>
+      <ul class="sf-list sf-list--text">
+        <li>教务邮箱 hello&#64;nurture.study</li>
+        <li>服务时间 每日 9:00 – 21:00</li>
+        <li>线上授课 · 全国可约</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sf-bottom">
+    <div class="nur-container sf-bottom-inner">
+      <p>© {{ year }} 润物细无声 Nurture · 线上学术精修与课后答疑平台</p>
+      <p class="sf-verse">随风潜入夜 · 润物细无声</p>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,234 @@
+<div class="dashboard-shell">
+  <header class="dash-header">
+    <div>
+      <p class="dash-greeting nur-serif">导师工作台 · {{ displayName() }}</p>
+      <p class="dash-subtitle">认真准备好每一场雨。</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="auth.logout()" aria-label="退出登录">
+      退出
+    </button>
+  </header>
+
+  @if (!loaded()) {
+    <p class="quiet-note" role="status">正在准备你的工作台…</p>
+  }
+
+  <!-- 当日课程（PRD 1.2 教师工作台：当日课程） -->
+  <section class="nur-card nur-enter" style="--stagger-index: 1" aria-labelledby="today-title">
+    <h2 id="today-title" class="nur-serif">今日课程</h2>
+    @if (todayLessons().length === 0) {
+      <p class="quiet-note">今天没有排定的课程。安排好休息，也是认真教课的一部分。</p>
+    } @else {
+      <ul class="slot-list">
+        @for (lesson of todayLessons(); track lesson.bookingId) {
+          <li>
+            <span>{{ lesson.startAt | date: 'HH:mm' }} – {{ lesson.endAt | date: 'HH:mm' }} · {{ lesson.subject }}</span>
+            <span class="status-pill">{{ lesson.status === 'IN_PROGRESS' ? '上课中' : '待上课' }}</span>
+            @if (lesson.status === 'CONFIRMED' || lesson.status === 'IN_PROGRESS') {
+              <button
+                type="button"
+                class="btn-ghost-sm reschedule-entry"
+                (click)="startReschedule(lesson)"
+                [attr.aria-expanded]="rescheduleBookingId() === lesson.bookingId"
+              >
+                改期
+              </button>
+              <button
+                type="button"
+                class="btn-ghost-sm reschedule-entry"
+                (click)="startClassroom(lesson)"
+                [attr.aria-expanded]="classroomBookingId() === lesson.bookingId"
+              >
+                课堂准备
+              </button>
+            }
+          </li>
+          @if (classroomBookingId() === lesson.bookingId) {
+            <li class="reschedule-panel">
+              <p class="reschedule-hint">第一步：在常用的会议工具（腾讯会议/飞书等）建好会议，把入会链接粘贴到这里：</p>
+              <div class="meeting-url-row">
+                <input
+                  type="url"
+                  class="meeting-url-input"
+                  placeholder="https://meeting.tencent.com/..."
+                  aria-label="外部会议链接"
+                  [value]="meetingUrlInput()"
+                  (input)="onMeetingUrlInput($any($event.target).value)"
+                />
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--primary nur-btn--sm"
+                  [disabled]="classroomBusy() || !meetingUrlInput().trim()"
+                  (click)="registerMeetingUrl()"
+                >
+                  登记链接
+                </button>
+              </div>
+              <p class="reschedule-hint">第二步：下课后结束课堂并标记学生考勤（为结算与退款争议留存依据）：</p>
+              <div class="attendance-row" role="group" aria-label="结课与考勤">
+                <button type="button" class="btn-ghost-sm" [disabled]="classroomBusy()" (click)="endLesson()">
+                  结课
+                </button>
+                <button type="button" class="nur-chip-btn" [disabled]="classroomBusy()" (click)="markAttendance('PRESENT')">考勤：正常</button>
+                <button type="button" class="nur-chip-btn" [disabled]="classroomBusy()" (click)="markAttendance('LATE')">考勤：迟到</button>
+                <button type="button" class="nur-chip-btn" [disabled]="classroomBusy()" (click)="markAttendance('ABSENT')">考勤：缺席</button>
+              </div>
+              @if (classroomMessage(); as msg) {
+                <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+              }
+              <button type="button" class="btn-ghost-sm" (click)="cancelClassroom()">收起课堂准备</button>
+            </li>
+          }
+          @if (rescheduleBookingId() === lesson.bookingId) {
+            <li class="reschedule-panel">
+              @if (rescheduleCandidates().length > 0) {
+                <p class="reschedule-hint">把这门课改到你的其他开放时段：</p>
+                <div class="slot-picker" role="group" aria-label="可改期的候选时段">
+                  @for (slot of rescheduleCandidates(); track slot.slotId) {
+                    <button
+                      type="button"
+                      class="nur-chip-btn"
+                      [attr.aria-pressed]="pickedRescheduleSlot() === slot.slotId"
+                      (click)="pickRescheduleSlot(slot.slotId)"
+                    >
+                      {{ slot.startAt | date: 'M月d日 HH:mm' }}
+                    </button>
+                  }
+                </div>
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--primary nur-btn--sm"
+                  [disabled]="!pickedRescheduleSlot() || rescheduleBusy()"
+                  (click)="confirmReschedule()"
+                >
+                  {{ rescheduleBusy() ? '正在改期…' : '确认改期' }}
+                </button>
+              }
+              @if (rescheduleMessage(); as msg) {
+                <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+              }
+              <button type="button" class="btn-ghost-sm" (click)="cancelReschedule()">取消改期</button>
+            </li>
+          }
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- 资质认证状态流 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 2" aria-labelledby="verify-title">
+    <h2 id="verify-title" class="nur-serif">资质认证审核状态</h2>
+    @if (verification(); as v) {
+      <p class="verify-status">
+        <span class="status-pill" [attr.data-status]="v.status" aria-hidden="true">
+          {{ v.status === 'APPROVED' ? '✔ 已通过' : v.status === 'UNDER_REVIEW' ? '◷ 审核中' : v.status === 'REJECTED' ? '↺ 需补充' : '◔ 已提交' }}
+        </span>
+      </p>
+      <p class="quiet-note">{{ v.guidance }}</p>
+    } @else {
+      <p class="quiet-note">尚未提交认证材料。上传身份证明与学历证明后，运营将进入审核流程。</p>
+    }
+  </section>
+
+  <!-- 档期排定 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="schedule-title">
+    <h2 id="schedule-title" class="nur-serif">档期排定</h2>
+    <p class="quiet-note">发布可用时段后，学生即可预约。时段冲突将被自动拦截。</p>
+    <div class="slot-actions">
+      <button type="button" class="btn-ghost-sm" (click)="publishSlot(1, 9)">发布明日 09:00–10:00</button>
+      <button type="button" class="btn-ghost-sm" (click)="publishSlot(1, 19)">发布明日 19:00–20:00</button>
+      <button type="button" class="btn-ghost-sm" (click)="publishSlot(2, 15)">发布后天 15:00–16:00</button>
+    </div>
+    @if (slots().length) {
+      <ul class="slot-list">
+        @for (slot of slots(); track slot.slotId) {
+          <li>
+            <span>{{ slot.startAt | date:'M月d日 HH:mm' }} – {{ slot.endAt | date:'HH:mm' }}</span>
+            <span class="status-pill" [attr.data-status]="slot.status">{{ slot.status === 'OPEN' ? '可约' : slot.status }}</span>
+          </li>
+        }
+      </ul>
+    }
+    @if (notice()) {
+      <p class="form-status" role="status"><span aria-hidden="true">ℹ</span> {{ notice() }}</p>
+    }
+  </section>
+
+  <!-- 预约申请审批面板 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 4" aria-labelledby="booking-title">
+    <h2 id="booking-title" class="nur-serif">预约申请审批</h2>
+    @if (bookingRequests().length === 0) {
+      <p class="quiet-note">暂无待处理的预约申请。</p>
+    } @else {
+      <ul class="request-list">
+        @for (req of bookingRequests(); track req.bookingId) {
+          <li class="request-item">
+            <div>
+              <p class="request-title">{{ req.subject }} · {{ req.type === 'TRIAL' ? '试听课' : '正式课' }}</p>
+              <p class="quiet-note">{{ req.createdAt | date:'M月d日 HH:mm' }} · 状态：{{ req.status === 'REQUESTED' ? '待审批' : req.status }}</p>
+            </div>
+            @if (req.status === 'REQUESTED') {
+              <div class="request-actions">
+                <button type="button" class="btn-primary-sm" (click)="decide(req.bookingId, 'approve')">确认</button>
+                <button type="button" class="btn-ghost-sm" (click)="decide(req.bookingId, 'reject')">驳回</button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- 课酬结算 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 5" aria-labelledby="settle-title">
+    <h2 id="settle-title" class="nur-serif">课酬结算流水</h2>
+    @if (settlement(); as s) {
+      <div class="settle-summary">
+        <div>
+          <p class="settle-num nur-serif">¥ {{ yuan(s.pendingNetCents) }}</p>
+          <p class="quiet-note">待结算</p>
+        </div>
+        <div>
+          <p class="settle-num nur-serif">¥ {{ yuan(s.paidOutNetCents) }}</p>
+          <p class="quiet-note">已提现</p>
+        </div>
+      </div>
+      <ul class="settle-list">
+        @for (entry of s.entries; track entry.entryId) {
+          <li>
+            <span>课程 {{ entry.bookingId.slice(0, 8) }} · 课酬 ¥{{ yuan(entry.netCents) }}（平台服务费 ¥{{ yuan(entry.platformFeeCents) }}）</span>
+            <span class="status-pill">{{ entry.status === 'PENDING' ? '待结算' : entry.status === 'SETTLED' ? '已结算' : '已提现' }}</span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="quiet-note">完成首节课后，课酬会按平台抽成规则进入待结算余额。</p>
+    }
+  </section>
+
+  <!-- 需求池：学生发布的找老师需求（双入口之一） -->
+  <section class="nur-card nur-enter" style="--stagger-index: 6" aria-labelledby="demand-title">
+    <h2 id="demand-title" class="nur-serif">学生的需求</h2>
+    <p class="quiet-note">学生主动发布的求助描述——如果某条正好是你的专长，欢迎在站内信中主动联系。</p>
+    @if (openDemands().length === 0) {
+      <p class="quiet-note">需求池暂无开放中的需求。</p>
+    } @else {
+      <ul class="slot-list">
+        @for (d of openDemands(); track d.demandId) {
+          <li>
+            <span>
+              {{ d.subject }}@if (d.gradeBand) { · {{ d.gradeBand }} }
+              @if (d.budgetMaxCents) { · 预算 ≤ ¥{{ d.budgetMaxCents / 100 }}/小时 }
+            </span>
+            <span class="status-pill">开放中</span>
+          </li>
+          @if (d.note) {
+            <li class="demand-note-row">“{{ d.note }}”</li>
+          }
+        }
+      </ul>
+    }
+  </section>
+
+  <nur-notice-center />
+</div>

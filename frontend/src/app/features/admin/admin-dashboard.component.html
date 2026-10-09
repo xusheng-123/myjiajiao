@@ -1,0 +1,208 @@
+<div class="dashboard-shell">
+  <header class="dash-header">
+    <div>
+      <p class="dash-greeting nur-serif">运营治理控制台 · {{ displayName() }}</p>
+      <p class="dash-subtitle">笃定运转，静水深处。</p>
+    </div>
+  </header>
+
+  @if (notice()) {
+    <p class="form-status" role="status"><span aria-hidden="true">ℹ</span> {{ notice() }}</p>
+  }
+
+  <!-- 平台全景概览 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 1" aria-labelledby="overview-title">
+    <h2 id="overview-title" class="nur-serif">平台全景</h2>
+    @if (overview(); as o) {
+      <dl class="metric-grid">
+        <div class="metric">
+          <dt>学生账户</dt>
+          <dd>{{ o['studentAccounts'] }}</dd>
+        </div>
+        <div class="metric">
+          <dt>家长账户</dt>
+          <dd>{{ o['parentAccounts'] }}</dd>
+        </div>
+        <div class="metric">
+          <dt>导师</dt>
+          <dd>{{ o['teacherAccounts'] }}</dd>
+        </div>
+        <div class="metric">
+          <dt>累计预约</dt>
+          <dd>{{ o['activeBookings'] }}</dd>
+        </div>
+        <div class="metric">
+          <dt>累计订单</dt>
+          <dd>{{ o['orders'] }}</dd>
+        </div>
+        <div class="metric">
+          <dt>平台抽成</dt>
+          <dd>{{ o['platformFeeRate'] }}</dd>
+        </div>
+      </dl>
+    }
+  </section>
+
+  <!-- 教师资质审核流转 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 2" aria-labelledby="verify-title">
+    <h2 id="verify-title" class="nur-serif">教师资质审核流转</h2>
+    @if (verificationCases().length === 0) {
+      <p class="quiet-note">暂无待处理的资质审核案例。</p>
+    } @else {
+      <ul class="case-list">
+        @for (c of verificationCases(); track c.id) {
+          <li class="case-item">
+            <div>
+              <p class="case-title">导师 {{ c.teacherId.slice(0, 8) }} · 提交于 {{ c.submittedAt | date:'M月d日 HH:mm' }}</p>
+              <p class="quiet-note">状态：{{ c.status }}</p>
+            </div>
+            @if (c.status === 'SUBMITTED' || c.status === 'UNDER_REVIEW') {
+              <div class="case-actions">
+                <button type="button" class="btn-primary-sm" (click)="decideVerification(c.id, true)">通过</button>
+                <button type="button" class="btn-ghost-sm" (click)="decideVerification(c.id, false)">驳回</button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- 差错退款仲裁（两阶段） -->
+  <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="refund-title">
+    <h2 id="refund-title" class="nur-serif">差错退款仲裁 · 两阶段确认</h2>
+    @if (refundCases().length === 0) {
+      <p class="quiet-note">暂无退款案例。</p>
+    } @else {
+      <ul class="case-list">
+        @for (c of refundCases(); track c.id) {
+          <li class="case-item">
+            <div>
+              <p class="case-title">订单 {{ c.orderId.slice(0, 8) }} · ¥{{ yuan(c.computedAmountCents) }}</p>
+              <p class="quiet-note">原因：{{ c.reason }} · 状态：{{ c.status }}</p>
+            </div>
+            @if (c.status === 'REQUESTED' || c.status === 'EVALUATED') {
+              <div class="case-actions">
+                <button type="button" class="btn-ghost-sm" (click)="arbitrationPreview(c.id)">① 评估影响</button>
+                <button type="button" class="btn-primary-sm" (click)="arbitrationExecute(c.id, true)">② 执行退款</button>
+              </div>
+            }
+            @if (preview(); as current) {
+              @if (current.caseId === c.id) {
+                <div class="impact-box">
+                  <p class="impact-title">级联影响预览（凭证 10 分钟有效）</p>
+                  <ul>
+                    @for (kv of current.data.cascadeImpact | keyvalue; track kv.key) {
+                      <li>{{ kv.key }}：{{ kv.value }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- 账户管理 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 4" aria-labelledby="account-title">
+    <h2 id="account-title" class="nur-serif">账户管理</h2>
+    <p class="quiet-note">违规干预入口：锁定/解锁账户，全部动作写入不可篡改审计日志。</p>
+    <table class="audit-table">
+      <thead>
+        <tr>
+          <th scope="col">账户</th>
+          <th scope="col">角色</th>
+          <th scope="col">状态</th>
+          <th scope="col">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of accounts(); track a.accountId) {
+          <tr>
+            <td>{{ a.displayName }}（{{ a.accountNo }}）</td>
+            <td>{{ a.role === 'STUDENT' ? '学生' : a.role === 'PARENT' ? '家长' : a.role === 'TEACHER' ? '导师' : a.role === 'ADMIN' ? '运营' : 'Agent' }}</td>
+            <td>{{ a.status === 'ACTIVE' ? '正常' : a.status === 'LOCKED' ? '已锁定' : '已注销' }}</td>
+            <td>
+              @if (a.role !== 'ADMIN') {
+                @if (a.status === 'ACTIVE') {
+                  <button type="button" class="btn-ghost-sm" (click)="setLock(a, true)">锁定</button>
+                } @else if (a.status === 'LOCKED') {
+                  <button type="button" class="btn-ghost-sm" (click)="setLock(a, false)">解锁</button>
+                }
+              } @else {
+                <span class="quiet-note">—</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 全站审计日志 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 5" aria-labelledby="audit-title">
+    <h2 id="audit-title" class="nur-serif">全站审计日志检视</h2>
+    <p class="quiet-note">审计日志由数据库触发器防篡改，任何 UPDATE / DELETE 都会被拒绝。</p>
+    <table class="audit-table">
+      <thead>
+        <tr>
+          <th scope="col">时间</th>
+          <th scope="col">动作</th>
+          <th scope="col">调用者角色</th>
+          <th scope="col">执行状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (log of auditLogs(); track log.id) {
+          <tr>
+            <td>{{ log.occurredAt | date:'MM-dd HH:mm:ss' }}</td>
+            <td>{{ log.actionType }}</td>
+            <td>{{ log.callerRole || '—' }}</td>
+            <td>{{ log.executionStatus }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+
+  <!-- 订单与收款（模式 B：线下收款确认） -->
+  <section class="nur-card nur-enter" aria-labelledby="orders-title">
+    <h2 id="orders-title" class="nur-serif">订单与收款</h2>
+    <p class="quiet-note">仅当线下款项实际到账后才可确认；确认后订单转为已支付，课酬自动进入结算。</p>
+    @if (orderMsg(); as m) {
+      <p class="form-status" role="status" [attr.data-type]="m.type">{{ m.text }}</p>
+    }
+    @if (pendingOrders().length === 0) {
+      <p class="quiet-note">当前没有待支付的订单。</p>
+    } @else {
+      <ul class="slot-list">
+        @for (o of pendingOrders(); track o.orderId) {
+          <li>
+            <span>{{ o.orderNo }} · {{ o.subject }} · ¥{{ (o.amountCents / 100).toFixed(2) }}</span>
+            <span class="quiet-note">{{ o.payerName }} → {{ o.studentName }}（{{ o.teacherName }}）</span>
+            <button type="button" class="btn-ghost-sm" (click)="askConfirm(o)">确认收款</button>
+          </li>
+        }
+      </ul>
+    }
+    @if (confirmTarget(); as o) {
+      <div class="reschedule-panel" role="alertdialog" aria-label="确认收款">
+        <p class="reschedule-hint">
+          请确认「{{ o.orderNo }}」的款项 <strong>已实际到账</strong>（¥{{ (o.amountCents / 100).toFixed(2) }}，
+          {{ o.payerName }}）。确认后订单转为已支付，此操作不可撤销。
+        </p>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button type="button" class="btn-primary-sm" [disabled]="orderBusy()" (click)="confirmOffline(o)">
+            {{ orderBusy() ? '处理中…' : '确认已收到款项' }}
+          </button>
+          <button type="button" class="btn-ghost-sm" (click)="cancelConfirm()">取消</button>
+        </div>
+      </div>
+    }
+  </section>
+
+  <nur-notice-center />
+</div>

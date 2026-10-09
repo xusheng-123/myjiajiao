@@ -1,0 +1,205 @@
+<div class="dashboard-shell">
+  <header class="dash-header">
+    <div>
+      <p class="dash-greeting nur-serif">你好，{{ displayName() }}</p>
+      <p class="dash-subtitle">按自己的节奏来，每一小步都算数。</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="toggleFocusMode()" [attr.aria-pressed]="focusMode()">
+      {{ focusMode() ? '展开全部' : '一键专注' }}
+    </button>
+    <button type="button" class="btn-ghost-sm" (click)="auth.logout()" aria-label="退出登录">
+      退出
+    </button>
+  </header>
+
+  <!-- 次级入口：找老师（不与主 CTA 争抢，弱化为文本链接样式） -->
+  <p class="find-teacher-line">
+    还没有合适的老师？<a routerLink="/student/match">去「找老师」看看 →</a>
+    （也可以先听一节免费试听）
+  </p>
+
+  @if (!loaded()) {
+    <p class="quiet-note" role="status">正在安静地准备你的学习台…</p>
+  } @else {
+    <!-- 核心主任务：迫近课程 + 进入课堂（专注模式唯一保留块） -->
+    <section class="focus-card nur-card nur-enter" style="--stagger-index: 1" aria-labelledby="focus-title">
+      @if (overview()?.nextLesson; as lesson) {
+        <h2 id="focus-title" class="nur-serif">{{ lesson.subject }}</h2>
+        <p class="lesson-meta">
+          与 {{ lesson.teacherName }} · {{ lesson.startAt ? (lesson.startAt | date:'M月d日 HH:mm') : '时间待定' }}
+        </p>
+
+        <!-- 课前准备任务切块：无序勾选 -->
+        <fieldset class="task-chunks">
+          <legend class="task-progress">{{ progressText() }}</legend>
+          @for (task of overview()?.preparationTasks ?? []; track task.taskId) {
+            <label class="task-chunk">
+              <input
+                type="checkbox"
+                [checked]="task.completed"
+                (change)="toggleTask(task)"
+              />
+              <span class="task-title">{{ task.title }}</span>
+              <span class="task-state" aria-hidden="true">{{ task.completed ? '✔' : '○' }}</span>
+            </label>
+          }
+        </fieldset>
+        <p class="encouragement">{{ overview()?.encouragement }}</p>
+
+        <button type="button" class="btn-enter-class" (click)="enterClassroom()" [disabled]="classroomBusy()">
+          {{ classroomBusy() ? '正在进入…' : '进入课堂' }}
+        </button>
+        @if (classroomMsg(); as cm) {
+          <p class="encouragement" role="status">{{ cm.text }}</p>
+        }
+        @if (classroomLink(); as link) {
+          <p class="encouragement">
+            <a [href]="link" target="_blank" rel="noopener">点此打开会议链接</a>
+          </p>
+        }
+      } @else {
+        <h2 id="focus-title" class="nur-serif">当前没有迫近课程</h2>
+        <p class="lesson-meta">安静的休息同样宝贵。想找老师聊聊，随时可以出发。</p>
+        <button type="button" class="btn-enter-class" (click)="retry()">刷新看看</button>
+      }
+    </section>
+
+    <!-- 专注模式收起的内容：次要信息弱化呈现 -->
+    @if (!focusMode()) {
+      <!-- 我的课程表 -->
+      <section class="secondary-row">
+        <div class="nur-card secondary-card schedule-card">
+          <h3>我的课程表</h3>
+          @if (schedule().length === 0) {
+            <p class="quiet-note">还没有排定的课程。预约试听后会出现在这里。</p>
+          } @else {
+            <ul class="schedule-list">
+              @for (lesson of schedule(); track lesson.bookingId) {
+                <li>
+                  <span class="schedule-subject">{{ lesson.subject }}</span>
+                  <span class="schedule-time">
+                    {{ lesson.startAt ? (lesson.startAt | date: 'M月d日 HH:mm') : '时间待定' }}
+                  </span>
+                  @if (lesson.status === 'CONFIRMED' || lesson.status === 'REQUESTED') {
+                    <button
+                      type="button"
+                      class="btn-ghost-sm reschedule-entry"
+                      (click)="startReschedule(lesson)"
+                      [attr.aria-expanded]="rescheduleBookingId() === lesson.bookingId"
+                    >
+                      改期
+                    </button>
+                  }
+                  @if (lesson.status === 'COMPLETED' || lesson.status === 'CLOSED') {
+                    @if (reviewedBookings().has(lesson.bookingId)) {
+                      <span class="status-pill">✓ 已评价</span>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn-ghost-sm reschedule-entry"
+                        (click)="openReview(lesson.bookingId)"
+                        [attr.aria-expanded]="reviewBookingId() === lesson.bookingId"
+                      >
+                        评价
+                      </button>
+                    }
+                  }
+                </li>
+                @if (reviewBookingId() === lesson.bookingId) {
+                  <li class="reschedule-panel" role="group" aria-label="课程评价">
+                    <p class="reschedule-hint">这节课上得怎么样？</p>
+                    <div class="slot-picker" role="radiogroup" aria-label="星级评分">
+                      @for (star of [1, 2, 3, 4, 5]; track star) {
+                        <button
+                          type="button"
+                          class="nur-chip-btn"
+                          [attr.aria-pressed]="reviewRating() >= star"
+                          (click)="reviewRating.set(star)"
+                        >{{ star }} ★</button>
+                      }
+                    </div>
+                    <div class="slot-picker" role="group" aria-label="评价标签（最多选 3 个）" style="margin-top:6px">
+                      @for (tag of ['讲解清晰', '耐心细致', '方法实用', '节奏合适', '有收获']; track tag) {
+                        <button
+                          type="button"
+                          class="nur-chip-btn"
+                          [attr.aria-pressed]="reviewTags().includes(tag)"
+                          (click)="toggleReviewTag(tag)"
+                        >{{ tag }}</button>
+                      }
+                    </div>
+                    <textarea
+                      aria-label="文字评语"
+                      rows="3"
+                      [value]="reviewComment()"
+                      (input)="reviewComment.set($any($event.target).value)"
+                      placeholder="写点什么给老师（可选，最多 1024 字）"
+                      style="width:100%;margin-top:6px;padding:8px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);color:var(--text-main)"
+                    ></textarea>
+                    @if (reviewMsg(); as rm) {
+                      <p class="reschedule-msg reschedule-msg--{{ rm.type }}" role="status">{{ rm.text }}</p>
+                    }
+                    <div style="display:flex;gap:8px;margin-top:8px">
+                      <button type="button" class="btn-primary-sm" [disabled]="reviewBusy()" (click)="submitReview(lesson.bookingId)">
+                        {{ reviewBusy() ? '提交中…' : '提交评价' }}
+                      </button>
+                      <button type="button" class="btn-ghost-sm" (click)="cancelReview()">取消</button>
+                    </div>
+                  </li>
+                }
+                @if (rescheduleBookingId() === lesson.bookingId) {
+                  <li class="reschedule-panel">
+                    @if (slotsLoading()) {
+                      <p class="quiet-note" role="status">正在获取导师的可约时间…</p>
+                    } @else if (openSlots().length > 0) {
+                      <p class="reschedule-hint">选择一个新的时间：</p>
+                      <div class="slot-picker" role="group" aria-label="可改期的候选时间">
+                        @for (slot of openSlots(); track slot.slotId) {
+                          <button
+                            type="button"
+                            class="nur-chip-btn"
+                            [attr.aria-pressed]="pickedSlotId() === slot.slotId"
+                            (click)="pickSlot(slot.slotId)"
+                          >
+                            {{ slot.startAt | date: 'M月d日 HH:mm' }}
+                          </button>
+                        }
+                      </div>
+                      <button
+                        type="button"
+                        class="nur-btn nur-btn--primary nur-btn--sm"
+                        [disabled]="!pickedSlotId() || rescheduleBusy()"
+                        (click)="confirmReschedule()"
+                      >
+                        {{ rescheduleBusy() ? '正在改期…' : '确认改期' }}
+                      </button>
+                    }
+                    @if (rescheduleMessage(); as msg) {
+                      <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+                    }
+                    <button type="button" class="btn-ghost-sm" (click)="cancelReschedule()">取消改期</button>
+                  </li>
+                }
+              }
+            </ul>
+          }
+        </div>
+        <div class="nur-card secondary-card">
+          <h3>课后疑难提问</h3>
+          <p class="quiet-note">把卡住的关窍写下来，导师会像及时雨一样回应。</p>
+          <textarea
+            rows="3"
+            placeholder="例如：这道题的第二步为什么要设辅助线？"
+            aria-label="问题描述"
+            #question
+          ></textarea>
+          <button type="button" class="btn-ghost-sm" [disabled]="asking()" (click)="askTeacher(question.value)">
+            {{ asking() ? '发送中…' : '发送给导师' }}
+          </button>
+        </div>
+      </section>
+
+      <nur-notice-center />
+    }
+  }
+</div>

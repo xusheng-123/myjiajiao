@@ -1,0 +1,77 @@
+# 本地/联调环境编排：PostgreSQL（唯一事实源）+ 后端单体容器
+# 前端静态资源由 Cloudflare Pages 托管，不经由此编排
+# Release Implementation 收口：restart 策略 / 日志轮转 / 健康检查 / Tunnel 就绪依赖
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: nurture
+      POSTGRES_USER: nurture
+      POSTGRES_PASSWORD: nurture
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nurture -d nurture"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    # D8：基础编排不向宿主机暴露 5432——数据库仅容器网络内部可达（Cloudflare → Backend → PostgreSQL）。
+    # 本机运行的后端联调时，叠加 -f docker-compose.dev.yml（仅本地回环映射）。
+    expose:
+      - "5432"
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NURTURE_DB_URL: jdbc:postgresql://postgres:5432/nurture
+      NURTURE_DB_USER: nurture
+      NURTURE_DB_PASSWORD: nurture
+      NURTURE_JWT_SECRET: ${NURTURE_JWT_SECRET:-change-me-in-production-nurture-hmac-secret-key}
+      NURTURE_ADMIN_PHONE: ${NURTURE_ADMIN_PHONE:-13800000000}
+      NURTURE_ADMIN_PASSWORD: ${NURTURE_ADMIN_PASSWORD:-}
+      NURTURE_STORAGE_DIR: /app/data/files
+      NURTURE_CORS_ALLOWED_ORIGINS: ${NURTURE_CORS_ALLOWED_ORIGINS:-http://localhost:4200}
+    # 本地/联调：发布 8080 供前端 dev-server 代理与接口联调；
+    # 生产覆盖层以 ports: !override [] 移除本映射——仅经 Cloudflare Tunnel 出站反向连接
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+    # P0-2：健康检查（actuator health，仅返回最简状态）
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  # Cloudflare Tunnel：反向出站连接，将后端安全暴露给边缘（无需公网入站端口）
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      backend:
+        # P0-2：后端健康检查通过后 Tunnel 才对外路由，防止导流至未就绪实例
+        condition: service_healthy
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    environment:
+      TUNNEL_ORIGIN_REQUEST: "connectTimeout=30s"
+
+volumes:
+  pgdata:

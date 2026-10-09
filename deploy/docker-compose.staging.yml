@@ -1,0 +1,8 @@
+# Staging 专用覆盖（在 base + prod 之上叠加）：
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.staging.yml --env-file staging.env up -d
+# 与 Production 的唯一差异：Staging 保留支付沙箱端点以验证支付联动全链路（env 模板同时声明 true）。
+# 其余生产形态加固（端口收口 / 契约关闭 / 错误信息收敛 / 密钥强制注入）与 Production 完全一致。
+services:
+  backend:
+    environment:
+      NURTURE_PAYMENT_SANDBOX_ENABLED: "true"

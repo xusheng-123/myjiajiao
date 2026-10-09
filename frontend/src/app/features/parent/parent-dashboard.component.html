@@ -1,0 +1,139 @@
+<div class="dashboard-shell">
+  <header class="dash-header">
+    <div>
+      <p class="dash-greeting nur-serif">家长中心 · {{ displayName() }}</p>
+      <p class="dash-subtitle">看得见的进度，算得清的课时。</p>
+    </div>
+  </header>
+
+  <!-- 核心主任务：子女学情看板 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 1" aria-labelledby="children-title">
+    <h2 id="children-title" class="nur-serif">绑定的子女</h2>
+    @if (children().length === 0) {
+      <p class="quiet-note">还没有绑定子女。填写学生的学生编号发起绑定，学生确认后即可查看学情看板。</p>
+    } @else {
+      <ul class="child-list">
+        @for (child of children(); track child.bindingId) {
+          <li class="child-item">
+            <div>
+              <p class="child-name">学生 {{ child.studentId.slice(0, 8) }}</p>
+              <p class="quiet-note">关系：{{ child.relation }} · 状态：{{ child.status === 'ACTIVE' ? '已生效' : child.status === 'PENDING' ? '待学生确认' : '已解除' }}</p>
+            </div>
+            <span class="status-pill" [attr.data-status]="child.status">
+              {{ child.status === 'ACTIVE' ? '✔ 已生效' : child.status === 'PENDING' ? '◷ 待确认' : '✕ 已解除' }}
+            </span>
+            @if (child.status === 'ACTIVE') {
+              <button type="button" class="btn-ghost-sm" (click)="toggleReport(child)"
+                [attr.aria-expanded]="reportFor() === child.studentId">学习周报</button>
+            }
+          </li>
+          @if (reportFor() === child.studentId) {
+            <li class="child-item report-panel" aria-live="polite">
+              @if (reportLoading()) { <p class="quiet-note">正在生成本周学习周报…</p> }
+              @if (reportError()) { <p class="quiet-note">{{ reportError() }}</p> }
+              @if (reportData(); as r) {
+                <div style="display:flex;gap:20px;flex-wrap:wrap;margin:8px 0">
+                  <div><p style="font-size:1.3rem;font-weight:700">{{ r.weekLessons }}</p><p class="quiet-note">本周课程</p></div>
+                  <div><p style="font-size:1.3rem;font-weight:700">{{ minutesText(r.weekMinutes) }}</p><p class="quiet-note">学习时长</p></div>
+                  <div><p style="font-size:1.3rem;font-weight:700">{{ r.taskCompleted }}/{{ r.taskTotal }}</p><p class="quiet-note">任务完成</p></div>
+                </div>
+                @if (r.teacherFeedbacks?.length) {
+                  <p style="font-weight:600;margin:8px 0 4px">教师反馈</p>
+                  @for (f of r.teacherFeedbacks; track f.subject) {
+                    <p class="quiet-note" style="margin:4px 0">
+                      {{ f.subject }}：{{ f.performance }} @if (f.nextSuggestion) { · {{ f.nextSuggestion }} }
+                    </p>
+                  }
+                } @else {
+                  <p class="quiet-note">本周还没有教师课堂记录。</p>
+                }
+                @if (r.upcomingLessons?.length) {
+                  <p style="font-weight:600;margin:8px 0 4px">下周课程</p>
+                  @for (u of r.upcomingLessons; track u.startAt) {
+                    <p class="quiet-note">{{ u.subject }} · {{ u.startAt }}</p>
+                  }
+                } @else {
+                  <p class="quiet-note">暂无已确认的下周课程。</p>
+                }
+              }
+            </li>
+          }
+        }
+      </ul>
+    }
+
+    <div class="bind-row">
+      <input
+        type="text"
+        placeholder="学生编号，如 NUR-STU-000123"
+        aria-label="学生编号"
+        [value]="studentNoInput()"
+        (input)="studentNoInput.set(numberInput.value)"
+        #numberInput
+      />
+      <input
+        type="text"
+        placeholder="与学生的关系（可选）"
+        aria-label="与学生关系"
+        [value]="relationInput()"
+        (input)="relationInput.set(relationField.value)"
+        #relationField
+      />
+      <button type="button" class="btn-primary-sm" (click)="bindChild()">绑定子女</button>
+    </div>
+    @if (notice()) {
+      <p class="form-status" role="status"><span aria-hidden="true">ℹ</span> {{ notice() }}</p>
+    }
+  </section>
+
+  <!-- 家庭统一教育支付钱包 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 2" aria-labelledby="wallet-title">
+    <h2 id="wallet-title" class="nur-serif">家庭支付钱包</h2>
+    <div class="wallet-row">
+      <p class="wallet-balance">¥ {{ yuan(wallet()?.balanceCents) }}</p>
+      <div class="topup-group" role="group" aria-label="快捷充值">
+        <button type="button" class="btn-ghost-sm" (click)="topUp(10000)">充 ¥100</button>
+        <button type="button" class="btn-ghost-sm" (click)="topUp(50000)">充 ¥500</button>
+        <button type="button" class="btn-ghost-sm" (click)="topUp(100000)">充 ¥1000</button>
+      </div>
+    </div>
+
+    <h3 class="section-sub">课时消费对账明细</h3>
+    @if (wallet()?.recentTransactions?.length) {
+      <table class="txn-table">
+        <caption class="visually-hidden">钱包流水</caption>
+        <thead>
+          <tr>
+            <th scope="col">类型</th>
+            <th scope="col">金额（元）</th>
+            <th scope="col">变动后余额（元）</th>
+            <th scope="col">备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (txn of wallet()?.recentTransactions ?? []; track txn.txnId) {
+            <tr>
+              <td>{{ txn.type === 'TOPUP' ? '充值' : txn.type === 'PAYMENT' ? '课时支付' : txn.type === 'REFUND' ? '退款入账' : '调整' }}</td>
+              <td [class.amount-negative]="txn.amountCents < 0">{{ txn.amountCents / 100 }}</td>
+              <td>{{ yuan(txn.balanceAfterCents) }}</td>
+              <td>{{ txn.memo || '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <p class="quiet-note">暂无流水记录。第一笔充值或课时消费后会在这里留痕。</p>
+    }
+  </section>
+
+  <!-- 授课进度透明度追踪 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="progress-title">
+    <h2 id="progress-title" class="nur-serif">授课进度透明追踪</h2>
+    <p class="quiet-note">
+      每节课后，导师的结构化学情反馈会同步至此；对课程有任何疑问，可通过站内信与导师直接沟通，
+      也可随时发起评价或申请退款（由平台两阶段仲裁保障）。
+    </p>
+  </section>
+
+  <nur-notice-center />
+</div>

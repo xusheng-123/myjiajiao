@@ -1,0 +1,20 @@
+# 生产覆盖（在 base 之上叠加）：docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# - PostgreSQL 不向宿主机暴露任何端口（Internet → Cloudflare → Backend → PostgreSQL）
+# - Backend 8080 同样不向宿主机发布（P1-1）：Tunnel 经容器网络访问，杜绝绕过 Cloudflare 直连源站
+# - 密钥必须由部署环境注入（缺失即拒绝启动）
+# - 沙箱网关模拟端点关闭；OpenAPI 匿名调试关闭（契约端点保留、需登录）
+# - 支付上线模式见 deploy/RUNBOOK.md（B=运营线下收款确认端点 /payments 运营操作）
+services:
+  postgres:
+    ports: !override []
+
+  backend:
+    ports: !override []
+    environment:
+      NURTURE_JWT_SECRET: ${NURTURE_JWT_SECRET:?生产必须注入强随机 JWT 密钥（>=256bit）}
+      NURTURE_ADMIN_PASSWORD: ${NURTURE_ADMIN_PASSWORD:?生产必须注入运营初始密码}
+      NURTURE_DB_PASSWORD: ${NURTURE_DB_PASSWORD:?生产必须注入数据库口令}
+      NURTURE_PAYMENT_SANDBOX_ENABLED: "false"
+      NURTURE_SECURITY_APIDOCSPUBLIC: "false"
+      NURTURE_ERROR_INCLUDE_MESSAGE: "never"
+      NURTURE_CORS_ALLOWED_ORIGINS: ${NURTURE_CORS_ALLOWED_ORIGINS:?生产必须注入真实前端域名（禁止通配符；同域部署也须显式声明）}

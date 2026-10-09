@@ -1,0 +1,256 @@
+/* 学生控制台 — 每个视口只突出一个核心主任务 */
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--bg-page);
+}
+
+.dashboard-shell {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-8);
+}
+
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.dash-greeting {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+}
+
+.dash-subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.btn-ghost-sm {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-5);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  transition: border-color var(--duration-enter) var(--ease-nurture);
+}
+
+.btn-ghost-sm:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ---------- 专注卡片 ---------- */
+.focus-card {
+  padding: var(--space-7) var(--space-6);
+}
+
+.focus-card h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.6rem;
+  color: var(--text-main);
+}
+
+.lesson-meta {
+  margin: 0 0 var(--space-5);
+  color: var(--text-muted);
+}
+
+.task-chunks {
+  border: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+}
+
+.task-progress {
+  color: var(--color-secondary);
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: var(--space-3);
+}
+
+.task-chunk {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition: background-color var(--duration-enter) var(--ease-nurture);
+}
+
+.task-chunk:hover {
+  background: var(--color-primary-bg);
+}
+
+.task-chunk input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  accent-color: var(--color-primary);
+}
+
+.task-title {
+  flex: 1;
+}
+
+.task-state {
+  color: var(--color-primary);
+}
+
+.encouragement {
+  margin: 0 0 var(--space-5);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.btn-enter-class {
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: var(--radius-control);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 1.05rem;
+  letter-spacing: 0.15em;
+  transition: background-color var(--duration-enter) var(--ease-nurture);
+}
+
+.btn-enter-class:hover {
+  background: var(--color-primary-hover);
+}
+
+/* ---------- 次要信息（专注模式收起） ---------- */
+.secondary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.find-teacher-line {
+  margin: 0 0 var(--space-5);
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.find-teacher-line a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.schedule-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.schedule-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  font-size: 0.9rem;
+}
+
+.schedule-subject {
+  font-weight: 600;
+}
+
+.schedule-time {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.secondary-card {
+  padding: var(--space-5);
+}
+
+.secondary-card h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.05rem;
+}
+
+.secondary-card textarea {
+  width: 100%;
+  margin-bottom: var(--space-3);
+}
+
+.quiet-note {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+.preference-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 2;
+}
+
+@media (max-width: 640px) {
+  .secondary-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- 改期（D11） ---------- */
+.reschedule-entry {
+  flex-shrink: 0;
+}
+
+.schedule-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.reschedule-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-secondary-bg);
+}
+
+.reschedule-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.slot-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.reschedule-msg {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.reschedule-msg--success { color: var(--color-success); }
+.reschedule-msg--error { color: var(--color-danger); }
+.reschedule-msg--info { color: var(--text-muted); }

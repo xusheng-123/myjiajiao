@@ -1,0 +1,152 @@
+/* 教师卡片 — 信任证据清晰可读，卡片内不做链接跳转（避免整卡误触） */
+
+.teacher-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  padding: var(--space-5);
+}
+
+.tc-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.tc-id {
+  flex: 1;
+  min-width: 0;
+}
+
+.tc-name {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  color: var(--text-main);
+}
+
+.tc-school {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.tc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tc-years {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.tc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tc-tags li {
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px dashed var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.tc-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.tc-rating {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--color-accent-hover);
+  font-size: 1.05rem;
+}
+
+.tc-star {
+  font-size: 0.9rem;
+}
+
+.tc-count {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.tc-rating--new {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.tc-price {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.tc-price small {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+
+.tc-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-secondary);
+  font-size: 0.85rem;
+}
+
+.tc-cta {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+
+/* ---------- 呼吸感：仅头像一处极小焦点做 9s 微光呼吸（其余内容静止） ---------- */
+.teacher-card .nur-avatar {
+  position: relative;
+}
+
+.teacher-card .nur-avatar::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 26%, rgba(221, 163, 111, 0.28), transparent 58%);
+  opacity: 0.18;
+  animation: avatarSheen 9s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes avatarSheen {
+  from { opacity: 0.12; }
+  to { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-card .nur-avatar::after {
+    animation: none;
+    opacity: 0.18;
+  }
+}
+
+/* 悬停：浮起已有（nur-card--interactive），内部姓名轻微提亮 */
+.teacher-card:hover .tc-name {
+  color: var(--color-accent-hover);
+}

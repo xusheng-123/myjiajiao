@@ -1,0 +1,29 @@
+# 集成测试配置（profile: it）——使用专用测试数据库 nurture_test（本地 PostgreSQL 容器内）
+# CI 由 backend-ci 的 integration job 提供同名 PostgreSQL 服务容器
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/nurture_test
+    username: nurture
+    password: nurture
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+nurture:
+  security:
+    jwt:
+      secret: it-secret-nurture-0123456789abcdef
+    api-docs:
+      apiDocsPublic: true
+  payment:
+    sandbox:
+      enabled: true
+  storage:
+    local:
+      base-dir: ./target/it-files
+
+# 集成测试：引导运营账户（BootstrapAdminRunner 按 @Value 键读取）
+NURTURE_ADMIN_PHONE: 13800000000
+NURTURE_ADMIN_PASSWORD: Admin#2026

@@ -1,0 +1,54 @@
+<header class="site-header" [class.site-header--scrolled]="scrolled()">
+  <div class="sh-inner nur-container">
+    <a routerLink="/" class="sh-brand" aria-label="润物细无声 Nurture 首页">
+      <span class="sh-brand-cn" aria-hidden="true">润物细无声</span>
+      <span class="sh-brand-en" aria-hidden="true">NURTURE</span>
+    </a>
+
+    <nav class="sh-nav" aria-label="站点导航">
+      @for (item of navItems; track item.label) {
+        @if (item.link) {
+          <a class="sh-link" [routerLink]="item.link">{{ item.label }}</a>
+        } @else {
+          <a class="sh-link" [href]="'#' + item.fragment">{{ item.label }}</a>
+        }
+      }
+    </nav>
+
+    <div class="sh-actions">
+      <a routerLink="/auth" class="nur-btn nur-btn--ghost nur-btn--sm sh-login">登录</a>
+      <button
+        type="button"
+        class="sh-burger"
+        (click)="toggleMenu()"
+        [class.sh-burger--open]="menuOpen()"
+        [attr.aria-expanded]="menuOpen()"
+        aria-controls="sh-mobile-menu"
+        [attr.aria-label]="menuOpen() ? '关闭菜单' : '打开菜单'"
+      >
+        <span class="sh-burger-bar" aria-hidden="true"></span>
+        <span class="sh-burger-bar" aria-hidden="true"></span>
+        <span class="sh-burger-bar" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+
+  @if (menuOpen()) {
+    <nav id="sh-mobile-menu" class="sh-mobile" aria-label="移动端导航">
+      @for (item of navItems; track item.label) {
+        @if (item.link) {
+          <a class="sh-mobile-link" [routerLink]="item.link" (click)="closeMenu()">
+            {{ item.label }}
+          </a>
+        } @else {
+          <a class="sh-mobile-link" [href]="'#' + item.fragment" (click)="closeMenu()">
+            {{ item.label }}
+          </a>
+        }
+      }
+      <a routerLink="/auth" class="nur-btn nur-btn--primary sh-mobile-login" (click)="closeMenu()">
+        登录 / 注册
+      </a>
+    </nav>
+  }
+</header>

@@ -1,0 +1,75 @@
+/* ============================================================
+ * 润物细无声 · Nurture — Design Tokens（视觉规范锁定）
+ * 墨绿 × 米白 × 浅灰绿 × 低饱和暖金 · 东方人文美学
+ * ============================================================ */
+
+:root {
+  /* ---------- 品牌主色：墨绿 ---------- */
+  --color-primary: #183D36;            /* 墨绿 主品牌色 / 核心 CTA / 焦点环 */
+  --color-primary-hover: #122E29;      /* 墨绿加深 悬停态 */
+  --color-primary-bg: #E9F0ED;         /* 浅灰绿底 微高光 / 标签底 */
+
+  /* ---------- 品牌辅色：浅灰绿 ---------- */
+  --color-secondary: #59766F;          /* 浅灰绿 次级强调 / 图标 / 辅助按钮 */
+  --color-secondary-hover: #4A645D;    /* 浅灰绿加深悬停 */
+  --color-secondary-bg: #EEF3F1;       /* 浅灰绿浅底 */
+
+  /* ---------- 点缀色：低饱和暖金 ---------- */
+  --color-accent: #C99D6B;             /* 暖金 标语高亮 / 核心数据 / 书卷气 */
+  --color-accent-hover: #B78A57;       /* 暖金深色悬停 */
+  --color-accent-bg: #F6EFE3;          /* 暖金浅底 推荐底色 */
+
+  /* ---------- 背景与表面 ---------- */
+  --bg-page: #F8F7F2;                  /* 米白 全局页面底色 · 宣纸质感 */
+  --bg-card: #FFFFFF;                  /* 卡片纯白底色 */
+  --bg-deep: #14302A;                  /* 深墨绿 愿景/CTA 深色段 */
+  --bg-deeper: #0F2622;                /* 更深墨绿 页脚 */
+
+  /* ---------- 文本墨韵 ---------- */
+  --text-main: #30443F;               /* 墨青 主标题与正文 */
+  --text-muted: #5E6E68;              /* 灰青 副标题与辅助文案 */
+  --text-placeholder: #9AA8A2;        /* 输入占位 / 弱化文本 */
+  --text-on-deep: #F3F1EA;            /* 深色底上的米白文字 */
+  --text-on-deep-muted: #B9C6C1;      /* 深色底上的次级文字 */
+
+  /* ---------- 边框与阴影 ---------- */
+  --border-subtle: #DDE4DF;           /* 轻量边框分割线 */
+  --border-focus: #183D36;            /* 聚焦边框 */
+  --shadow-subtle: 0 4px 20px -2px rgba(24, 61, 54, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  --shadow-hover: 0 12px 30px -4px rgba(24, 61, 54, 0.13), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+
+  /* ---------- 状态色（双通道表达：颜色 + 图标 + 文字） ---------- */
+  --color-success: #3F7D5F;           /* 成功 · 静竹绿 */
+  --color-success-bg: #E8F1EC;
+  --color-danger: #B0524C;            /* 错误 · 赭红（低饱和） */
+  --color-danger-bg: #F7E9E7;
+
+  /* ---------- 字体栈 ---------- */
+  --font-brand: 'Kaiti SC', 'STKaiti', 'KaiTi', 'DFKai-SB', 'Source Han Serif CN', 'Noto Serif CJK SC', serif; /* 主标题 现代行楷 · 书写感 */
+  --font-serif: 'Source Han Serif CN', 'Noto Serif CJK SC', 'Songti SC', 'SimSun', serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* ---------- 动效（规范锁定） ---------- */
+  --ease-nurture: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-enter: 400ms;
+  --stagger-step: 80ms;               /* 入场阶梯错落加载步长 */
+
+  /* ---------- 圆角与热区（ADHD 友好 / Apple HIG） ---------- */
+  --radius-card: 20px;
+  --radius-control: 14px;
+  --radius-pill: 999px;
+  --touch-target: 44px;               /* 核心可交互控件最小热区 ≥ 44×44pt */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* ---------- 布局 ---------- */
+  --container-max: 1120px;
+  --header-height: 72px;
+}

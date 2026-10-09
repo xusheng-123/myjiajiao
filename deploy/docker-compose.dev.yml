@@ -1,0 +1,7 @@
+# 本地开发覆盖：仅将 PostgreSQL 映射到本机回环（供宿主机直跑的后端 jar 连接）。
+# 用法：docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+# 生产严禁叠加本文件（D8：5432 不得对宿主机/公网暴露）。
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"

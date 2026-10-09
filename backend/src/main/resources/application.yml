@@ -1,0 +1,108 @@
+# 润物细无声 · Nurture 后端 — 生产基线配置
+server:
+  port: 8080
+  forward-headers-strategy: framework   # Cloudflare Tunnel 反代透传
+  error:
+    # Release P1-9：开发默认 always 便于联调；生产经环境变量强制 never（防内部异常细节外泄）
+    include-message: ${NURTURE_ERROR_INCLUDE_MESSAGE:always}
+
+spring:
+  application:
+    name: nurture-backend
+  threads:
+    virtual:
+      enabled: true                      # Java 25 虚拟线程并发模型
+  datasource:
+    url: ${NURTURE_DB_URL:jdbc:postgresql://localhost:5432/nurture}
+    username: ${NURTURE_DB_USER:nurture}
+    password: ${NURTURE_DB_PASSWORD:nurture}
+    hikari:
+      maximum-pool-size: 20
+      connection-timeout: 5000
+  jpa:
+    hibernate:
+      ddl-auto: validate                 # 结构唯一事实源 = Flyway 迁移
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: Asia/Shanghai
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  cache:
+    type: caffeine                       # 应用内存本地缓存，规范禁止 Redis
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=5m
+  servlet:
+    multipart:
+      max-file-size: 20MB
+
+springdoc:
+  api-docs:
+    path: /api/v1/api-docs
+  swagger-ui:
+    path: /api/v1/swagger-ui
+    display-request-duration: true
+
+nurture:
+  security:
+    jwt:
+      # 生产环境必须通过环境变量注入 ≥ 256bit 随机密钥
+      secret: ${NURTURE_JWT_SECRET:change-me-in-production-nurture-hmac-secret-key}
+      issuer: nurture
+      access-token-ttl-minutes: 30
+      refresh-token-ttl-days: 14
+    api-token:
+      # Agent 专用 API Token：仅生成时刻展示一次，库中只存加盐哈希
+      prefix: nur_at_
+    # OpenAPI/Swagger 匿名访问开关（D6）：开发默认开放；生产必须置 false——
+    # 契约端点转为需登录（OpenAPI 仍作为正式契约维护），匿名调试 UI 关闭
+    apiDocsPublic: ${NURTURE_SECURITY_APIDOCSPUBLIC:true}
+    # CORS 允许源清单（P1-2）：逗号分隔；禁止通配符 *。生产由 env 注入真实域名；
+    # 推荐 Cloudflare 同域 /api 路由使前后端同源（同源请求不触发 CORS）
+    cors-allowed-origins: ${NURTURE_CORS_ALLOWED_ORIGINS:http://localhost:4200}
+    brute-force:
+      # 登录防暴力破解：账号 15 分钟内错 5 次锁 15 分钟；IP 累计 100 次限制（防撞库）
+      max-attempts: 5
+      window-minutes: 15
+      lockout-minutes: 15
+      ip-max-attempts: 100
+  sms:
+    rate-limit:
+      # 短信验证码三级限频：同号最小间隔 / 自然小时配额 / 自然日配额
+      min-interval-seconds: 60
+      hourly-limit: 5
+      daily-limit: 10
+    verify-max-attempts: 5     # 验证码试错上限，耗尽即作废须重发
+  storage:
+    local:
+      base-dir: ${NURTURE_STORAGE_DIR:./data/files}   # 首版本地持久卷，预留 R2 通道
+  payment:
+    default-channel: MOCK                # 首版外部渠道适配桩
+    sandbox:
+      # 沙箱网关模拟端点开关：生产必须置 false（模拟"用户已支付"入口仅联调存在）
+      enabled: ${NURTURE_PAYMENT_SANDBOX_ENABLED:true}
+      # 沙箱 HMAC 密钥：生产环境必须通过环境变量注入随机值
+      secret: ${NURTURE_PAYMENT_SANDBOX_SECRET:dev-sandbox-secret-nurture-0123456789abcdef}
+  classroom:
+    meeting-provider: EXTERNAL_SAAS      # 首版集成成熟商用会议 SaaS，严禁自研 WebRTC 网关
+  settlement:
+    platform-fee-rate: 0.15              # 平台抽成比例（可通过 admin PlatformConfig 覆盖）
+
+# P0-2 健康检查：仅暴露 health 与 info；探针启用 liveness/readiness；
+# 严禁加入 env/beans/mappings/configprops 等暴露内部信息的端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+      probes:
+        enabled: true
+
+logging:
+  level:
+    com.nurture: INFO
+    org.hibernate.SQL: WARN

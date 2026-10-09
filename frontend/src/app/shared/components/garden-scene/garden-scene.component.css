@@ -1,0 +1,194 @@
+/* 「雨后竹林」场景层 — 纯装饰，铺满最近定位父级；scene--fixed 固定于视口 */
+
+:host {
+  display: block;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+:host(.scene--fixed) {
+  position: fixed;
+}
+
+/* 前景竹叶模式（使用方给宿主加 class="scene--foreground" 启用）：
+   竹叶升到内容层之上形成近景，同时朝中心渐隐——只压边缘、不盖正文。
+   该模式须由使用方显式声明宿主定位层级（如 .hero 内 z-index:2）。 */
+:host(.mode-stems) .breeze-sway-soft,
+:host(.mode-stems) .breeze-sway-subtle {
+  display: none;   /* stems 模式：叶组交由独立前景叶层渲染 */
+}
+
+:host(.mode-leaves) .bamboo {
+  display: none;   /* leaves 模式：只渲染前景叶层 */
+}
+
+/* 前景叶层：与竹竿层同坐标，overflow 可见使超出 viewBox 的叶尖完整绘制 */
+.bamboo-leaves {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--scene-bamboo-width, clamp(240px, 24vw, 380px));
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.bamboo-leaves--left { left: 0; }
+
+.bamboo-leaves--right {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+/* 注意：前景叶层禁止加 mask-image——mask 渐变到 transparent 会把溢出边界的叶尖
+   重新裁剪至不可见（资源自裁剪，与 z-index 无关）。叶层必须按原始形状完整绘制。 */
+
+@media (max-width: 720px) {
+  :host(.scene--foreground) .bamboo-leaves {
+    opacity: 0.85;
+  }
+}
+
+.garden-lattice-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  background-image:
+    repeating-linear-gradient(45deg, #4a8574 0, #4a8574 1px, transparent 0, transparent 42px),
+    repeating-linear-gradient(-45deg, #4a8574 0, #4a8574 1px, transparent 0, transparent 42px);
+}
+
+.moon-gate-portal {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(480px, 72vw, 1000px);
+  height: clamp(480px, 72vw, 1000px);
+  border-radius: 50%;
+  border: 1px solid rgba(74, 133, 116, 0.22);
+  box-shadow: 0 0 100px rgba(19, 39, 32, 0.6) inset, 0 0 140px rgba(44, 94, 80, 0.12);
+}
+
+.moon-gate-portal::after {
+  content: '';
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px dashed rgba(221, 163, 111, 0.15);
+}
+
+.bamboo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--scene-bamboo-width, clamp(240px, 24vw, 380px));
+  height: 100%;
+}
+
+.bamboo--left { left: 0; }
+
+.bamboo--right {
+  right: 0;
+  transform: scaleX(-1);
+}
+
+.breeze-sway-soft {
+  transform-origin: 30% 20%;
+  /* 负 delay 让两组叶丛处于呼吸周期的不同相位，避免机械同步 */
+  animation: bambooBreeze 7.5s ease-in-out -2.2s infinite alternate;
+}
+
+.breeze-sway-subtle {
+  transform-origin: 20% 40%;
+  animation: bambooBreeze 9.5s ease-in-out -3.4s infinite alternate-reverse;
+}
+
+@keyframes bambooBreeze {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(0.8deg) translateY(1px); }
+  100% { transform: rotate(-0.6deg) translateY(-1px); }
+}
+
+.rain-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.rain-line {
+  position: absolute;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(240, 246, 243, 0.26), transparent);
+  transform: rotate(12deg);
+  animation: rainDrizzle linear infinite;
+}
+
+.rain-1 { top: -60px; left: 18%; height: 80px; animation-duration: 3.6s; }
+.rain-2 { top: -80px; left: 36%; height: 100px; animation-duration: 4.2s; animation-delay: 1.2s; }
+.rain-3 { top: -50px; left: 65%; height: 75px; animation-duration: 3.5s; animation-delay: 2.1s; }
+.rain-4 { top: -70px; left: 84%; height: 110px; animation-duration: 4.6s; animation-delay: 0.5s; }
+
+@keyframes rainDrizzle {
+  0% { transform: translateY(-80px) rotate(12deg); opacity: 0; }
+  40% { opacity: 0.65; }
+  100% { transform: translateY(105vh) rotate(12deg); opacity: 0; }
+}
+
+.stone-plinth-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 180px;
+  background: linear-gradient(180deg, transparent 0%, rgba(20, 42, 34, 0.85) 60%, #11231c 100%);
+  border-top: 1px solid rgba(74, 133, 116, 0.16);
+}
+
+.water-line-glow {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 65%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(74, 133, 116, 0.4), rgba(221, 163, 111, 0.35), rgba(74, 133, 116, 0.4), transparent);
+}
+
+/* ---------- 雨后水面微涟漪：极淡圆环偶尔扩散，两枚长间隔错开 ---------- */
+.ripple-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.ripple {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border: 1px solid rgba(159, 206, 188, 0.5);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0.7);
+  animation: rippleGrow 12s ease-out infinite;
+}
+
+.ripple-a { left: 8%; top: 86%; }
+.ripple-b { left: 78%; top: 92%; animation-delay: 6s; }
+
+@keyframes rippleGrow {
+  0% { transform: scale(0.7); opacity: 0.10; }
+  38% { transform: scale(1.2); opacity: 0; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breeze-sway-soft,
+  .breeze-sway-subtle,
+  .rain-line,
+  .ripple {
+    animation: none;
+  }
+}

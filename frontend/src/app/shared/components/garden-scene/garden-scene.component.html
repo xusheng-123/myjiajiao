@@ -1,0 +1,234 @@
+@if (lattice()) {
+  <div class="garden-lattice-bg" aria-hidden="true"></div>
+}
+@if (moonGate()) {
+  <div class="moon-gate-portal" aria-hidden="true"></div>
+}
+@if (rain()) {
+  <div class="rain-layer" aria-hidden="true">
+    <div class="rain-line rain-1"></div>
+    <div class="rain-line rain-2"></div>
+    <div class="rain-line rain-3"></div>
+    <div class="rain-line rain-4"></div>
+  </div>
+}
+
+@if (bamboo()) {
+  <!-- 左侧写实楠竹（含渐变 defs）；右侧为同一画稿镜像，构成月洞门对称框景 -->
+  <svg class="bamboo bamboo--left" viewBox="0 0 360 900" fill="none" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="real-culm-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#12241D"/>
+        <stop offset="22%" stop-color="#2A594C"/>
+        <stop offset="42%" stop-color="#418070"/>
+        <stop offset="70%" stop-color="#1F463B"/>
+        <stop offset="100%" stop-color="#10221B"/>
+      </linearGradient>
+      <linearGradient id="real-back-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#0E1B15"/>
+        <stop offset="35%" stop-color="#1A382F"/>
+        <stop offset="100%" stop-color="#0A1410"/>
+      </linearGradient>
+      <linearGradient id="leaf-light-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#4E9984"/>
+        <stop offset="50%" stop-color="#347060"/>
+        <stop offset="100%" stop-color="#1E4439"/>
+      </linearGradient>
+      <linearGradient id="leaf-dark-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#2D6153"/>
+        <stop offset="60%" stop-color="#1C3F34"/>
+        <stop offset="100%" stop-color="#102620"/>
+      </linearGradient>
+      <linearGradient id="node-ring-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#10221B"/>
+        <stop offset="30%" stop-color="#4D9280"/>
+        <stop offset="70%" stop-color="#2E6254"/>
+        <stop offset="100%" stop-color="#0F2019"/>
+      </linearGradient>
+    </defs>
+
+    <path d="M 210,900 C 208,650 216,350 225,0 L 255,0 C 246,350 238,650 240,900 Z" fill="url(#real-back-grad)"/>
+    <ellipse cx="230" cy="690" rx="17" ry="3.5" fill="#2A564A"/>
+    <ellipse cx="225" cy="460" rx="16" ry="3.2" fill="#2A564A"/>
+    <ellipse cx="221" cy="230" rx="15" ry="3" fill="#2A564A"/>
+
+    <path d="M 72,900 C 74,700 70,510 78,320 C 84,170 91,60 94,0 L 138,0 C 135,60 128,170 122,320 C 114,510 118,700 126,900 Z" fill="url(#real-culm-grad)"/>
+
+    <g>
+      <ellipse cx="98" cy="738" rx="27" ry="5.5" fill="none" stroke="#0D1D16" stroke-width="2"/>
+      <path d="M 72,735 C 85,730 115,730 125,735 C 122,741 75,741 72,735 Z" fill="url(#node-ring-grad)"/>
+      <ellipse cx="98" cy="733" rx="26" ry="4" fill="none" stroke="#60AD9A" stroke-width="1.2" opacity="0.6"/>
+    </g>
+    <g>
+      <ellipse cx="96" cy="533" rx="25.5" ry="5" fill="none" stroke="#0D1D16" stroke-width="2"/>
+      <path d="M 73,530 C 85,526 113,526 122,530 C 120,536 75,536 73,530 Z" fill="url(#node-ring-grad)"/>
+      <ellipse cx="96" cy="528" rx="24.5" ry="3.8" fill="none" stroke="#60AD9A" stroke-width="1.2" opacity="0.65"/>
+    </g>
+    <g>
+      <ellipse cx="99" cy="328" rx="24" ry="4.8" fill="none" stroke="#0D1D16" stroke-width="2"/>
+      <path d="M 77,325 C 89,321 115,321 123,325 C 121,331 79,331 77,325 Z" fill="url(#node-ring-grad)"/>
+      <ellipse cx="99" cy="323" rx="23" ry="3.5" fill="none" stroke="#60AD9A" stroke-width="1.2" opacity="0.7"/>
+    </g>
+    <g>
+      <ellipse cx="106" cy="123" rx="23" ry="4.5" fill="none" stroke="#0D1D16" stroke-width="2"/>
+      <path d="M 85,120 C 97,116 122,116 129,120 C 127,126 87,126 85,120 Z" fill="url(#node-ring-grad)"/>
+      <ellipse cx="106" cy="118" rx="22" ry="3.2" fill="none" stroke="#60AD9A" stroke-width="1.2" opacity="0.7"/>
+    </g>
+
+    <path d="M 115,530 C 145,510 180,488 220,472" stroke="#224E42" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M 175,492 C 205,475 235,465 265,460" stroke="#224E42" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M 118,325 C 158,295 210,270 270,250" stroke="#255447" stroke-width="3.8" stroke-linecap="round"/>
+    <path d="M 205,273 C 245,250 280,238 315,232" stroke="#255447" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M 122,120 C 170,95 235,78 295,68" stroke="#224E42" stroke-width="3.2" stroke-linecap="round"/>
+
+    <g class="breeze-sway-subtle">
+      <path d="M 218,472 C 248,460 285,470 310,495 C 275,490 240,485 218,472 Z" fill="url(#leaf-dark-grad)"/>
+      <path d="M 215,475 C 250,485 285,512 305,540 C 270,525 240,505 215,475 Z" fill="url(#leaf-dark-grad)"/>
+      <path d="M 220,472 C 265,462 315,470 345,490 C 295,492 255,485 220,472 Z" fill="url(#leaf-light-grad)"/>
+      <path d="M 220,472 C 270,470 320,478 343,489" stroke="#79CAA6" stroke-width="0.8" opacity="0.6"/>
+      <path d="M 219,474 C 255,488 290,518 318,548 C 275,532 245,505 219,474 Z" fill="url(#leaf-light-grad)"/>
+      <path d="M 219,474 C 260,498 295,525 316,546" stroke="#79CAA6" stroke-width="0.8" opacity="0.6"/>
+      <path d="M 265,460 C 295,445 328,442 355,450 C 322,462 290,465 265,460 Z" fill="url(#leaf-light-grad)"/>
+      <circle cx="344" cy="491" r="2.2" fill="#FFFFFF" opacity="0.85"/>
+      <circle cx="317" cy="547" r="2" fill="#FFFFFF" opacity="0.8"/>
+    </g>
+
+    <g class="breeze-sway-soft">
+      <path d="M 268,252 C 308,240 345,250 375,275 C 335,272 295,268 268,252 Z" fill="url(#leaf-dark-grad)"/>
+      <path d="M 266,254 C 305,272 342,302 365,332 C 325,315 290,290 266,254 Z" fill="url(#leaf-dark-grad)"/>
+      <path d="M 270,250 C 320,238 375,248 405,268 C 352,270 308,262 270,250 Z" fill="url(#leaf-light-grad)"/>
+      <path d="M 270,250 C 330,246 380,254 403,267" stroke="#85D7B3" stroke-width="0.9" opacity="0.65"/>
+      <path d="M 268,253 C 312,275 352,310 380,345 C 332,326 298,295 268,253 Z" fill="url(#leaf-light-grad)"/>
+      <path d="M 268,253 C 318,285 355,318 378,343" stroke="#85D7B3" stroke-width="0.9" opacity="0.65"/>
+      <path d="M 315,232 C 348,220 378,222 402,232 C 370,240 340,240 315,232 Z" fill="url(#leaf-light-grad)"/>
+      <path d="M 314,234 C 342,246 370,268 388,292 C 355,278 330,260 314,234 Z" fill="url(#leaf-dark-grad)"/>
+      <circle cx="404" cy="269" r="2.4" fill="#FFFFFF" opacity="0.9"/>
+      <circle cx="379" cy="344" r="2" fill="#FFFFFF" opacity="0.8"/>
+    </g>
+
+    <g class="breeze-sway-subtle">
+      <path d="M 295,68 C 342,55 385,62 418,80 C 370,84 330,80 295,68 Z" fill="url(#leaf-light-grad)"/>
+      <path d="M 295,68 C 350,62 395,70 416,79" stroke="#85D7B3" stroke-width="0.8" opacity="0.6"/>
+      <path d="M 293,70 C 330,88 368,118 392,148 C 352,132 322,108 293,70 Z" fill="url(#leaf-dark-grad)"/>
+    </g>
+  </svg>
+
+  <svg class="bamboo bamboo--right" viewBox="0 0 360 900" fill="none" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M 210,900 C 208,650 216,350 225,0 L 255,0 C 246,350 238,650 240,900 Z" fill="url(#real-back-grad)"/>
+    <ellipse cx="230" cy="690" rx="17" ry="3.5" fill="#2A564A"/>
+    <ellipse cx="225" cy="460" rx="16" ry="3.2" fill="#2A564A"/>
+    <ellipse cx="221" cy="230" rx="15" ry="3" fill="#2A564A"/>
+    <path d="M 72,900 C 74,700 70,510 78,320 C 84,170 91,60 94,0 L 138,0 C 135,60 128,170 122,320 C 114,510 118,700 126,900 Z" fill="url(#real-culm-grad)"/>
+    <g>
+      <ellipse cx="98" cy="738" rx="27" ry="5.5" fill="none" stroke="#0D1D16" stroke-width="2"/>
+      <path d="M 72,735 C 85,730 115,730 125,735 C 122,741 75,741 72,735 Z" fill="url(#node-ring-grad)"/>
+      <ellipse cx="98" cy="733" rx="26" ry="4" fill="none" stroke="#60AD9A" stroke-width="1.2" opacity="0.6"/>
+    </g>
+    <g>
+      <ellipse cx="96" cy="533" rx="25.5" ry="5" fill="none" stroke="#0D1D16" stroke-width="2"/>
+      <path d="M 73,530 C 85,526 113,526 122,530 C 120,536 75,536 73,530 Z" fill="url(#node-ring-grad)"/>
+      <ellipse cx="96" cy="528" rx="24.5" ry="3.8" fill="none" stroke="#60AD9A" stroke-width="1.2" opacity="0.65"/>
+    </g>
+    <g>
+      <ellipse cx="99" cy="328" rx="24" ry="4.8" fill="none" stroke="#0D1D16" stroke-width="2"/>
+      <path d="M 77,325 C 89,321 115,321 123,325 C 121,331 79,331 77,325 Z" fill="url(#node-ring-grad)"/>
+      <ellipse cx="99" cy="323" rx="23" ry="3.5" fill="none" stroke="#60AD9A" stroke-width="1.2" opacity="0.7"/>
+    </g>
+    <g>
+      <ellipse cx="106" cy="123" rx="23" ry="4.5" fill="none" stroke="#0D1D16" stroke-width="2"/>
+      <path d="M 85,120 C 97,116 122,116 129,120 C 127,126 87,126 85,120 Z" fill="url(#node-ring-grad)"/>
+      <ellipse cx="106" cy="118" rx="22" ry="3.2" fill="none" stroke="#60AD9A" stroke-width="1.2" opacity="0.7"/>
+    </g>
+    <path d="M 115,530 C 145,510 180,488 220,472" stroke="#224E42" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M 175,492 C 205,475 235,465 265,460" stroke="#224E42" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M 118,325 C 158,295 210,270 270,250" stroke="#255447" stroke-width="3.8" stroke-linecap="round"/>
+    <path d="M 205,273 C 245,250 280,238 315,232" stroke="#255447" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M 122,120 C 170,95 235,78 295,68" stroke="#224E42" stroke-width="3.2" stroke-linecap="round"/>
+    <g class="breeze-sway-subtle">
+      <path d="M 218,472 C 248,460 285,470 310,495 C 275,490 240,485 218,472 Z" fill="url(#leaf-dark-grad)"/>
+      <path d="M 220,472 C 265,462 315,470 345,490 C 295,492 255,485 220,472 Z" fill="url(#leaf-light-grad)"/>
+      <path d="M 219,474 C 255,488 290,518 318,548 C 275,532 245,505 219,474 Z" fill="url(#leaf-light-grad)"/>
+      <circle cx="344" cy="491" r="2.2" fill="#FFFFFF" opacity="0.85"/>
+    </g>
+    <g class="breeze-sway-soft">
+      <path d="M 270,250 C 320,238 375,248 405,268 C 352,270 308,262 270,250 Z" fill="url(#leaf-light-grad)"/>
+      <path d="M 268,253 C 312,275 352,310 380,345 C 332,326 298,295 268,253 Z" fill="url(#leaf-light-grad)"/>
+      <path d="M 315,232 C 348,220 378,222 402,232 C 370,240 340,240 315,232 Z" fill="url(#leaf-light-grad)"/>
+      <circle cx="404" cy="269" r="2.4" fill="#FFFFFF" opacity="0.9"/>
+    </g>
+  </svg>
+}
+
+@if (mode() === 'leaves') {
+  <!-- 前景竹叶层：与竹竿层同坐标同尺寸，但独立成层供使用方置于最高层级；
+       overflow 可见使叶尖完整呈现（不被 viewBox/元素边界裁剪）。渐变为前景专用副本（-fg 后缀防 id 冲突）。 -->
+  <svg class="bamboo-leaves bamboo-leaves--left" viewBox="0 0 360 900" fill="none" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="leaf-light-grad-fg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#4E9984"/>
+        <stop offset="50%" stop-color="#347060"/>
+        <stop offset="100%" stop-color="#1E4439"/>
+      </linearGradient>
+      <linearGradient id="leaf-dark-grad-fg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#2D6153"/>
+        <stop offset="60%" stop-color="#1C3F34"/>
+        <stop offset="100%" stop-color="#102620"/>
+      </linearGradient>
+    </defs>
+    <g class="breeze-sway-subtle">
+      <path d="M 218,472 C 248,460 285,470 310,495 C 275,490 240,485 218,472 Z" fill="url(#leaf-dark-grad-fg)"/>
+      <path d="M 215,475 C 250,485 285,512 305,540 C 270,525 240,505 215,475 Z" fill="url(#leaf-dark-grad-fg)"/>
+      <path d="M 220,472 C 265,462 315,470 345,490 C 295,492 255,485 220,472 Z" fill="url(#leaf-light-grad-fg)"/>
+      <path d="M 220,472 C 270,470 320,478 343,489" stroke="#79CAA6" stroke-width="0.8" opacity="0.6"/>
+      <path d="M 219,474 C 255,488 290,518 318,548 C 275,532 245,505 219,474 Z" fill="url(#leaf-light-grad-fg)"/>
+      <path d="M 219,474 C 260,498 295,525 316,546" stroke="#79CAA6" stroke-width="0.8" opacity="0.6"/>
+      <path d="M 265,460 C 295,445 328,442 355,450 C 322,462 290,465 265,460 Z" fill="url(#leaf-light-grad-fg)"/>
+      <circle cx="344" cy="491" r="2.2" fill="#FFFFFF" opacity="0.85"/>
+      <circle cx="317" cy="547" r="2" fill="#FFFFFF" opacity="0.8"/>
+    </g>
+    <g class="breeze-sway-soft">
+      <path d="M 268,252 C 308,240 345,250 375,275 C 335,272 295,268 268,252 Z" fill="url(#leaf-dark-grad-fg)"/>
+      <path d="M 266,254 C 305,272 342,302 365,332 C 325,315 290,290 266,254 Z" fill="url(#leaf-dark-grad-fg)"/>
+      <path d="M 270,250 C 320,238 375,248 405,268 C 352,270 308,262 270,250 Z" fill="url(#leaf-light-grad-fg)"/>
+      <path d="M 270,250 C 330,246 380,254 403,267" stroke="#85D7B3" stroke-width="0.9" opacity="0.65"/>
+      <path d="M 268,253 C 312,275 352,310 380,345 C 332,326 298,295 268,253 Z" fill="url(#leaf-light-grad-fg)"/>
+      <path d="M 268,253 C 318,285 355,318 378,343" stroke="#85D7B3" stroke-width="0.9" opacity="0.65"/>
+      <path d="M 315,232 C 348,220 378,222 402,232 C 370,240 340,240 315,232 Z" fill="url(#leaf-light-grad-fg)"/>
+      <path d="M 314,234 C 342,246 370,268 388,292 C 355,278 330,260 314,234 Z" fill="url(#leaf-dark-grad-fg)"/>
+      <circle cx="404" cy="269" r="2.4" fill="#FFFFFF" opacity="0.9"/>
+      <circle cx="379" cy="344" r="2" fill="#FFFFFF" opacity="0.8"/>
+    </g>
+    <g class="breeze-sway-subtle">
+      <path d="M 295,68 C 342,55 385,62 418,80 C 370,84 330,80 295,68 Z" fill="url(#leaf-light-grad-fg)"/>
+      <path d="M 295,68 C 350,62 395,70 416,79" stroke="#85D7B3" stroke-width="0.8" opacity="0.6"/>
+      <path d="M 293,70 C 330,88 368,118 392,148 C 352,132 322,108 293,70 Z" fill="url(#leaf-dark-grad-fg)"/>
+    </g>
+  </svg>
+  <svg class="bamboo-leaves bamboo-leaves--right" viewBox="0 0 360 900" fill="none" preserveAspectRatio="none" aria-hidden="true">
+    <g class="breeze-sway-subtle">
+      <path d="M 218,472 C 248,460 285,470 310,495 C 275,490 240,485 218,472 Z" fill="url(#leaf-dark-grad-fg)"/>
+      <path d="M 220,472 C 265,462 315,470 345,490 C 295,492 255,485 220,472 Z" fill="url(#leaf-light-grad-fg)"/>
+      <path d="M 219,474 C 255,488 290,518 318,548 C 275,532 245,505 219,474 Z" fill="url(#leaf-light-grad-fg)"/>
+      <circle cx="344" cy="491" r="2.2" fill="#FFFFFF" opacity="0.85"/>
+    </g>
+    <g class="breeze-sway-soft">
+      <path d="M 270,250 C 320,238 375,248 405,268 C 352,270 308,262 270,250 Z" fill="url(#leaf-light-grad-fg)"/>
+      <path d="M 268,253 C 312,275 352,310 380,345 C 332,326 298,295 268,253 Z" fill="url(#leaf-light-grad-fg)"/>
+      <path d="M 315,232 C 348,220 378,222 402,232 C 370,240 340,240 315,232 Z" fill="url(#leaf-light-grad-fg)"/>
+      <circle cx="404" cy="269" r="2.4" fill="#FFFFFF" opacity="0.9"/>
+    </g>
+  </svg>
+}
+
+@if (ripples()) {
+  <div class="ripple-field" aria-hidden="true">
+    <span class="ripple ripple-a"></span>
+    <span class="ripple ripple-b"></span>
+  </div>
+}
+
+@if (plinth()) {
+  <div class="stone-plinth-footer" aria-hidden="true">
+    <div class="water-line-glow"></div>
+  </div>
+}

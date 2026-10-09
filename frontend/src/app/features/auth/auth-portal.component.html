@@ -1,0 +1,262 @@
+<!-- 统一鉴权门户 — 「雨后竹林·月洞门」视觉（以用户设计稿 test_8.html 为准），功能绑定保持不变 -->
+<nur-garden-scene [lattice]="true" [moonGate]="true" [rain]="true" [plinth]="true" />
+
+<nav class="garden-nav">
+  <a href="/" class="brand-logo-wrap" (click)="$event.preventDefault(); backToLanding()" aria-label="返回首页">
+    <svg class="logo-bamboo-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+      <path d="M12 2v20M7 7h10M6 14h12M8 20h8" stroke-linecap="round"/>
+    </svg>
+    <span class="nav-logo-text">
+      <span class="logo-en">NURTURE</span><span class="logo-slash" aria-hidden="true">/</span><span class="logo-cn">润物细无声</span>
+    </span>
+  </a>
+  <button type="button" class="nav-auth-btn" (click)="backToLanding()">
+    <span class="nav-auth-dot" aria-hidden="true"></span>
+    <span>返回首页</span>
+  </button>
+</nav>
+
+<main class="hero-chamber">
+  <div class="chamber-line chamber-line--left" aria-hidden="true"></div>
+  <div class="chamber-line chamber-line--right" aria-hidden="true"></div>
+
+  <!-- 品牌叙事区（设计稿层级：辅助信息 → 英文品牌 → 中文主标 → 情绪标题 → 价值正文） -->
+  <section class="brand-story" aria-label="品牌介绍">
+    <div class="hero-aux-line hero-rise d-1">
+      <span class="aux-rule" aria-hidden="true"></span>
+      <span class="aux-dot" aria-hidden="true"></span>
+      <span class="aux-text">学业成长 · 课后答疑 · 1对1陪伴</span>
+      <span class="aux-dot" aria-hidden="true"></span>
+      <span class="aux-rule rev" aria-hidden="true"></span>
+    </div>
+
+    <p class="brand-name-en hero-rise d-2">NURTURE</p>
+
+    <div class="philosophy-lockup hero-rise d-4">
+      <p class="brand-title-cn">润物细无声</p>
+      <div class="cinnabar-seal-accent" aria-hidden="true">
+        <span>研</span>
+        <span>学</span>
+      </div>
+    </div>
+    <div class="brand-divider-line hero-rise d-5" aria-hidden="true"></div>
+
+    <p class="hero-emotional-headline hero-rise d-6">不是每一道难题，都该独自熬过。</p>
+    <p class="hero-body-copy hero-rise d-7">
+      <span class="copy-line">当你卡在一道题、困在一个知识点，我们愿意及时回应，耐心讲懂每一个细微关窍。</span>
+      <span class="copy-line">让每一次提问都有回应，让每一次努力都有收获，陪你慢一点，也走得更远。</span>
+    </p>
+
+    <div class="metrics-shrine-grid hero-rise d-8">
+      <div class="shrine-card">
+        <span class="metric-value">98.4<small>%</small></span>
+        <span class="metric-subtitle">疑难点即时消解率</span>
+      </div>
+      <div class="shrine-card">
+        <span class="metric-value">1 <small>对</small> 1</span>
+        <span class="metric-subtitle">定制化思维推导</span>
+      </div>
+      <div class="shrine-card">
+        <span class="metric-value amber-glow">零焦虑</span>
+        <span class="metric-subtitle">循循善诱陪伴成长</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 登录卡片：功能完整保留（角色门户 / 双通道 / 注册入驻） -->
+  <section class="portal-card hero-rise d-6" aria-labelledby="portal-title">
+    <h1 id="portal-title" class="portal-title">统一登录门户</h1>
+    <p class="portal-subtitle">因材施以微雨 · 静候学海生花</p>
+
+    <div class="role-tabs" role="tablist" aria-label="选择登录角色">
+      @for (role of roles; track role) {
+        <button
+          type="button"
+          role="tab"
+          class="role-tab"
+          [class.role-tab--active]="activeRole() === role"
+          [attr.aria-selected]="activeRole() === role"
+          (click)="switchRole(role)"
+        >
+          {{ roleLabels[role] }}登录
+        </button>
+      }
+    </div>
+
+    <div class="channel-switch" role="group" aria-label="选择登录方式">
+      @if (!isRegister()) {
+        <button
+          type="button"
+          class="channel-pill"
+          [class.channel-pill--active]="channel() === 'sms'"
+          (click)="switchChannel('sms')"
+        >
+          验证码登录
+        </button>
+        <button
+          type="button"
+          class="channel-pill"
+          [class.channel-pill--active]="channel() === 'password'"
+          (click)="switchChannel('password')"
+        >
+          账号密码登录
+        </button>
+      }
+      @if (registerAvailable()) {
+        <button
+          type="button"
+          class="channel-pill channel-pill--accent"
+          [class.channel-pill--active]="isRegister()"
+          (click)="switchChannel('register')"
+        >
+          {{ activeRole() === Role.TEACHER ? '导师入驻申请' : activeRole() === Role.PARENT ? '家长注册' : '学生注册' }}
+        </button>
+      }
+    </div>
+
+    <form class="auth-form" (submit)="$event.preventDefault(); submit()">
+      @if (channel() === 'sms' || isRegister()) {
+        <div class="field" [class.field--error]="phone().length > 0 && !smsReady()">
+          <label for="phone">手机号</label>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            inputmode="numeric"
+            autocomplete="tel"
+            placeholder="请输入 11 位手机号"
+            [value]="phone()"
+            (input)="phone.set(phoneInput.value)"
+            #phoneInput
+            required
+          />
+          @if (phone().length > 0 && !smsReady()) {
+            <p class="field-hint" role="status">
+              <span aria-hidden="true">◇</span> 手机号需为 11 位数字，请继续输入或检查格式。
+            </p>
+          }
+        </div>
+
+        @if (!isRegister()) {
+          <div class="field field--row">
+            <label for="sms-code">短信验证码</label>
+            <div class="sms-row">
+              <input
+                id="sms-code"
+                name="smsCode"
+                type="text"
+                inputmode="numeric"
+                maxlength="6"
+                autocomplete="one-time-code"
+                placeholder="6 位验证码"
+                [value]="smsCode()"
+                (input)="smsCode.set(codeInput.value)"
+                #codeInput
+                required
+              />
+              <button
+                type="button"
+                class="btn-send-code"
+                (click)="sendSmsCode()"
+                [disabled]="!smsReady() || smsCountdown() > 0"
+              >
+                {{ smsCountdown() > 0 ? smsCountdown() + 's 后可重发' : '获取验证码' }}
+              </button>
+            </div>
+          </div>
+        }
+      }
+
+      @if (channel() === 'password') {
+        <div class="field">
+          <label for="account">账号</label>
+          <input
+            id="account"
+            name="account"
+            type="text"
+            autocomplete="username"
+            placeholder="手机号或账号编号"
+            [value]="account()"
+            (input)="account.set(accountInput.value)"
+            #accountInput
+            required
+          />
+        </div>
+        <div class="field" [class.field--error]="password().length > 0 && password().length < 8">
+          <label for="password">密码</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="至少 8 位"
+            [value]="password()"
+            (input)="password.set(pwInput.value)"
+            #pwInput
+            required
+          />
+        </div>
+      }
+
+      @if (isRegister()) {
+        <div class="field">
+          <label for="display-name">称呼</label>
+          <input
+            id="display-name"
+            name="displayName"
+            type="text"
+            placeholder="{{ activeRole() === Role.TEACHER ? '导师姓名或教学称号' : '学生姓名或昵称' }}"
+            [value]="displayName()"
+            (input)="displayName.set(nameInput.value)"
+            #nameInput
+            required
+          />
+        </div>
+        <div class="field">
+          <label for="reg-password">设置密码</label>
+          <input
+            id="reg-password"
+            name="regPassword"
+            type="password"
+            autocomplete="new-password"
+            placeholder="至少 8 位，建议字母与数字组合"
+            [value]="password()"
+            (input)="password.set(regPwInput.value)"
+            #regPwInput
+            required
+          />
+        </div>
+        @if (activeRole() === Role.TEACHER) {
+          <div class="field">
+            <label for="school">毕业/任职院校</label>
+            <input id="school" name="school" type="text" placeholder="如：华东师范大学" [value]="school()" (input)="school.set(schoolInput.value)" #schoolInput required />
+          </div>
+          <div class="field">
+            <label for="degree">最高学历</label>
+            <input id="degree" name="degree" type="text" placeholder="如：硕士研究生" [value]="highestDegree()" (input)="highestDegree.set(degreeInput.value)" #degreeInput required />
+          </div>
+          <p class="field-hint">
+            <span aria-hidden="true">◆</span> 提交后将进入资质认证审核流程，审核结果将在导师工作台展示。
+          </p>
+        }
+      }
+
+      @if (formStatus().text) {
+        <p class="form-status form-status--{{ formStatus().type }}" role="status" aria-live="polite">
+          <span aria-hidden="true">
+            {{ formStatus().type === 'success' ? '✔' : formStatus().type === 'error' ? '⚠' : 'ℹ' }}
+          </span>
+          {{ formStatus().text }}
+        </p>
+      }
+
+      <button type="submit" class="btn-submit" [disabled]="!canSubmit()">
+        {{ submitting() ? '正在安全验证…' : isRegister() ? (activeRole() === Role.TEACHER ? '提交入驻申请' : activeRole() === Role.PARENT ? '注册并登录（家长）' : '注册并登录') : '登 录' }}
+      </button>
+    </form>
+
+    <p class="portal-footnote">
+      登录即代表同意以最小必要原则处理个人信息 · 学生与家长为相互独立的独立账户
+    </p>
+  </section>
+</main>

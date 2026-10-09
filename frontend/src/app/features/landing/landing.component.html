@@ -1,0 +1,207 @@
+<nur-site-header />
+
+<!-- 雨后竹林·固定视口场景（花窗纹 + 两侧楠竹，长页滚动如穿行竹林） -->
+<nur-garden-scene class="landing-scene" [lattice]="true" [bamboo]="false" />
+<!-- 前景竹叶层：位置与宽度沿用原始页面边缘构图，仅层级升到内容之上（z-2）；渐隐遮罩使其只压边缘 -->
+<nur-garden-scene class="bamboo-stems mode-stems" [bamboo]="true" [mode]="'stems'" />
+<nur-garden-scene class="bamboo-leaves-fg mode-leaves scene--foreground" [bamboo]="true" [mode]="'leaves'" />
+
+<!-- ============ Hero（雨后竹林·月洞门） ============ -->
+<section class="hero" aria-labelledby="hero-title">
+  <nur-garden-scene class="hero-scene" [moonGate]="true" [rain]="true" [bamboo]="false" [ripples]="true" />
+  <!-- 雨后呼吸系统：微雾 ×2 + 中央微光（低频低幅度，reduced-motion 时全部静止） -->
+  <div class="hero-atmo" aria-hidden="true">
+    <div class="hero-mist hero-mist--a"></div>
+    <div class="hero-mist hero-mist--b"></div>
+    <div class="hero-glow"></div>
+  </div>
+
+  <p class="hero-eyebrow hero-rise d-1">线上学术精修与课后答疑</p>
+  <p class="hero-en hero-rise d-2" aria-hidden="true">NURTURE</p>
+
+  <h1 id="hero-title" class="hero-title hero-rise d-3">润物细无声</h1>
+
+  <div class="brand-divider-line hero-rise d-4" aria-hidden="true"></div>
+
+  <p class="hero-slogan hero-rise d-5">因材施以微雨，静候学海生花</p>
+
+  <p class="hero-intro hero-rise d-6">
+    打破机械刷题的焦虑桎梏。在这里，名校学长与资深导师化作及时雨，在细微之处耐心解惑，陪你从容蓄积突破学业瓶颈的恒久底气。
+  </p>
+
+  <div class="hero-cta hero-rise d-7">
+    <button type="button" class="nur-btn nur-btn--primary" (click)="beginNurture()">开启专属因材点拨</button>
+    <a class="nur-btn nur-btn--ghost" href="#philosophy">探索办学理念</a>
+  </div>
+
+  <dl class="trust-bar hero-rise d-8" aria-label="平台信任背书">
+    <div class="trust-item">
+      <dt>98.4%</dt>
+      <dd>疑难点即时消解率</dd>
+    </div>
+    <div class="trust-item">
+      <dt>1 对 1</dt>
+      <dd>定制化思维推导</dd>
+    </div>
+    <div class="trust-item">
+      <dt>零焦虑</dt>
+      <dd>循循善诱陪伴成长</dd>
+    </div>
+  </dl>
+</section>
+
+<!-- ============ Brand Philosophy 办学理念 ============ -->
+<section id="philosophy" class="nur-section" aria-labelledby="philosophy-title">
+  <div class="nur-container philosophy">
+    <p class="nur-kicker nur-reveal" nurReveal style="--stagger-index: 0">办学理念</p>
+    <h2 id="philosophy-title" class="philosophy-quote nur-serif nur-reveal" nurReveal style="--stagger-index: 1">
+      随风潜入夜，润物细无声
+    </h2>
+    <p class="philosophy-text nur-reveal" nurReveal style="--stagger-index: 2">
+      取意杜甫《春夜喜雨》。我们相信教育应如春雨：不喧哗、不催促，依循每个学习者的心田纹理，在关键处给予恰如其分的滋养。
+    </p>
+
+    <ul class="principles nur-reveal" nurReveal style="--stagger-index: 3">
+      @for (p of principles; track p.title) {
+        <li class="principle">
+          <h3 class="principle-title nur-serif">{{ p.title }}</h3>
+          <p class="principle-text">{{ p.text }}</p>
+        </li>
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- ============ Service Features 服务体系 ============ -->
+<section id="services" class="nur-section nur-section--tint" aria-labelledby="services-title">
+  <div class="nur-container">
+    <header class="nur-section-head nur-reveal" nurReveal style="--stagger-index: 0">
+      <p class="nur-kicker">服务体系</p>
+      <h2 id="services-title" class="nur-section-title">及时雨式的三重滋养</h2>
+      <p class="nur-section-lead">从一道题的困惑，到一段学业的同行——服务在细微处发生。</p>
+    </header>
+
+    <div class="services-grid">
+      @for (s of services; track s.title) {
+        <article class="service nur-card nur-reveal" nurReveal [style.--stagger-index]="$index">
+          <span class="service-no nur-serif" aria-hidden="true">{{ s.no }}</span>
+          <h3 class="service-title nur-serif">{{ s.title }}</h3>
+          <p class="service-text">{{ s.text }}</p>
+        </article>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ============ Teacher Showcase 精选导师 ============ -->
+<section id="teachers" class="nur-section" aria-labelledby="teachers-title">
+  <div class="nur-container">
+    <header class="nur-section-head nur-reveal" nurReveal style="--stagger-index: 0">
+      <p class="nur-kicker">精选导师</p>
+      <h2 id="teachers-title" class="nur-section-title">名校学长与资深导师</h2>
+      <p class="nur-section-lead">每一位导师都经过平台认证，评价与档期真实可查。</p>
+    </header>
+
+    <div class="teachers-grid">
+      @for (t of teachers; track t.teacherId) {
+        <div class="teachers-item nur-reveal" nurReveal [style.--stagger-index]="$index % 3">
+          <nur-teacher-card [teacher]="t" />
+        </div>
+      }
+    </div>
+
+    <p class="teachers-more">
+      <a class="nur-link-arrow" routerLink="/teachers">
+        查看全部 20 位导师，按学科与学段细筛
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </p>
+  </div>
+</section>
+
+<!-- ============ Subject Categories 学科门类 ============ -->
+<section id="subjects" class="nur-section nur-section--tint" aria-labelledby="subjects-title">
+  <div class="nur-container subjects">
+    <header class="nur-section-head nur-reveal" nurReveal style="--stagger-index: 0">
+      <p class="nur-kicker">学科门类</p>
+      <h2 id="subjects-title" class="nur-section-title">覆盖 K12 主科与竞赛</h2>
+      <p class="nur-section-lead">学段与学科自由组合，找到与你同频的导师。</p>
+    </header>
+
+    <ul class="subject-list nur-reveal" nurReveal style="--stagger-index: 1">
+      @for (s of subjects; track s) {
+        <li><a class="nur-chip" href="#teachers">{{ s }}</a></li>
+      }
+    </ul>
+  </div>
+</section>
+
+<!-- ============ Learning Process 学习流程 ============ -->
+<section id="process" class="nur-section" aria-labelledby="process-title">
+  <div class="nur-container">
+    <header class="nur-section-head nur-reveal" nurReveal style="--stagger-index: 0">
+      <p class="nur-kicker">学习流程</p>
+      <h2 id="process-title" class="nur-section-title">从相识到同行，六步闭环</h2>
+      <p class="nur-section-lead">每一步都有明确的下一步，随时可以暂停，也可以随时回来。</p>
+    </header>
+
+    <ol class="steps-grid">
+      @for (step of steps; track step.no) {
+        <li class="step nur-reveal" nurReveal [style.--stagger-index]="$index % 3">
+          <span class="step-no nur-serif" aria-hidden="true">{{ step.no }}</span>
+          <h3 class="step-title">{{ step.title }}</h3>
+          <p class="step-text">{{ step.text }}</p>
+        </li>
+      }
+    </ol>
+  </div>
+</section>
+
+<!-- ============ Testimonials 学员心声 ============ -->
+<section id="voices" class="nur-section nur-section--tint" aria-labelledby="voices-title">
+  <div class="nur-container">
+    <header class="nur-section-head nur-reveal" nurReveal style="--stagger-index: 0">
+      <p class="nur-kicker">学员心声</p>
+      <h2 id="voices-title" class="nur-section-title">润物，自有回响</h2>
+    </header>
+
+    <div class="voices-grid">
+      @for (v of voices; track v.name) {
+        <figure class="voice nur-reveal" nurReveal [style.--stagger-index]="$index">
+          <blockquote class="voice-quote nur-serif">「{{ v.quote }}」</blockquote>
+          <figcaption class="voice-by">
+            <span class="voice-name">{{ v.name }}</span>
+            <span class="voice-role">{{ v.role }}</span>
+          </figcaption>
+        </figure>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- ============ Brand Vision 品牌愿景 ============ -->
+<section class="nur-section vision" aria-labelledby="vision-title">
+  <div class="nur-container vision-inner">
+    <p class="nur-ornament nur-reveal" nurReveal aria-hidden="true">❖</p>
+    <h2 id="vision-title" class="vision-title nur-serif nur-reveal" nurReveal style="--stagger-index: 1">
+      教育如春雨，不求轰然，但求入土三分
+    </h2>
+    <p class="vision-text nur-reveal" nurReveal style="--stagger-index: 2">
+      我们愿作一场春夜细雨，陪每一个孩子把根须扎进属于自己的土壤——不催促绽开，只静候学海生花。
+    </p>
+  </div>
+</section>
+
+<!-- ============ CTA（深墨绿收束） ============ -->
+<section class="nur-section nur-section--deep cta" aria-labelledby="cta-title">
+  <div class="nur-container cta-inner">
+    <h2 id="cta-title" class="cta-title nur-serif nur-reveal" nurReveal>因材施以微雨，静候学海生花</h2>
+    <p class="cta-lead nur-reveal" nurReveal style="--stagger-index: 1">一节试听课，遇见更从容的学习方式。</p>
+    <div class="cta-actions nur-reveal" nurReveal style="--stagger-index: 2">
+      <button type="button" class="nur-btn nur-btn--light" (click)="beginNurture()">开启专属因材点拨</button>
+      <a class="nur-btn nur-btn--ghost-light" href="#teachers">浏览精选导师</a>
+    </div>
+  </div>
+</section>
+
+<nur-site-footer />

@@ -1,0 +1,324 @@
+/* ============================================================
+ * 润物细无声 · Nurture — Design System 组件层
+ * 容器 / 区块 / 标题层级 / 按钮 / 徽章 / 头像 / 链接
+ * 供全站营销页与业务页复用，组件内只写差异样式
+ * ============================================================ */
+
+/* ---------- 版心容器 ---------- */
+.nur-container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--space-5);
+}
+
+/* ---------- 通用区块（锚点留出吸顶导航高度） ---------- */
+.nur-section {
+  padding-block: clamp(64px, 9vw, 112px);
+  scroll-margin-top: calc(var(--header-height) + 16px);
+}
+
+.nur-section--tint {
+  background: linear-gradient(180deg, var(--color-secondary-bg) 0%, var(--bg-page) 100%);
+}
+
+.nur-section--deep {
+  background: var(--bg-deep);
+  color: var(--text-on-deep);
+}
+
+/* ---------- 区块标题层级 ---------- */
+.nur-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  color: var(--color-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+}
+
+.nur-kicker::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.nur-section-title {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 3.2vw, 2.1rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-main);
+}
+
+.nur-section-lead {
+  max-width: 560px;
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 2;
+}
+
+.nur-section-head {
+  max-width: 640px;
+  margin: 0 auto var(--space-8);
+  text-align: center;
+}
+
+.nur-section-head .nur-section-lead {
+  margin-inline: auto;
+}
+
+/* ---------- 按钮（全局唯一权威定义） ---------- */
+.nur-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-6);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-pill);
+  font-size: 1rem;
+  font-family: inherit;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--duration-enter) var(--ease-nurture),
+    border-color var(--duration-enter) var(--ease-nurture),
+    color var(--duration-enter) var(--ease-nurture),
+    box-shadow var(--duration-enter) var(--ease-nurture),
+    transform var(--duration-enter) var(--ease-nurture);
+}
+
+.nur-btn--primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.nur-btn--primary:hover {
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+
+/* 按压反馈：轻微下沉，与 hover 抬升形成完整手感 */
+.nur-btn:active {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-subtle);
+}
+
+.nur-btn--ghost {
+  background: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.nur-btn--ghost:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* 深色段上的反白按钮 */
+.nur-btn--light {
+  background: var(--bg-page);
+  color: var(--color-primary);
+}
+
+.nur-btn--light:hover {
+  background: #fff;
+  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.nur-btn--ghost-light {
+  background: transparent;
+  border-color: rgba(243, 241, 234, 0.4);
+  color: var(--text-on-deep);
+}
+
+.nur-btn--ghost-light:hover {
+  border-color: var(--text-on-deep);
+}
+
+.nur-btn--sm {
+  min-height: calc(var(--touch-target) - 8px);
+  padding: var(--space-2) var(--space-5);
+  font-size: 0.9rem;
+}
+
+/* ---------- 文字箭头链接 ---------- */
+.nur-link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  color: var(--color-secondary);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  transition: color var(--duration-enter) var(--ease-nurture), gap var(--duration-enter) var(--ease-nurture);
+}
+
+.nur-link-arrow:hover {
+  color: var(--color-primary);
+  gap: var(--space-3);
+}
+
+.nur-link-arrow .arrow {
+  transition: transform var(--duration-enter) var(--ease-nurture);
+}
+
+.nur-link-arrow:hover .arrow {
+  transform: translateX(2px);
+}
+
+/* ---------- 徽章与标签 ---------- */
+.nur-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: calc(var(--touch-target) - 10px);
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  transition: border-color var(--duration-enter) var(--ease-nurture),
+    color var(--duration-enter) var(--ease-nurture), box-shadow var(--duration-enter) var(--ease-nurture);
+}
+
+a.nur-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-subtle);
+}
+
+.nur-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- 筛选片选按钮（aria-pressed 双态：状态不只靠颜色） ---------- */
+.nur-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: calc(var(--touch-target) - 10px);
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: border-color var(--duration-enter) var(--ease-nurture),
+    color var(--duration-enter) var(--ease-nurture), background-color var(--duration-enter) var(--ease-nurture),
+    box-shadow var(--duration-enter) var(--ease-nurture);
+}
+
+.nur-chip-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-subtle);
+}
+
+.nur-chip-btn[aria-pressed='true'] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.nur-chip-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ---------- 首字母头像（无外部图片依赖） ---------- */
+.nur-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: #fff;
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  letter-spacing: 0;
+}
+
+/* ---------- 认证徽标（双通道：图标 + 文字） ---------- */
+.nur-cert {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+}
+
+.nur-cert--ok {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.nur-cert--pending {
+  background: var(--color-accent-bg);
+  color: var(--color-accent-hover);
+}
+
+/* ---------- 东方分隔饰纹 ---------- */
+.nur-ornament {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  letter-spacing: 0.4em;
+}
+
+.nur-ornament::before,
+.nur-ornament::after {
+  content: '';
+  width: 48px;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* ---------- 滚动显现（轻量、单次、可关闭） ---------- */
+.nur-reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 560ms var(--ease-nurture), transform 560ms var(--ease-nurture);
+  transition-delay: calc(var(--stagger-index, 0) * var(--stagger-step));
+}
+
+.nur-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nur-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

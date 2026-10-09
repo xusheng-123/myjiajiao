@@ -1,0 +1,4 @@
+#
+#Sun Sep 27 22:10:27 GMT+08:00 2026
+no\ classes\ that\ \u4E3B\u4EE3\u7801\uFF08\u6392\u9664\u6D4B\u8BD5\u7C7B\uFF09\ and\ reside\ in\ a\ package\ 'com.nurture..'\ and\ reside\ outside\ of\ package\ 'com.nurture.shared..'\ should\ \u4E0D\u4F9D\u8D56\u5176\u4ED6\u6A21\u5757\u7684\ infra\ \u5C42=9ae7ca49-4698-4a92-82b2-48fa76470f8b
+no\ classes\ that\ \u4E3B\u4EE3\u7801\uFF08\u6392\u9664\u6D4B\u8BD5\u7C7B\uFF09\ and\ reside\ in\ a\ package\ 'com.nurture..api..'\ should\ depend\ on\ classes\ that\ reside\ in\ a\ package\ 'com.nurture.*.infra..'=e4eac181-9154-4a2d-8bce-92e3ac1d1e74

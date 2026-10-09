@@ -1,0 +1,47 @@
+# ============================================================
+# NURTURE .gitignore —— 原则：源码/脚本/文档/配置模板入库；
+# 依赖、构建产物、日志、数据库备份、部署包、本地密钥一律不入库。
+# ============================================================
+
+# ---- 依赖目录 ----
+node_modules/
+
+# ---- 构建产物（可用源码重建）----
+frontend/dist/
+frontend/.angular/
+backend/target/
+
+# ---- 日志与临时文件 ----
+*.log
+*.tmp
+*.pid
+
+# ---- 数据库备份 / 导出 / 转储（含真实数据，严禁入库）----
+deploy/backups/
+*.dump
+*.sql.gz
+*.backup
+
+# ---- 部署打包产物（由 deploy/package-staging.sh 重建）----
+deploy/dist/
+
+# ---- 本地环境配置：含真实密钥的 .env 不入库；无敏感信息的模板正常跟踪 ----
+.env
+.env.*
+!.env.example
+
+# ---- 个人开发环境文件 ----
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---- 操作系统杂项 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ---- 测试覆盖率产物 ----
+coverage/
+frontend/coverage/
