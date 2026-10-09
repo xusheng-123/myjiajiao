@@ -297,3 +297,54 @@
   font-size: 0.85rem;
   word-break: break-all;
 }
+
+/* ── 课程与定价管理（G6） ── */
+.subject-list .subject-name {
+  font-weight: 600;
+}
+
+.subject-list .subject-price {
+  color: var(--color-secondary);
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.subject-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-secondary-bg);
+}
+
+.subject-price-input {
+  flex: 0 1 220px;
+}
+
+.subject-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-card);
+}
+
+.subject-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.subject-field {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.subject-field--price {
+  flex: 1 1 160px;
+}

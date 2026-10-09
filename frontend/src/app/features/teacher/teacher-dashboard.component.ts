@@ -20,6 +20,15 @@ interface PickedFile {
   sizeLabel: string;
 }
 
+/** G6 开课条目（服务端仅返回在售条目；active 字段如实展示）。 */
+interface SubjectOffering {
+  offeringId: string;
+  subject: string;
+  gradeBand: string | null;
+  pricePerHourCents: number;
+  active: boolean;
+}
+
 interface TodayLesson {
   bookingId: string;
   subject: string;
@@ -111,6 +120,23 @@ export class TeacherDashboardComponent implements OnInit {
     return status === undefined || status === 'NOT_SUBMITTED' || status === 'REJECTED';
   });
 
+  // ---------- 课程与定价管理（G6）----------
+  // 下架 = DELETE /subjects/{id}：服务端语义为「停止销售」（active=false 标记，非删除记录），
+  // 服务端无重新上架端点，故界面不提供该入口；调价/金额一律以服务端返回为准。
+  readonly subjects = signal<SubjectOffering[]>([]);
+  readonly subjectsLoaded = signal(false);
+  readonly subjectsError = signal(false);
+  readonly subjectsNotice = signal<{ type: 'info' | 'error' | 'success'; text: string } | null>(null);
+  readonly newSubjectName = signal('');
+  readonly newSubjectGradeBand = signal('');
+  readonly newSubjectPriceYuan = signal('');
+  readonly addSubjectBusy = signal(false);
+  readonly repricingId = signal<string | null>(null);
+  readonly repriceInputYuan = signal('');
+  readonly repriceBusy = signal(false);
+  readonly delistingId = signal<string | null>(null);
+  readonly delistBusy = signal(false);
+
   // ---------- 改期（D11）：候选时段来自自己的开放档期 ----------
   readonly rescheduleBookingId = signal<string | null>(null);
   readonly rescheduleCandidates = signal<AvailabilitySlot[]>([]);
@@ -141,6 +167,22 @@ export class TeacherDashboardComponent implements OnInit {
     this.refreshRequests();
     this.http.get<Settlement>(API.teacher.settlement).subscribe({ next: (d) => this.settlement.set(d) });
     this.refreshSlots();
+    this.loadSubjects();
+  }
+
+  /** G6：加载我的开课条目（服务端只返回在售条目）。 */
+  loadSubjects(): void {
+    this.http.get<SubjectOffering[]>(API.teacher.subjects).subscribe({
+      next: (data) => {
+        this.subjects.set(data ?? []);
+        this.subjectsLoaded.set(true);
+        this.subjectsError.set(false);
+      },
+      error: () => {
+        this.subjectsLoaded.set(true);
+        this.subjectsError.set(true);
+      },
+    });
   }
 
   refreshRequests(): void {
@@ -155,6 +197,143 @@ export class TeacherDashboardComponent implements OnInit {
     this.http
       .get<AvailabilitySlot[]>(`${API.teacher.availabilityCalendar}?from=${from.toISOString()}&to=${to.toISOString()}`)
       .subscribe({ next: (data) => this.slots.set(data) });
+  }
+
+  // ---------- 课程与定价管理（G6）方法 ----------
+
+  onNewSubjectField(field: 'name' | 'gradeBand' | 'price', value: string): void {
+    if (field === 'name') {
+      this.newSubjectName.set(value);
+    } else if (field === 'gradeBand') {
+      this.newSubjectGradeBand.set(value);
+    } else {
+      this.newSubjectPriceYuan.set(value);
+    }
+  }
+
+  /** 新增开课条目：服务端 D9 幂等（同科目+学段重复创建返回既有条目）。 */
+  addSubject(): void {
+    const subject = this.newSubjectName().trim();
+    const gradeBand = this.newSubjectGradeBand().trim();
+    const price = parseYuanToCents(this.newSubjectPriceYuan());
+    if (this.addSubjectBusy()) {
+      return;
+    }
+    if (!subject || !gradeBand) {
+      this.subjectsNotice.set({ type: 'error', text: '请填写科目与学段。' });
+      return;
+    }
+    if (price === null || price <= 0) {
+      this.subjectsNotice.set({ type: 'error', text: '课时定价需为正数（元/小时，最多两位小数）。' });
+      return;
+    }
+    const knownIds = new Set(this.subjects().map((s) => s.offeringId));
+    this.addSubjectBusy.set(true);
+    this.subjectsNotice.set(null);
+    this.http
+      .post<SubjectOffering>(API.teacher.subjects, { subject, gradeBand, pricePerHourCents: price })
+      .subscribe({
+        next: (o) => {
+          this.addSubjectBusy.set(false);
+          // 重复添加时服务端返回既有条目（D9），如实提示而非谎称新建
+          const existed = knownIds.has(o.offeringId);
+          this.subjectsNotice.set({
+            type: existed ? 'info' : 'success',
+            text: existed
+              ? `该科目与学段已有在售条目（当前 ¥${this.yuan(o.pricePerHourCents)}/小时），未重复创建；如需改价请用「调价」。`
+              : `已新增「${o.subject} · ${o.gradeBand}」，学生在检索中即可看到。`,
+          });
+          if (!existed) {
+            this.subjects.update((list) => [...list, o]);
+          }
+          this.newSubjectName.set('');
+          this.newSubjectGradeBand.set('');
+          this.newSubjectPriceYuan.set('');
+        },
+        error: (err) => {
+          this.addSubjectBusy.set(false);
+          this.subjectsNotice.set({ type: 'error', text: err?.error?.detail ?? '新增未成功，请稍后重试。' });
+        },
+      });
+  }
+
+  startReprice(offering: SubjectOffering): void {
+    this.repricingId.set(offering.offeringId);
+    this.repriceInputYuan.set(this.yuan(offering.pricePerHourCents));
+    this.subjectsNotice.set(null);
+  }
+
+  cancelReprice(): void {
+    this.repricingId.set(null);
+    this.repriceInputYuan.set('');
+  }
+
+  onRepriceInput(value: string): void {
+    this.repriceInputYuan.set(value);
+  }
+
+  /** 调价：原价仅供确认，新价以服务端校验与返回为准；已生成订单金额不受影响。 */
+  confirmReprice(offering: SubjectOffering): void {
+    if (this.repriceBusy()) {
+      return;
+    }
+    const cents = parseYuanToCents(this.repriceInputYuan());
+    if (cents === null || cents <= 0) {
+      this.subjectsNotice.set({ type: 'error', text: '新价格需为正数（元/小时，最多两位小数）。' });
+      return;
+    }
+    this.repriceBusy.set(true);
+    this.http
+      .put<SubjectOffering>(API.teacher.pricing(offering.offeringId), { pricePerHourCents: cents })
+      .subscribe({
+        next: (updated) => {
+          this.repriceBusy.set(false);
+          this.repricingId.set(null);
+          this.repriceInputYuan.set('');
+          // 直接采用服务端返回价刷新列表，不在前端臆造
+          this.subjects.update((list) => list.map((s) => (s.offeringId === updated.offeringId ? updated : s)));
+          this.subjectsNotice.set({
+            type: 'success',
+            text: `「${updated.subject} · ${updated.gradeBand}」已调至 ¥${this.yuan(updated.pricePerHourCents)}/小时。仅影响之后的新订单，已生成订单金额不变。`,
+          });
+        },
+        error: (err) => {
+          this.repriceBusy.set(false);
+          this.subjectsNotice.set({ type: 'error', text: err?.error?.detail ?? '调价未成功，请稍后重试。' });
+        },
+      });
+  }
+
+  askDelist(offering: SubjectOffering): void {
+    this.delistingId.set(offering.offeringId);
+    this.subjectsNotice.set(null);
+  }
+
+  cancelDelist(): void {
+    this.delistingId.set(null);
+  }
+
+  /** 下架（停止销售）：二次确认后调用 DELETE；服务端为标记语义，不删除记录，无重新上架入口。 */
+  confirmDelist(offering: SubjectOffering): void {
+    if (this.delistBusy()) {
+      return;
+    }
+    this.delistBusy.set(true);
+    this.http.delete(API.teacher.subjectRemove(offering.offeringId)).subscribe({
+      next: () => {
+        this.delistBusy.set(false);
+        this.delistingId.set(null);
+        this.loadSubjects(); // 以服务端列表为准：在售条目中不再出现
+        this.subjectsNotice.set({
+          type: 'success',
+          text: `「${offering.subject} · ${offering.gradeBand}」已下架（停止销售）：学生无法再检索到或预约该条目；已生成订单不受影响。`,
+        });
+      },
+      error: (err) => {
+        this.delistBusy.set(false);
+        this.subjectsNotice.set({ type: 'error', text: err?.error?.detail ?? '下架未成功，请稍后重试。' });
+      },
+    });
   }
 
   // ---------- 资质材料上传（G5）----------
@@ -407,4 +586,13 @@ function formatBytes(size: number): string {
     return `${Math.round(size / 1024)} KB`;
   }
   return `${size} B`;
+}
+
+/** 元字符串 → 分（整数）；非法/负数/超两位小数返回 null。金额换算仅用于提交表单，订单金额一律由服务端决定。 */
+function parseYuanToCents(input: string): number | null {
+  const trimmed = input.trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) {
+    return null;
+  }
+  return Math.round(parseFloat(trimmed) * 100);
 }

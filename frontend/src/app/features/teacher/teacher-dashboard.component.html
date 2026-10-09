@@ -182,8 +182,105 @@
     }
   </section>
 
+  <!-- 课程与定价管理（G6）：列表 / 新增 / 调价 / 下架（停止销售） -->
+  <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="subjects-title">
+    <h2 id="subjects-title" class="nur-serif">课程与定价</h2>
+    @if (!subjectsLoaded()) {
+      <p class="quiet-note" role="status">正在读取开课条目…</p>
+    } @else if (subjectsError()) {
+      <p class="quiet-note">开课条目读取失败，请刷新页面重试。</p>
+    } @else if (subjects().length === 0) {
+      <p class="quiet-note">还没有开课条目。添加你的第一个科目与定价，学生才能在「找老师」中检索到你。</p>
+    } @else {
+      <ul class="slot-list subject-list">
+        @for (o of subjects(); track o.offeringId) {
+          <li>
+            <span class="subject-name">{{ o.subject }} · {{ o.gradeBand }}</span>
+            <span class="subject-price">¥{{ yuan(o.pricePerHourCents) }}/小时</span>
+            <span class="status-pill" [attr.data-status]="o.active ? 'OPEN' : 'CLOSED'">{{ o.active ? '在售' : '已下架' }}</span>
+            @if (o.active) {
+              <button type="button" class="btn-ghost-sm" (click)="startReprice(o)" [attr.aria-expanded]="repricingId() === o.offeringId">调价</button>
+              <button type="button" class="btn-ghost-sm" (click)="askDelist(o)" [attr.aria-expanded]="delistingId() === o.offeringId">下架</button>
+            }
+          </li>
+          @if (repricingId() === o.offeringId) {
+            <li class="subject-panel">
+              <p class="reschedule-hint">
+                当前价格：¥{{ yuan(o.pricePerHourCents) }}/小时。调整后仅影响之后的新订单，已生成订单金额不变。
+              </p>
+              <div class="meeting-url-row">
+                <input
+                  type="text"
+                  inputmode="decimal"
+                  class="meeting-url-input subject-price-input"
+                  aria-label="新价格（元/小时）"
+                  placeholder="新价格（元/小时，如 250 或 199.5）"
+                  [value]="repriceInputYuan()"
+                  (input)="onRepriceInput($any($event.target).value)"
+                />
+                <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="repriceBusy()" (click)="confirmReprice(o)">
+                  {{ repriceBusy() ? '正在保存…' : '确认调价' }}
+                </button>
+                <button type="button" class="btn-ghost-sm" [disabled]="repriceBusy()" (click)="cancelReprice()">取消</button>
+              </div>
+            </li>
+          }
+          @if (delistingId() === o.offeringId) {
+            <li class="subject-panel">
+              <p class="reschedule-hint">
+                确认下架「{{ o.subject }} · {{ o.gradeBand }}」？下架即停止销售：学生将无法再检索到或预约该条目；已生成订单不受影响。下架不是删除记录；平台当前不提供自助重新上架，如需恢复请联系运营。
+              </p>
+              <div class="attendance-row">
+                <button type="button" class="btn-primary-sm" [disabled]="delistBusy()" (click)="confirmDelist(o)">
+                  {{ delistBusy() ? '正在下架…' : '确认下架' }}
+                </button>
+                <button type="button" class="btn-ghost-sm" [disabled]="delistBusy()" (click)="cancelDelist()">取消</button>
+              </div>
+            </li>
+          }
+        }
+      </ul>
+    }
+    <form class="subject-add" (submit)="$event.preventDefault(); addSubject()" aria-label="新增开课条目">
+      <p class="reschedule-hint">新增开课条目（科目 + 学段 + 定价）。同一科目与学段重复添加不会重复创建。</p>
+      <div class="subject-add-row">
+        <input
+          type="text"
+          class="meeting-url-input subject-field"
+          aria-label="科目"
+          placeholder="科目，如：数学"
+          [value]="newSubjectName()"
+          (input)="onNewSubjectField('name', $any($event.target).value)"
+        />
+        <input
+          type="text"
+          class="meeting-url-input subject-field"
+          aria-label="学段"
+          placeholder="学段，如：初三"
+          [value]="newSubjectGradeBand()"
+          (input)="onNewSubjectField('gradeBand', $any($event.target).value)"
+        />
+        <input
+          type="text"
+          inputmode="decimal"
+          class="meeting-url-input subject-field subject-field--price"
+          aria-label="定价（元/小时）"
+          placeholder="定价（元/小时）"
+          [value]="newSubjectPriceYuan()"
+          (input)="onNewSubjectField('price', $any($event.target).value)"
+        />
+        <button type="submit" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="addSubjectBusy()">
+          {{ addSubjectBusy() ? '正在添加…' : '新增条目' }}
+        </button>
+      </div>
+    </form>
+    @if (subjectsNotice(); as msg) {
+      <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+    }
+  </section>
+
   <!-- 档期排定 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="schedule-title">
+  <section class="nur-card nur-enter" style="--stagger-index: 4" aria-labelledby="schedule-title">
     <h2 id="schedule-title" class="nur-serif">档期排定</h2>
     <p class="quiet-note">发布可用时段后，学生即可预约。时段冲突将被自动拦截。</p>
     <div class="slot-actions">
@@ -207,7 +304,7 @@
   </section>
 
   <!-- 预约申请审批面板 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 4" aria-labelledby="booking-title">
+  <section class="nur-card nur-enter" style="--stagger-index: 5" aria-labelledby="booking-title">
     <h2 id="booking-title" class="nur-serif">预约申请审批</h2>
     @if (bookingRequests().length === 0) {
       <p class="quiet-note">暂无待处理的预约申请。</p>
@@ -232,7 +329,7 @@
   </section>
 
   <!-- 课酬结算 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 5" aria-labelledby="settle-title">
+  <section class="nur-card nur-enter" style="--stagger-index: 6" aria-labelledby="settle-title">
     <h2 id="settle-title" class="nur-serif">课酬结算流水</h2>
     @if (settlement(); as s) {
       <div class="settle-summary">
@@ -259,7 +356,7 @@
   </section>
 
   <!-- 需求池：学生发布的找老师需求（双入口之一） -->
-  <section class="nur-card nur-enter" style="--stagger-index: 6" aria-labelledby="demand-title">
+  <section class="nur-card nur-enter" style="--stagger-index: 7" aria-labelledby="demand-title">
     <h2 id="demand-title" class="nur-serif">学生的需求</h2>
     <p class="quiet-note">学生主动发布的求助描述——如果某条正好是你的专长，欢迎在站内信中主动联系。</p>
     @if (openDemands().length === 0) {
