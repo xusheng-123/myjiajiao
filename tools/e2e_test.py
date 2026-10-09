@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """润物细无声 · Nurture — 端到端 API 冒烟与漏洞挖掘脚本（stdlib only）"""
-import json, sys, urllib.request, urllib.error, uuid, datetime, io, mimetypes
+import json, sys, urllib.request, urllib.error, uuid, datetime, io, mimetypes, base64, random
 
 BASE = "http://localhost:8080/api/v1"
 FRONT = "http://localhost:4200"
@@ -70,6 +70,27 @@ def register_or_login(role_path, role, phone, password, payload=None):
         return st, resp, True
     st2, _, resp2 = http("POST", "/identity/auth/login:password", {"role": role, "account": phone, "password": password}, idem=str(uuid.uuid4()))
     return st2, resp2, False
+
+def jwt_sub(token):
+    """从 JWT 中解码账户 ID（登录响应体不含 accountId）。"""
+    payload = token.split(".")[1]
+    payload += "=" * (-len(payload) % 4)
+    return json.loads(base64.urlsafe_b64decode(payload)).get("sub")
+
+def find_verification_case(admin_token, teacher_account_id, status):
+    """翻页查找某教师的指定状态审核案例（案例列表多轮累计可能超过单页）。"""
+    page = 0
+    while page < 20:
+        st, _, resp = http("GET", f"/admin/verification-cases?page={page}&size=50", token=admin_token)
+        if st != 200:
+            return None
+        for c in resp.get("content", []):
+            if c.get("teacherId") == teacher_account_id and c.get("status") == status:
+                return c
+        if page + 1 >= max(1, resp.get("totalPages", 1)):
+            return None
+        page += 1
+    return None
 
 def main():
     # 宽域随机基准（未来 30 天内、8~20 点、5 分钟粒度），避免与历史残留档期重合
@@ -152,6 +173,52 @@ def main():
         check("运营批准认证", st == 200, f"{st}")
     st, _, vs = http("GET", "/verification/me/status", token=t_teacher)
     check("状态机流转=APPROVED", st == 200 and vs.get("status") == "APPROVED", f"{st} {vs}")
+
+    print("== 3.5 G5 教师自助入驻闭环（独立教师：未提交→提交→驳回→重新提交→通过） ==")
+    g5_phone = "13" + str(random.randint(0, 999999999)).zfill(9)
+    st, g5_body, _ = register_or_login("teacher", "TEACHER", g5_phone, "Teacher#2026",
+        {"displayName": "G5入驻教师", "phone": g5_phone, "password": "Teacher#2026",
+         "school": "示范大学", "highestDegree": "本科"})
+    check("G5 教师注册", st == 200 and g5_body.get("accessToken"), f"{st}")
+    t_g5 = g5_body.get("accessToken", "")
+    g5_account = jwt_sub(t_g5)
+    st, _, vs = http("GET", "/verification/me/status", token=t_g5)
+    check("G5 新教师状态=NOT_SUBMITTED", st == 200 and vs.get("status") == "NOT_SUBMITTED", f"{st} {vs}")
+    body, ctype = multipart([("idDocument", "only-id.pdf", b"%PDF-1.4 only-id")])
+    st, _, miss = http("POST", "/verification/cases", (body, ctype), token=t_g5, idem=str(uuid.uuid4()), raw=True)
+    check("G5 缺学历证明被拒(4xx)", 400 <= st < 500, f"{st} {miss}")
+    body, ctype = multipart([
+        ("idDocument", "g5-id.pdf", b"%PDF-1.4 g5-id"),
+        ("degreeCert", "g5-degree.pdf", b"%PDF-1.4 g5-degree"),
+    ])
+    st, _, vc = http("POST", "/verification/cases", (body, ctype), token=t_g5, idem=str(uuid.uuid4()), raw=True)
+    check("G5 提交资质材料", st in (200, 201) and vc.get("status") == "SUBMITTED", f"{st} {vc}")
+    check("G5 服务端返回提交时间", bool(vc.get("submittedAt")), f"{vc.get('submittedAt')}")
+    g5_case = find_verification_case(t_admin, g5_account, "SUBMITTED")
+    check("G5 运营可见新案例", g5_case is not None)
+    if g5_case:
+        st, _, _ = http("POST", f"/admin/verification-cases/{g5_case['caseId']}:decide",
+            {"approve": False, "note": "材料模糊，请上传清晰扫描件"}, token=t_admin, idem=str(uuid.uuid4()))
+        check("G5 运营驳回", st == 200, f"{st}")
+    st, _, vs = http("GET", "/verification/me/status", token=t_g5)
+    check("G5 驳回状态=REJECTED", st == 200 and vs.get("status") == "REJECTED", f"{st} {vs}")
+    check("G5 教师可见真实审核意见", vs.get("decisionNote") == "材料模糊，请上传清晰扫描件", f"{vs.get('decisionNote')}")
+    check("G5 guidance 含未通过提示", "未通过" in (vs.get("guidance") or ""), f"{vs.get('guidance')}")
+    body, ctype = multipart([
+        ("idDocument", "g5-id2.pdf", b"%PDF-1.4 g5-id-v2"),
+        ("degreeCert", "g5-degree2.pdf", b"%PDF-1.4 g5-degree-v2"),
+    ])
+    st, _, vc2 = http("POST", "/verification/cases", (body, ctype), token=t_g5, idem=str(uuid.uuid4()), raw=True)
+    check("G5 驳回后可重新提交", st in (200, 201) and vc2.get("status") == "SUBMITTED", f"{st} {vc2}")
+    g5_case2 = find_verification_case(t_admin, g5_account, "SUBMITTED")
+    check("G5 重新提交生成新案例", g5_case2 is not None and g5_case2.get("caseId") != (g5_case or {}).get("caseId"),
+        f"{g5_case2} vs {g5_case}")
+    if g5_case2:
+        st, _, _ = http("POST", f"/admin/verification-cases/{g5_case2['caseId']}:decide",
+            {"approve": True, "note": "复核通过"}, token=t_admin, idem=str(uuid.uuid4()))
+        check("G5 复核批准", st == 200, f"{st}")
+    st, _, vs = http("GET", "/verification/me/status", token=t_g5)
+    check("G5 最终状态=APPROVED", st == 200 and vs.get("status") == "APPROVED", f"{st} {vs}")
 
     print("== 4. 档期与并发排他 ==")
     st, _, offer = http("POST", "/teacher/me/subjects",
