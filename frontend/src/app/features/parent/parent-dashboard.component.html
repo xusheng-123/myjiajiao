@@ -126,8 +126,108 @@
     }
   </section>
 
+  <!-- 课程与订单（G7）：选孩子 → 可下单课程 → 下单/支付 -->
+  <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="orders-title">
+    <h2 id="orders-title" class="nur-serif">课程与订单</h2>
+
+    <div class="bind-row">
+      <select
+        aria-label="选择孩子"
+        [value]="selectedChild()"
+        (change)="selectedChild.set($any($event.target).value)"
+        [disabled]="activeChildren().length === 0"
+      >
+        <option value="">选择孩子…</option>
+        @for (child of activeChildren(); track child.studentId) {
+          <option [value]="child.studentId">学生 {{ child.studentId.slice(0, 8) }}</option>
+        }
+      </select>
+      <button type="button" class="btn-primary-sm" (click)="loadOrderable()" [disabled]="orderableLoading()">
+        {{ orderableLoading() ? '查询中…' : '查看可下单课程' }}
+      </button>
+    </div>
+
+    @if (activeChildren().length === 0) {
+      <p class="quiet-note">绑定生效后（学生确认），即可在这里为孩子查询并下单课程。</p>
+    }
+    @if (orderable().length > 0) {
+      <table class="txn-table">
+        <caption class="visually-hidden">可下单课程</caption>
+        <thead>
+          <tr>
+            <th scope="col">科目</th>
+            <th scope="col">上课时间</th>
+            <th scope="col">课程单价（元）</th>
+            <th scope="col">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (lesson of orderable(); track lesson.bookingId) {
+            <tr>
+              <td>{{ lesson.subject }}</td>
+              <td>{{ lesson.startAt ? (lesson.startAt | date: 'M月d日 HH:mm') : '时间待定' }}</td>
+              <td>{{ yuan(lesson.priceCents) }}</td>
+              <td>
+                <button type="button" class="btn-primary-sm" [disabled]="orderBusy()" (click)="createOrder(lesson.bookingId)">
+                  {{ orderBusy() ? '下单中…' : '下单' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else if (!orderableLoading() && selectedChild() && orderMsg()?.type !== 'error') {
+      <p class="quiet-note">该孩子当前没有待下单的课程（导师确认预约后会出现在这里）。</p>
+    }
+
+    <h3 class="section-sub">家庭订单（付款方视角）</h3>
+    @if (!ordersLoaded()) {
+      <p class="quiet-note" role="status">正在加载订单…</p>
+    } @else if (orders().length === 0) {
+      <p class="quiet-note">还没有订单。为孩子下单后会在这里展示。</p>
+    } @else {
+      <table class="txn-table">
+        <caption class="visually-hidden">家庭订单列表</caption>
+        <thead>
+          <tr>
+            <th scope="col">订单号</th>
+            <th scope="col">金额（元）</th>
+            <th scope="col">状态</th>
+            <th scope="col">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (order of orders(); track order.orderId) {
+            <tr>
+              <td>{{ order.orderNo }}</td>
+              <td>{{ yuan(order.amountCents) }}</td>
+              <td>
+                {{ order.status === 'PAID' ? '✓ 已支付' : order.status === 'PENDING_PAYMENT' ? '◷ 待支付' : order.status === 'CLOSED' ? '已关闭' : '已取消' }}
+              </td>
+              <td>
+                @if (order.status === 'PENDING_PAYMENT' && sandboxEnabled() === true) {
+                  <button type="button" class="btn-ghost-sm" [disabled]="isPaying(order.orderId)" (click)="payOrder(order)">
+                    {{ isPaying(order.orderId) ? '支付中…' : '沙箱演示支付' }}
+                  </button>
+                } @else if (order.status === 'PENDING_PAYMENT') {
+                  <span class="quiet-note">线下收款：转账后由运营确认（模式 B）</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (sandboxEnabled() === true) {
+        <p class="quiet-note">当前环境开放沙箱演示支付：模拟渠道完成支付联动（非真实收款）。</p>
+      }
+    }
+    @if (orderMsg(); as msg) {
+      <p class="form-status" role="status"><span aria-hidden="true">ℹ</span> {{ msg.text }}</p>
+    }
+  </section>
+
   <!-- 授课进度透明度追踪 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="progress-title">
+  <section class="nur-card nur-enter" style="--stagger-index: 4" aria-labelledby="progress-title">
     <h2 id="progress-title" class="nur-serif">授课进度透明追踪</h2>
     <p class="quiet-note">
       每节课后，导师的结构化学情反馈会同步至此；对课程有任何疑问，可通过站内信与导师直接沟通，

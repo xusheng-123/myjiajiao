@@ -2,6 +2,7 @@ package com.nurture.order.api;
 
 import com.nurture.booking.app.BookingApplicationService;
 import com.nurture.order.app.OrderApplicationService;
+import com.nurture.parent.app.ParentApplicationService;
 import com.nurture.shared.security.CallerContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -34,10 +35,13 @@ public class OrderController {
 
     private final OrderApplicationService orderService;
     private final BookingApplicationService bookingService;
+    private final ParentApplicationService parentService;
 
-    public OrderController(OrderApplicationService orderService, BookingApplicationService bookingService) {
+    public OrderController(OrderApplicationService orderService, BookingApplicationService bookingService,
+                           ParentApplicationService parentService) {
         this.orderService = orderService;
         this.bookingService = bookingService;
+        this.parentService = parentService;
     }
 
     public record CreateOrderRequest(@NotNull UUID bookingId) {
@@ -65,5 +69,19 @@ public class OrderController {
     @Operation(summary = "订单详情（含对账快照）", description = "仅订单付款方、课程参与双方或运营可查看")
     public OrderApplicationService.OrderView get(@PathVariable UUID orderId) {
         return orderService.detailsForCaller(orderId);
+    }
+
+    @GetMapping("/bookings:orderable")
+    @PreAuthorize("hasRole('PARENT') or hasRole('ADMIN')")
+    @Operation(summary = "孩子的可下单课程（ACTIVE 监护家长视角）",
+            description = "studentId 为学生档案 ID；仅返回导师已确认且尚未生成订单的课程，金额为服务端定价快照")
+    public java.util.List<OrderApplicationService.OrderableLessonView> orderableForChild(
+            @RequestParam UUID studentId) {
+        var studentAccountId = parentService.accountIdOfStudentProfile(studentId);
+        if (studentAccountId == null) {
+            throw new IllegalArgumentException("学生档案不存在");
+        }
+        var candidates = bookingService.confirmedForStudent(studentAccountId);
+        return orderService.orderableLessonsForCaller(studentAccountId, candidates);
     }
 }

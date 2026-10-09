@@ -112,6 +112,16 @@ export const API = {
     submit: `${API_BASE}/review/reviews`,
     given: `${API_BASE}/review/me/reviews-given`,
   },
+  order: {
+    create: `${API_BASE}/order/orders`,
+    mine: `${API_BASE}/order/me/orders`,
+    orderable: (studentId: string) => `${API_BASE}/order/bookings:orderable?studentId=${studentId}`,
+  },
+  payment: {
+    config: `${API_BASE}/payment/config`,
+    initiate: `${API_BASE}/payment/payments:initiate`,
+    sandboxNotify: `${API_BASE}/payment/sandbox/notify`,
+  },
   messaging: {
     conversations: `${API_BASE}/messaging/conversations`,
     messages: (conversationId: string) => `${API_BASE}/messaging/conversations/${conversationId}/messages`,

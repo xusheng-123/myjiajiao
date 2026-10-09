@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -137,6 +138,39 @@ public class OrderApplicationService {
     @Transactional(readOnly = true)
     public Page<OrderView> ordersOfPayerView(UUID payerParentId, Pageable pageable) {
         return ordersOfPayer(payerParentId, pageable).map(OrderView::from);
+    }
+
+    /** 家长「可下单课程」视图：已确认预约 − 已有订单，金额为服务端定价快照。 */
+    public record OrderableLessonView(UUID bookingId, String subject, String startAt, long priceCents) {
+    }
+
+    /**
+     * 孩子的可下单课程（家长/运营视角）。预约候选由 Controller 经 booking.app 获取后传入
+     * （沿用本服务不反向依赖 booking 模块的收口），本方法负责资格校验、去重与定价快照。
+     */
+    @Transactional(readOnly = true)
+    public List<OrderableLessonView> orderableLessonsForCaller(UUID studentAccountId,
+                                                               List<BookingApplicationService.UpcomingBookingView> candidates) {
+        var caller = CallerContext.require();
+        if (caller.role() != CallerRole.PARENT && caller.role() != CallerRole.ADMIN) {
+            throw new AccessDeniedException("仅家长或运营可查看孩子的可下单课程");
+        }
+        if (caller.role() == CallerRole.PARENT
+                && !parentService.isActiveGuardian(caller.accountId(), studentAccountId)) {
+            throw new AccessDeniedException("仅已确认监护关系的家长可查看孩子的可下单课程");
+        }
+        return candidates.stream()
+                .filter(b -> "CONFIRMED".equals(b.status()))
+                .filter(b -> orderRepository.findByBookingId(b.bookingId()).isEmpty())
+                .map(b -> {
+                    long priceCents = teacherService.offeringsPriceOf(b.teacherId()).stream()
+                            .filter(o -> o.subject().equals(b.subject()))
+                            .findFirst()
+                            .map(TeacherApplicationService.OfferingPriceView::pricePerHourCents)
+                            .orElse(DEFAULT_LESSON_PRICE_CENTS);
+                    return new OrderableLessonView(b.bookingId(), b.subject(),
+                            b.startAt() == null ? null : b.startAt().toString(), priceCents);
+                }).toList();
     }
 
     public Page<Order> ordersOfPayer(UUID payerParentId,

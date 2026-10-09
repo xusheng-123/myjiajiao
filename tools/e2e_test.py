@@ -315,6 +315,103 @@ def main():
     st, _, notices = http("GET", "/messaging/notifications?page=0&size=10", token=t_teacher)
     check("导师收到课酬通知", st == 200 and any(n["type"] == "SETTLEMENT" for n in notices.get("items", [])), f"{st}")
 
+    print("== 8.4 可下单课程与学生/家长下单支付（G7） ==")
+    st, g7s_body, _ = register_or_login("student", "STUDENT", "13900000041", "Student#2026",
+        {"displayName": "G7下单学生", "phone": "13900000041", "password": "Student#2026"})
+    check("G7 学生账号注册或登录", st == 200 and g7s_body.get("accessToken"), f"{st}")
+    st, g7p_body, _ = register_or_login("parent", "PARENT", "13900000042", "Parent#2026",
+        {"displayName": "G7下单家长", "phone": "13900000042", "password": "Parent#2026"})
+    check("G7 家长账号注册或登录", st == 200 and g7p_body.get("accessToken"), f"{st}")
+    st, g7o_body, _ = register_or_login("parent", "PARENT", "13900000043", "Parent#2026",
+        {"displayName": "G7无关家长", "phone": "13900000043", "password": "Parent#2026"})
+    check("G7 无关家长账号注册或登录", st == 200 and g7o_body.get("accessToken"), f"{st}")
+    t_g7s, t_g7p, t_g7o = (g7s_body.get("accessToken", ""), g7p_body.get("accessToken", ""),
+                            g7o_body.get("accessToken", ""))
+    # 支付能力配置：前端仅在此开关明确为 true 时展示沙箱演示支付（生产模式 B 引导）
+    st, _, pcfg = http("GET", "/payment/config", token=t_g7p)
+    check("G7 支付能力配置可见(sandboxEnabled)", st == 200 and isinstance(pcfg.get("sandboxEnabled"), bool), f"{st} {pcfg}")
+    st, _, pcfg_anon = http("GET", "/payment/config")
+    check("G7 匿名读取支付配置被拒", st in (401, 403), f"{st}")
+    # 绑定 → 确认（重跑容忍：409 视为已绑定，直接核验 ACTIVE）
+    st, _, g7prof = http("GET", "/student/me/profile", token=t_g7s)
+    g7_no = g7prof.get("studentNo") if st == 200 else None
+    g7_profile_id = None
+    if g7_no:
+        st, _, g7bind = http("POST", "/parent/me/children", {"studentNo": g7_no, "relation": "父亲"},
+            token=t_g7p, idem=str(uuid.uuid4()))
+        check("G7 家长发起绑定", st in (200, 201, 409), f"{st} {g7bind}")
+        if st in (200, 201):
+            st, _, _ = http("POST", "/parent/me/children:confirm", {}, token=t_g7s, idem=str(uuid.uuid4()))
+            check("G7 学生确认绑定", st == 200, f"{st}")
+        st, _, g7kids = http("GET", "/parent/me/children", token=t_g7p)
+        g7_profile_id = next((k.get("studentId") for k in g7kids or [] if k.get("status") == "ACTIVE"), None)
+        check("G7 家长侧存在 ACTIVE 绑定", bool(g7_profile_id), f"{str(g7kids)[:160]}")
+    else:
+        check("G7 学生档案获取", False, f"{st} {g7prof}")
+
+    # 可下单课程：教师发档期 → G7 学生预约（试听自动确认）→ 家长视图可见且含服务端定价
+    slot_g7, _at_g7 = publish_slot_retry(t_teacher, None, 50, 51)
+    st, _, bk_g7 = http("POST", "/booking/bookings",
+        {"teacherId": found["teacherId"], "slotId": slot_g7["slotId"], "subject": "数学", "bookingType": "TRIAL"},
+        token=t_g7s, idem=str(uuid.uuid4()))
+    check("G7 学生预约试听自动确认", st == 201 and bk_g7.get("status") == "CONFIRMED", f"{st} {bk_g7}")
+    st, _, orderable1 = http("GET", "/order/bookings:orderable?studentId=%s" % g7_profile_id, token=t_g7p)
+    check("G7 家长可下单视图含已确认课程", st == 200 and isinstance(orderable1, list)
+        and any(b.get("bookingId") == bk_g7["bookingId"] for b in orderable1), f"{st} {str(orderable1)[:200]}")
+    check("G7 可下单视图含服务端定价(>0)", st == 200 and all(b.get("priceCents", 0) > 0 for b in orderable1 or []), f"{st}")
+    st, _, deny_o = http("GET", "/order/bookings:orderable?studentId=%s" % g7_profile_id, token=t_g7o)
+    check("G7 无关家长查孩子可下单课程被拒(403)", st == 403, f"{st} {deny_o}")
+    st, _, deny_s = http("GET", "/order/bookings:orderable?studentId=%s" % g7_profile_id, token=t_g7s)
+    check("G7 学生调用家长视图被拒(403)", st == 403, f"{st} {deny_s}")
+
+    # 学生自建订单：付款方=学生本人；无余额沙箱支付被拒且订单回滚为待支付
+    st, _, sord = http("POST", "/order/orders", {"bookingId": bk_g7["bookingId"]}, token=t_g7s, idem=str(uuid.uuid4()))
+    check("G7 学生本人下单成功(待支付)", st == 201 and sord.get("status") == "PENDING_PAYMENT", f"{st} {sord}")
+    st, _, sorders = http("GET", "/order/me/orders?page=0&size=20", token=t_g7s)
+    check("G7 学生订单列表含自建订单", st == 200 and any(o.get("bookingId") == bk_g7["bookingId"] for o in sorders.get("content", [])), f"{st}")
+    st, _, g7p_orders0 = http("GET", "/order/me/orders?page=0&size=20", token=t_g7p)
+    check("G7 家长订单列表不含学生自建订单(payer 隔离)", st == 200 and not any(o.get("bookingId") == bk_g7["bookingId"] for o in g7p_orders0.get("content", [])), f"{st}")
+    st, _, dup7 = http("POST", "/order/orders", {"bookingId": bk_g7["bookingId"]}, token=t_g7s, idem=str(uuid.uuid4()))
+    check("G7 一课一单：重复下单被拒(409)", st == 409, f"{st} {dup7}")
+    st, _, orderable2 = http("GET", "/order/bookings:orderable?studentId=%s" % g7_profile_id, token=t_g7p)
+    check("G7 已下单课程从可下单视图消失", st == 200 and not any(b.get("bookingId") == bk_g7["bookingId"] for b in orderable2 or []), f"{st} {str(orderable2)[:160]}")
+    st, _, spay = http("POST", "/payment/payments:initiate", {"orderId": sord["orderId"], "channel": "MOCK"},
+        token=t_g7s, idem=str(uuid.uuid4()))
+    check("G7 学生发起支付(payer 本人)", st == 201, f"{st} {spay}")
+    st, _, snotify = http("POST", "/payment/sandbox/notify",
+        {"orderId": sord["orderId"], "channel": "MOCK", "success": True})
+    check("G7 无余额支付被拒", st >= 400, f"{st} {snotify}")
+    st, _, safter = http("GET", "/order/orders/%s" % sord["orderId"], token=t_g7s)
+    check("G7 支付失败后订单仍待支付(回滚)", st == 200 and safter.get("status") == "PENDING_PAYMENT", f"{st} {safter}")
+
+    # 家长为孩子下单并沙箱支付：PAID + 钱包扣减 + 已付订单不可重复发起支付
+    slot_g7b, _at_g7b = publish_slot_retry(t_teacher, None, 52, 53)
+    st, _, bk_g7b = http("POST", "/booking/bookings",
+        {"teacherId": found["teacherId"], "slotId": slot_g7b["slotId"], "subject": "物理", "bookingType": "TRIAL"},
+        token=t_g7s, idem=str(uuid.uuid4()))
+    check("G7 第二节课预约确认", st == 201 and bk_g7b.get("status") == "CONFIRMED", f"{st} {bk_g7b}")
+    st, _, topup7 = http("POST", "/parent/me/wallet/topup", {"amountCents": 100000, "memo": "G7家庭充值"},
+        token=t_g7p, idem=str(uuid.uuid4()))
+    check("G7 家长钱包充值", st in (200, 201), f"{st} {topup7}")
+    st, _, pord = http("POST", "/order/orders", {"bookingId": bk_g7b["bookingId"]}, token=t_g7p, idem=str(uuid.uuid4()))
+    check("G7 家长为孩子下单", st == 201 and pord.get("amountCents", 0) > 0, f"{st} {pord}")
+    st, _, porders = http("GET", "/order/me/orders?page=0&size=20", token=t_g7p)
+    check("G7 家长订单列表含新订单(待支付)", st == 200 and any(o.get("orderId") == pord["orderId"] and o.get("status") == "PENDING_PAYMENT" for o in porders.get("content", [])), f"{st}")
+    st, _, pinit = http("POST", "/payment/payments:initiate", {"orderId": pord["orderId"], "channel": "MOCK"},
+        token=t_g7p, idem=str(uuid.uuid4()))
+    check("G7 家长发起支付", st == 201, f"{st} {pinit}")
+    st, _, pnotify = http("POST", "/payment/sandbox/notify",
+        {"orderId": pord["orderId"], "channel": "MOCK", "success": True})
+    check("G7 沙箱支付成功", st == 200 and pnotify.get("result") == "SUCCESS", f"{st} {pnotify}")
+    st, _, pafter = http("GET", "/order/orders/%s" % pord["orderId"], token=t_g7p)
+    check("G7 订单状态=PAID", st == 200 and pafter.get("status") == "PAID", f"{st} {pafter}")
+    st, _, g7wallet = http("GET", "/parent/me/wallet", token=t_g7p)
+    expect_bal = 100000 - pord.get("amountCents", 0)
+    check("G7 钱包扣减=订单金额", st == 200 and g7wallet.get("balanceCents") == expect_bal, f"{g7wallet.get('balanceCents')} vs {expect_bal}")
+    st, _, repay = http("POST", "/payment/payments:initiate", {"orderId": pord["orderId"], "channel": "MOCK"},
+        token=t_g7p, idem=str(uuid.uuid4()))
+    check("G7 已支付订单不可再发起支付(4xx)", 400 <= st < 500, f"{st} {repay}")
+
     print("== 8.5 改期（D11：参与双方可改期，冲突原子回滚） ==")
     reschedule_ok = False
     for _try in range(10):

@@ -100,6 +100,20 @@
                   <span class="schedule-time">
                     {{ lesson.startAt ? (lesson.startAt | date: 'M月d日 HH:mm') : '时间待定' }}
                   </span>
+                  @if (lesson.status === 'CONFIRMED') {
+                    @if (orderOf(lesson.bookingId); as ord) {
+                      <span class="status-pill">{{ ord.status === 'PAID' ? '✓ 已支付' : '◷ 待支付' }}</span>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn-ghost-sm reschedule-entry"
+                        [disabled]="orderBusy()"
+                        (click)="orderFor(lesson.bookingId)"
+                      >
+                        {{ orderBusy() ? '下单中…' : '下单' }}
+                      </button>
+                    }
+                  }
                   @if (lesson.status === 'CONFIRMED' || lesson.status === 'REQUESTED') {
                     <button
                       type="button"
@@ -202,6 +216,9 @@
                 }
               }
             </ul>
+          }
+          @if (orderMsg(); as om) {
+            <p class="reschedule-msg reschedule-msg--{{ om.type }}" role="status">{{ om.text }}</p>
           }
         </div>
         <div class="nur-card secondary-card">

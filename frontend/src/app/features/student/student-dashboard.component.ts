@@ -31,6 +31,15 @@ interface PendingBinding {
   createdAt: string | null;
 }
 
+interface MyOrder {
+  orderId: string;
+  orderNo: string;
+  bookingId: string;
+  status: string;
+  amountCents: number;
+  paidAt: string | null;
+}
+
 /**
  * 学生控制台 — ADHD 友好硬性规范：
  * 每个视口只突出一个核心主任务（迫近课程 + 进入课堂）；
@@ -94,6 +103,11 @@ export class StudentDashboardComponent implements OnInit {
   readonly bindingBusy = signal(false);
   readonly bindingMsg = signal<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
 
+  // ---------- 课程下单（G7）：金额与状态一律以服务端为准 ----------
+  private readonly myOrders = signal<Map<string, MyOrder>>(new Map());
+  readonly orderBusy = signal(false);
+  readonly orderMsg = signal<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
+
   constructor() {
     this.load();
   }
@@ -115,6 +129,56 @@ export class StudentDashboardComponent implements OnInit {
       } });
     // 监护绑定申请（G3）
     this.loadPendingBindings();
+    // 我的订单（G7）：付款方视角（学生自建订单）
+    this.loadMyOrders();
+  }
+
+  loadMyOrders(): void {
+    this.http
+      .get<{ content: MyOrder[] }>(`${API.order.mine}?page=0&size=50`)
+      .subscribe({
+        next: (page) => {
+          const map = new Map<string, MyOrder>();
+          for (const o of page?.content ?? []) {
+            map.set(o.bookingId, o);
+          }
+          this.myOrders.set(map);
+        },
+        error: () => this.myOrders.set(new Map()),
+      });
+  }
+
+  orderOf(bookingId: string): MyOrder | undefined {
+    return this.myOrders().get(bookingId);
+  }
+
+  yuan(cents: number | undefined): string {
+    return ((cents ?? 0) / 100).toFixed(2);
+  }
+
+  /** 学生发起下单：成功后以服务端订单为准刷新状态，并引导家长完成支付。 */
+  orderFor(bookingId: string): void {
+    if (this.orderBusy()) {
+      return;
+    }
+    this.orderBusy.set(true);
+    this.orderMsg.set(null);
+    this.http.post<MyOrder>(API.order.create, { bookingId }).subscribe({
+      next: (order) => {
+        this.orderBusy.set(false);
+        this.loadMyOrders();
+        this.orderMsg.set({
+          type: 'success',
+          text: `订单已创建：¥${this.yuan(order.amountCents)}（待支付）。当前版本由家庭统一支付，请家长在家长端为该课程完成支付。`,
+        });
+      },
+      error: (err) => {
+        this.orderBusy.set(false);
+        const detail = err?.error?.detail ?? err?.error?.message ?? '下单未成功，请稍后重试。';
+        this.orderMsg.set({ type: 'error', text: detail });
+        this.loadMyOrders();
+      },
+    });
   }
 
   loadPendingBindings(): void {

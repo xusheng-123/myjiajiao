@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { API } from '../../core/api/endpoints';
@@ -25,13 +26,29 @@ interface WalletOverview {
   }[];
 }
 
+interface OrderableLesson {
+  bookingId: string;
+  subject: string;
+  startAt: string | null;
+  priceCents: number;
+}
+
+interface FamilyOrder {
+  orderId: string;
+  orderNo: string;
+  bookingId: string;
+  status: string;
+  amountCents: number;
+  paidAt: string | null;
+}
+
 /**
  * 家长控制台 — 子女学情看板、家庭统一支付钱包与消费对账、进度透明追踪。
  */
 @Component({
   selector: 'nur-parent-dashboard',
   standalone: true,
-  imports: [NoticeCenterComponent],
+  imports: [NoticeCenterComponent, DatePipe],
   templateUrl: './parent-dashboard.component.html',
   styleUrl: './parent-dashboard.component.css',
 })
@@ -51,8 +68,26 @@ export class ParentDashboardComponent implements OnInit {
   readonly studentNoInput = signal('');
   readonly relationInput = signal('');
 
+  // ---------- 课程与订单（G7）：孩子 → 可下单课程 → 下单/支付，金额一律以服务端为准 ----------
+  readonly activeChildren = computed(() => this.children().filter((c) => c.status === 'ACTIVE'));
+  readonly selectedChild = signal<string>('');
+  readonly orderable = signal<OrderableLesson[]>([]);
+  readonly orderableLoading = signal(false);
+  readonly orders = signal<FamilyOrder[]>([]);
+  readonly ordersLoaded = signal(false);
+  readonly orderBusy = signal(false);
+  readonly orderMsg = signal<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
+  /** 沙箱开关以服务端 /payment/config 为准：仅环境明确允许时展示沙箱演示支付。 */
+  readonly sandboxEnabled = signal<boolean | null>(null);
+  private readonly payingOrderId = signal<string | null>(null);
+
   ngOnInit(): void {
     this.load();
+    this.http.get<{ sandboxEnabled: boolean }>(API.payment.config).subscribe({
+      next: (cfg) => this.sandboxEnabled.set(cfg?.sandboxEnabled === true),
+      error: () => this.sandboxEnabled.set(false),
+    });
+    this.loadOrders();
   }
 
   load(): void {
@@ -98,6 +133,124 @@ export class ParentDashboardComponent implements OnInit {
         this.notice.set('充值已到账。');
       },
     });
+  }
+
+  // ── 课程与订单（G7） ──
+
+  loadOrders(): void {
+    this.http
+      .get<{ content: FamilyOrder[] }>(`${API.order.mine}?page=0&size=20`)
+      .subscribe({
+        next: (page) => {
+          this.orders.set(page?.content ?? []);
+          this.ordersLoaded.set(true);
+        },
+        error: () => this.ordersLoaded.set(true),
+      });
+  }
+
+  /** 查看所选孩子的可下单课程（服务端校验监护关系与定价）。 */
+  loadOrderable(): void {
+    const studentId = this.selectedChild();
+    if (!studentId) {
+      this.orderMsg.set({ type: 'info', text: '请先选择孩子。' });
+      return;
+    }
+    this.orderableLoading.set(true);
+    this.orderMsg.set(null);
+    this.http.get<OrderableLesson[]>(API.order.orderable(studentId)).subscribe({
+      next: (list) => {
+        this.orderable.set(list ?? []);
+        this.orderableLoading.set(false);
+      },
+      error: (err) => {
+        this.orderableLoading.set(false);
+        this.orderable.set([]);
+        const detail = err?.error?.detail ?? err?.error?.message ?? '可下单课程加载失败，请稍后重试。';
+        this.orderMsg.set({ type: 'error', text: detail });
+      },
+    });
+  }
+
+  /** 为孩子下单：金额以服务端返回的定价快照为准。 */
+  createOrder(bookingId: string): void {
+    if (this.orderBusy()) {
+      return;
+    }
+    this.orderBusy.set(true);
+    this.orderMsg.set(null);
+    this.http.post<FamilyOrder>(API.order.create, { bookingId }).subscribe({
+      next: (order) => {
+        this.orderBusy.set(false);
+        this.orderMsg.set({
+          type: 'success',
+          text: `订单 ${order.orderNo} 已创建：¥${this.yuan(order.amountCents)}（待支付）。`,
+        });
+        this.loadOrderable();
+        this.loadOrders();
+      },
+      error: (err) => {
+        this.orderBusy.set(false);
+        const detail = err?.error?.detail ?? err?.error?.message ?? '下单未成功，请稍后重试。';
+        this.orderMsg.set({ type: 'error', text: detail });
+        this.loadOrderable();
+      },
+    });
+  }
+
+  /** 支付待支付订单：仅沙箱环境开放演示支付；生产引导线下收款（模式 B）。 */
+  payOrder(order: FamilyOrder): void {
+    if (this.payingOrderId() || this.sandboxEnabled() !== true) {
+      return;
+    }
+    this.payingOrderId.set(order.orderId);
+    this.orderMsg.set(null);
+    this.http
+      .post<{ attemptId: string }>(API.payment.initiate, { orderId: order.orderId, channel: 'MOCK' })
+      .subscribe({
+        next: () => {
+          // 沙箱网关模拟渠道回调：与真实回调同一条验签/防重入/联动链路
+          this.http
+            .post<{ result: string }>(API.payment.sandboxNotify, {
+              orderId: order.orderId,
+              channel: 'MOCK',
+              success: true,
+            })
+            .subscribe({
+              next: (res) => {
+                this.payingOrderId.set(null);
+                if (res?.result === 'SUCCESS') {
+                  this.orderMsg.set({
+                    type: 'success',
+                    text: `沙箱演示支付完成：订单 ${order.orderNo} 已标记为已付（模拟渠道，非真实收款）。`,
+                  });
+                } else {
+                  this.orderMsg.set({ type: 'info', text: '支付回调已受理，订单状态以服务端为准。' });
+                }
+                this.loadOrders();
+                this.http.get<WalletOverview>(API.parent.wallet).subscribe({
+                  next: (w) => this.wallet.set(w),
+                });
+              },
+              error: (err) => {
+                this.payingOrderId.set(null);
+                const detail = err?.error?.detail ?? err?.error?.message
+                  ?? '支付未完成：请确认家庭钱包余额充足后重试，或联系运营线下确认。';
+                this.orderMsg.set({ type: 'error', text: detail });
+                this.loadOrders();
+              },
+            });
+        },
+        error: (err) => {
+          this.payingOrderId.set(null);
+          const detail = err?.error?.detail ?? err?.error?.message ?? '支付发起失败，请稍后重试。';
+          this.orderMsg.set({ type: 'error', text: detail });
+        },
+      });
+  }
+
+  isPaying(orderId: string): boolean {
+    return this.payingOrderId() === orderId;
   }
 
   yuan(cents: number | undefined): string {

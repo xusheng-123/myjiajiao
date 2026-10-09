@@ -288,6 +288,20 @@ public class BookingApplicationService {
                 }).toList();
     }
 
+    /** 学生已确认课程：家长「可下单课程」视图的数据源（订单侧再做去重与定价快照）。 */
+    @Transactional(readOnly = true)
+    public List<UpcomingBookingView> confirmedForStudent(UUID studentId) {
+        return bookingRepository.findByStudentIdOrderByCreatedAtDesc(studentId,
+                        org.springframework.data.domain.PageRequest.of(0, 20)).getContent().stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.CONFIRMED)
+                .map(b -> {
+                    var slot = schedulingService.slotOf(b.getSlotId()).orElse(null);
+                    return new UpcomingBookingView(b.getId(), b.getSubject(), b.getStatus().name(),
+                            slot == null ? null : slot.startAt(), slot == null ? null : slot.endAt(),
+                            b.getTeacherId());
+                }).toList();
+    }
+
     @Transactional(readOnly = true)
     public long countAll() {
         return bookingRepository.count();

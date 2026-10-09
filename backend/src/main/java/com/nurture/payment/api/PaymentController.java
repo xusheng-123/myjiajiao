@@ -24,6 +24,9 @@ import java.util.UUID;
 public class PaymentController {
 
     private final PaymentApplicationService paymentService;
+    /** 沙箱网关开关：前端据此决定展示「沙箱演示支付」还是「线下收款（模式 B）」引导。 */
+    @org.springframework.beans.factory.annotation.Value("${nurture.payment.sandbox.enabled:true}")
+    private boolean sandboxEnabled;
 
     public PaymentController(PaymentApplicationService paymentService) {
         this.paymentService = paymentService;
@@ -38,6 +41,15 @@ public class PaymentController {
 
     public record GatewayCallbackRequest(@NotNull UUID orderId, String channel, String payload, String signature,
                                          boolean success) {
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/config")
+    @SecurityRequirement(name = "bearerJWT")
+    @Operation(summary = "支付能力配置（前端环境适配）",
+            description = "sandboxEnabled=true 时前端可展示沙箱演示支付；false 时引导线下收款（模式 B），"
+                    + "不代表任何真实支付渠道已接入")
+    public java.util.Map<String, Object> config() {
+        return java.util.Map.of("sandboxEnabled", sandboxEnabled);
     }
 
     @PostMapping("/payments:initiate")
