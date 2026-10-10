@@ -129,13 +129,13 @@ export class StudentDashboardComponent implements OnInit {
       } });
     // 监护绑定申请（G3）
     this.loadPendingBindings();
-    // 我的订单（G7）：付款方视角（学生自建订单）
+    // Course ownership includes orders paid by an active guardian.
     this.loadMyOrders();
   }
 
   loadMyOrders(): void {
     this.http
-      .get<{ content: MyOrder[] }>(`${API.order.mine}?page=0&size=50`)
+      .get<{ content: MyOrder[] }>(`${API.order.related}?page=0&size=50`)
       .subscribe({
         next: (page) => {
           const map = new Map<string, MyOrder>();
@@ -154,31 +154,6 @@ export class StudentDashboardComponent implements OnInit {
 
   yuan(cents: number | undefined): string {
     return ((cents ?? 0) / 100).toFixed(2);
-  }
-
-  /** 学生发起下单：成功后以服务端订单为准刷新状态，并引导家长完成支付。 */
-  orderFor(bookingId: string): void {
-    if (this.orderBusy()) {
-      return;
-    }
-    this.orderBusy.set(true);
-    this.orderMsg.set(null);
-    this.http.post<MyOrder>(API.order.create, { bookingId }).subscribe({
-      next: (order) => {
-        this.orderBusy.set(false);
-        this.loadMyOrders();
-        this.orderMsg.set({
-          type: 'success',
-          text: `订单已创建：¥${this.yuan(order.amountCents)}（待支付）。当前版本由家庭统一支付，请家长在家长端为该课程完成支付。`,
-        });
-      },
-      error: (err) => {
-        this.orderBusy.set(false);
-        const detail = err?.error?.detail ?? err?.error?.message ?? '下单未成功，请稍后重试。';
-        this.orderMsg.set({ type: 'error', text: detail });
-        this.loadMyOrders();
-      },
-    });
   }
 
   loadPendingBindings(): void {

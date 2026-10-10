@@ -42,6 +42,19 @@ public class MatchingController {
                                     Long budgetMaxCents, String preferredTime) {
     }
 
+    @GetMapping("/public/teachers")
+    @Operation(summary = "公开在售师资检索", description = "仅已认证且账户可用的教师，不开放未认证查询、账户联系方式或资质材料")
+    public List<MatchingApplicationService.TeacherCandidate> publicSearch(@RequestParam(required = false) String subject,
+            @RequestParam(required = false) String gradeBand, @RequestParam(required = false) Long maxPricePerHourCents,
+            @RequestParam(required = false) String styleTag, @RequestParam(required = false) String keyword) {
+        return matchingService.search(subject, gradeBand, maxPricePerHourCents, styleTag, keyword, false);
+    }
+
+    @GetMapping("/public/teachers/{teacherId}")
+    public MatchingApplicationService.TeacherDetail publicDetail(@PathVariable UUID teacherId) {
+        return matchingService.publicTeacherDetail(teacherId);
+    }
+
     public record DemandView(UUID demandId, String subject, String gradeBand, String note,
                              Long budgetMaxCents, String preferredTime, String status) {
         static DemandView from(StudentDemand d) {
@@ -60,8 +73,9 @@ public class MatchingController {
             @Parameter(description = "单价上限（分/小时）") @RequestParam(required = false) Long maxPricePerHourCents,
             @Parameter(description = "教学风格标签") @RequestParam(required = false) String styleTag,
             @Parameter(description = "自由关键词") @RequestParam(required = false) String keyword,
-            @Parameter(description = "是否包含未认证导师（默认仅展示已认证）") @RequestParam(defaultValue = "false") boolean includeUnverified) {
-        return matchingService.search(subject, gradeBand, maxPricePerHourCents, styleTag, keyword, includeUnverified);
+            @Parameter(description = "是否包含未认证导师（默认仅展示已认证）") @RequestParam(defaultValue = "false") boolean includeUnverified,
+            @RequestParam(required = false) UUID teacherId) {
+        return matchingService.search(subject, gradeBand, maxPricePerHourCents, styleTag, keyword, includeUnverified, teacherId);
     }
 
     @PreAuthorize("hasRole('STUDENT') or hasRole('PARENT') or hasRole('ADMIN')")

@@ -29,7 +29,10 @@ class SmsCodeStoreLogSafetyTest {
     void setUp() {
         SmsProperties props = new SmsProperties(
                 new SmsProperties.RateLimit(0, 100, 1000), 5);
-        store = new SmsCodeStore(new SmsRateLimiter(props), props);
+        store = new SmsCodeStore(new SmsRateLimiter(props), props, new SmsDelivery() {
+            public boolean available() { return true; }
+            public void send(String phone, String code) { /* Test supplier accepting delivery. */ }
+        });
         logger = (Logger) LoggerFactory.getLogger(SmsCodeStore.class);
         appender = new ListAppender<>();
         appender.start();

@@ -61,6 +61,12 @@ public class MatchingApplicationService {
     @Transactional(readOnly = true)
     public List<TeacherCandidate> search(String subject, String gradeBand, Long maxPricePerHourCents,
                                          String styleTag, String keyword, boolean includeUnverified) {
+        return search(subject, gradeBand, maxPricePerHourCents, styleTag, keyword, includeUnverified, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeacherCandidate> search(String subject, String gradeBand, Long maxPricePerHourCents,
+                                         String styleTag, String keyword, boolean includeUnverified, UUID selectedTeacherId) {
         int maxSize = (int) configReader.longValue("matching.max-result-size", 20);
 
         List<TeacherApplicationService.OfferingView> pool = subject != null && !subject.isBlank()
@@ -78,6 +84,9 @@ public class MatchingApplicationService {
             // 跨模块教师标识统一为「账户ID」：条目内联档案ID，经 teacher.app 换算
             var brief = teacherService.briefByProfileId(offering.teacherProfileId());
             UUID teacherAccountId = brief.accountId();
+            if (selectedTeacherId != null && !selectedTeacherId.equals(teacherAccountId)) continue;
+            var account = identityService.adminAccountById(teacherAccountId).orElse(null);
+            if (account == null || account.role() != com.nurture.shared.security.CallerRole.TEACHER || !"ACTIVE".equals(account.status())) continue;
             // 教学风格筛选：档案风格标签精确匹配
             if (styleTag != null && !styleTag.isBlank()
                     && (brief.styleTags() == null || !brief.styleTags().contains(styleTag))) {
@@ -128,7 +137,7 @@ public class MatchingApplicationService {
         }
         var stats = reviewService.statsOf(teacherAccountId);
         if (stats.reviewCount() > 0) {
-            reasons.add(String.format("学员评价 %.1f 分（%d 条评价，可查看原文）", stats.averageRating(), stats.reviewCount()));
+            reasons.add(String.format("学员评价 %.1f 分（%d 条评价）", stats.averageRating(), stats.reviewCount()));
         }
         if (offering.pricePerHourCents() <= 20_000) {
             reasons.add("课时定价亲民，适合长期稳定陪跑");
@@ -139,11 +148,13 @@ public class MatchingApplicationService {
         OffsetDateTime nextSlot = schedulingService.openSlotViewsOf(teacherAccountId).stream()
                 .map(SchedulingApplicationService.SlotView::startAt)
                 .findFirst().orElse(null);
+        var brief = teacherService.profileBriefOf(teacherAccountId);
+        String displayName = identityService.adminAccountById(teacherAccountId).map(a -> a.displayName()).orElse("导师");
         return new TeacherCandidate(teacherAccountId, offering.subject(), offering.gradeBand(),
                 offering.pricePerHourCents(), verified,
                 stats.averageRating() > 0 ? Math.round(stats.averageRating() * 10) / 10.0 : null,
                 stats.reviewCount(), nextSlot,
-                List.of(), reasons);
+                brief.styleTags().stream().sorted().toList(), reasons, displayName, brief.school(), brief.highestDegree(), brief.yearsOfTeaching());
     }
 
     // ------------------------------------------------------------ 需求发布
@@ -183,7 +194,28 @@ public class MatchingApplicationService {
     public record TeacherCandidate(UUID teacherId, String subject, String gradeBand,
                                    long pricePerHourCents, boolean verificationApproved,
                                    Double averageRating, long reviewCount, OffsetDateTime nextOpenSlotAt,
-                                   List<String> styleTags, List<String> reasons) {
+                                   List<String> styleTags, List<String> reasons, String displayName,
+                                   String school, String highestDegree, int yearsOfTeaching) {
+    }
+
+    public record TeacherDetail(UUID teacherId, String displayName, String school, String highestDegree,
+                                int yearsOfTeaching, String intro, List<String> styleTags,
+                                Double averageRating, long reviewCount, List<TeacherApplicationService.OfferingView> offerings,
+                                List<SchedulingApplicationService.SlotView> openSlots) {}
+
+    @Transactional(readOnly = true)
+    public TeacherDetail publicTeacherDetail(UUID teacherId) {
+        var account = identityService.adminAccountById(teacherId).orElse(null);
+        if (account == null || account.role() != com.nurture.shared.security.CallerRole.TEACHER || !"ACTIVE".equals(account.status()) || !verificationService.isApproved(teacherId)) {
+            throw new com.nurture.shared.web.ResourceNotFoundException("导师暂未公开展示，请返回列表选择其他导师");
+        }
+        var brief = teacherService.profileBriefOf(teacherId);
+        var offerings = teacherService.offeringViewsOf(teacherId);
+        if (offerings.isEmpty()) throw new com.nurture.shared.web.ResourceNotFoundException("导师暂无在售课程");
+        var stats = reviewService.statsOf(teacherId);
+        return new TeacherDetail(teacherId, account.displayName(), brief.school(), brief.highestDegree(), brief.yearsOfTeaching(),
+                brief.intro(), brief.styleTags().stream().sorted().toList(), stats.reviewCount() > 0 ? Math.round(stats.averageRating()*10)/10.0 : null,
+                stats.reviewCount(), offerings, schedulingService.openSlotViewsOf(teacherId));
     }
 
     // ------------------------------------------------------------ 收藏与规则化推荐

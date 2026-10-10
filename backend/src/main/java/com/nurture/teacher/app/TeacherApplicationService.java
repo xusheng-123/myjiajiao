@@ -35,6 +35,12 @@ public class TeacherApplicationService {
     @Transactional
     public TeacherProfile updateProfile(UUID accountId, String school, String highestDegree,
                                         Integer yearsOfTeaching, String intro, Set<String> styleTags) {
+        if ((school != null && school.length() > 128) || (highestDegree != null && highestDegree.length() > 32)
+                || (intro != null && intro.length() > 1024)) throw new IllegalArgumentException("院校、学历或介绍超过长度上限");
+        if (yearsOfTeaching != null && (yearsOfTeaching < 0 || yearsOfTeaching > 80)) throw new IllegalArgumentException("教龄须为 0–80 年");
+        if (styleTags != null && (styleTags.size() > 12 || styleTags.stream().anyMatch(t -> t == null || t.isBlank() || t.length() > 32))) {
+            throw new IllegalArgumentException("风格标签最多 12 个，每个为 1–32 字");
+        }
         TeacherProfile profile = ensureProfile(accountId);
         profile.update(school, highestDegree, yearsOfTeaching, intro, styleTags);
         return profile;
@@ -42,14 +48,49 @@ public class TeacherApplicationService {
 
     @Transactional
     /** 档案摘要（供 matching 检索消费：账户ID/院校/风格标签）。 */
-    public record TeacherBrief(UUID accountId, String school, java.util.Set<String> styleTags) {
+    public record TeacherBrief(UUID accountId, String school, java.util.Set<String> styleTags,
+                               String highestDegree, int yearsOfTeaching, String intro) {
     }
 
     @Transactional(readOnly = true)
     public TeacherBrief briefByProfileId(UUID teacherProfileId) {
         TeacherProfile profile = teacherProfileRepository.findById(teacherProfileId)
                 .orElseThrow(() -> new IllegalArgumentException("导师档案不存在"));
-        return new TeacherBrief(profile.getAccountId(), profile.getSchool(), profile.getTeachingStyleTags());
+        return brief(profile);
+    }
+
+    private TeacherBrief brief(TeacherProfile profile) {
+        return new TeacherBrief(profile.getAccountId(), profile.getSchool(), Set.copyOf(profile.getTeachingStyleTags()),
+                profile.getHighestDegree(), profile.getYearsOfTeaching(), profile.getIntro());
+    }
+
+    public record ProfileView(UUID profileId, String teacherNo, String school, String highestDegree,
+                               int yearsOfTeaching, String intro, Set<String> styleTags) {}
+    private ProfileView profileView(TeacherProfile p) {
+        return new ProfileView(p.getId(), p.getTeacherNo(), p.getSchool(), p.getHighestDegree(), p.getYearsOfTeaching(), p.getIntro(), Set.copyOf(p.getTeachingStyleTags()));
+    }
+    @Transactional(readOnly = true)
+    public ProfileView profileViewOf(UUID accountId) {
+        return teacherProfileRepository.findByAccountId(accountId).map(this::profileView)
+                .orElseGet(() -> new ProfileView(null, null, null, null, 0, null, Set.of()));
+    }
+    @Transactional
+    public ProfileView updateProfileView(UUID accountId, String school, String degree, Integer years, String intro, Set<String> tags) {
+        return profileView(updateProfile(accountId, school, degree, years, intro, tags));
+    }
+
+    @Transactional(readOnly = true)
+    public TeacherBrief profileBriefOf(UUID accountId) {
+        return teacherProfileRepository.findByAccountId(accountId).map(this::brief)
+                .orElseThrow(() -> new IllegalArgumentException("导师档案不存在"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<OfferingView> offeringViewsOf(UUID accountId) {
+        var profile = teacherProfileRepository.findByAccountId(accountId).orElse(null);
+        if (profile == null) return List.of();
+        return offeringRepository.findByTeacherIdAndActiveTrue(profile.getId()).stream()
+                .map(o -> new OfferingView(o.getId(), o.getTeacherId(), o.getSubject(), o.getGradeBand(), o.getPricePerHourCents(), o.isActive())).toList();
     }
 
     /** 在售开课条目检索（供 matching 消费；subject 近似匹配）。 */

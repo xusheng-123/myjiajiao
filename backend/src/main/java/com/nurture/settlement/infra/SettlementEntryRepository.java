@@ -12,6 +12,14 @@ import java.util.UUID;
 
 public interface SettlementEntryRepository extends JpaRepository<SettlementEntry, UUID> {
 
+    java.util.Optional<SettlementEntry> findByOrderIdAndEntryKind(UUID orderId, SettlementEntry.EntryKind kind);
+    java.util.Optional<SettlementEntry> findByReversesEntryId(UUID entryId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from SettlementEntry e where e.orderId = :orderId and e.entryKind = :kind")
+    java.util.Optional<SettlementEntry> lockEarning(@Param("orderId") UUID orderId,
+            @Param("kind") SettlementEntry.EntryKind kind);
+
     Page<SettlementEntry> findByTeacherIdOrderByCreatedAtDesc(UUID teacherId, Pageable pageable);
 
     List<SettlementEntry> findByTeacherIdAndStatus(UUID teacherId, SettlementEntry.SettlementStatus status);

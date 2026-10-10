@@ -1,4 +1,6 @@
-import { Component, ElementRef, inject, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, inject, NgZone, OnDestroy, OnInit, signal } from '@angular/core';
+import { TeachersApi } from '../../core/api/teachers-api';
+import { TeacherSummary } from '../../shared/models/teacher.model';
 import { Router, RouterLink } from '@angular/router';
 import { SiteFooterComponent } from '../../layout/site-footer/site-footer.component';
 import { SiteHeaderComponent } from '../../layout/site-header/site-header.component';
@@ -34,6 +36,10 @@ export class LandingComponent implements OnInit, OnDestroy {
   private removeParallax?: () => void;
 
   ngOnInit(): void {
+    this.teachersApi.search({}).subscribe({
+      next: rows => this.teachers.set([...new Map(rows.map(t => [t.teacherId, t])).values()].slice(0, 3)),
+      error: () => this.teachersError.set(true),
+    });
     this.setupBreathingParallax();
   }
 
@@ -77,7 +83,9 @@ export class LandingComponent implements OnInit, OnDestroy {
 
   private readonly router = inject(Router);
 
-  readonly teachers = FEATURED_TEACHERS;
+  private readonly teachersApi = inject(TeachersApi);
+  readonly teachers = signal<TeacherSummary[]>([]);
+  readonly teachersError = signal(false);
   readonly principles = PRINCIPLES;
   readonly services = SERVICES;
   readonly subjects = SUBJECTS;

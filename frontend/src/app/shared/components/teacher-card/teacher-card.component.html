@@ -57,9 +57,9 @@
 
   <a
     class="nur-btn nur-btn--ghost nur-btn--sm tc-cta"
-    routerLink="/auth"
-    [attr.aria-label]="'咨询导师 ' + teacher().displayName"
+    [routerLink]="['/teachers', teacher().teacherId]"
+    [attr.aria-label]="'查看导师 ' + teacher().displayName"
   >
-    咨询该导师
+    查看导师与课程
   </a>
 </article>

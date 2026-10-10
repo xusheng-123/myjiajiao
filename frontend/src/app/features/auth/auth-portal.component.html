@@ -90,6 +90,7 @@
           class="channel-pill"
           [class.channel-pill--active]="channel() === 'sms'"
           (click)="switchChannel('sms')"
+          [disabled]="!smsAvailable()"
         >
           验证码登录
         </button>
@@ -115,6 +116,7 @@
     </div>
 
     <form class="auth-form" (submit)="$event.preventDefault(); submit()">
+      @if (!smsAvailable()) { <p class="portal-subtitle">短信登录暂未开通，请使用账号密码登录。新用户可注册并设置密码。</p> }
       @if (channel() === 'sms' || isRegister()) {
         <div class="field" [class.field--error]="phone().length > 0 && !smsReady()">
           <label for="phone">手机号</label>

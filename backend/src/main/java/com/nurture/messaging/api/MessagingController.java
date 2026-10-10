@@ -37,10 +37,11 @@ public class MessagingController {
         this.messagingService = messagingService;
     }
 
-    public record OpenConversationRequest(UUID teacherId, String subject) {
+    public record OpenConversationRequest(@jakarta.validation.constraints.NotNull UUID teacherId,
+                                           @jakarta.validation.constraints.Size(max = 64) String subject) {
     }
 
-    public record SendMessageRequest(@NotBlank String body) {
+    public record SendMessageRequest(@NotBlank @jakarta.validation.constraints.Size(max = 4000) String body) {
     }
 
     public record ConversationView(UUID conversationId, UUID counterpartId, String subject,
@@ -48,9 +49,10 @@ public class MessagingController {
     }
 
     public record MessageView(UUID messageId, UUID senderId, String senderRole, String body,
-                              java.time.Instant sentAt) {
+                              java.time.Instant sentAt, java.time.Instant readAt, boolean mine) {
         static MessageView from(Message m) {
-            return new MessageView(m.getId(), m.getSenderId(), m.getSenderRole().name(), m.getBody(), m.getSentAt());
+            return new MessageView(m.getId(), m.getSenderId(), m.getSenderRole().name(), m.getBody(), m.getSentAt(),
+                    m.getReadAt(), CallerContext.require().accountId().equals(m.getSenderId()));
         }
     }
 
@@ -58,7 +60,7 @@ public class MessagingController {
     @PostMapping("/conversations")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "发起课前咨询会话", description = "与导师开启双向沟通线程（幂等：重复开启返回既有会话）")
-    public ConversationView open(@RequestBody OpenConversationRequest request) {
+    public ConversationView open(@jakarta.validation.Valid @RequestBody OpenConversationRequest request) {
         UUID studentId = CallerContext.require().accountId();
         var conversation = messagingService.openOrGet(studentId, request.teacherId(), request.subject());
         return new ConversationView(conversation.getId(), request.teacherId(),
@@ -67,26 +69,27 @@ public class MessagingController {
 
     @GetMapping("/conversations")
     @Operation(summary = "我的会话列表")
-    public List<ConversationView> conversations() {
-        UUID me = CallerContext.require().accountId();
-        return messagingService.conversationsOf(me).stream()
-                .map(c -> new ConversationView(c.getId(),
-                        c.getStudentId().equals(me) ? c.getTeacherId() : c.getStudentId(),
-                        c.getSubject(), c.getLastMessageAt()))
-                .toList();
+    public List<MessagingApplicationService.ConversationSummary> conversations() {
+        return messagingService.conversationSummaries();
     }
 
     @GetMapping("/conversations/{conversationId}/messages")
     @Operation(summary = "会话消息记录")
-    public List<MessageView> messages(@PathVariable UUID conversationId) {
-        return messagingService.messagesOf(conversationId).stream().map(MessageView::from).toList();
+    public List<MessageView> messages(@PathVariable UUID conversationId, @RequestParam(defaultValue = "0") int page) {
+        return messagingService.messagesOf(conversationId, page).stream().map(MessageView::from).toList();
     }
 
     @PostMapping("/conversations/{conversationId}/messages")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "发送会话消息")
-    public MessageView send(@PathVariable UUID conversationId, @RequestBody SendMessageRequest request) {
+    public MessageView send(@PathVariable UUID conversationId, @jakarta.validation.Valid @RequestBody SendMessageRequest request) {
         return MessageView.from(messagingService.send(conversationId, request.body()));
+    }
+
+    @PostMapping("/conversations/{conversationId}:read")
+    public Map<String, Object> readConversation(@PathVariable UUID conversationId) {
+        messagingService.markConversationRead(conversationId);
+        return Map.of("conversationId", conversationId, "read", true);
     }
 
     /** 通知已读（D12「已处理状态」）：仅接收人本人可标记。 */

@@ -2,6 +2,8 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Role, ROLE_HOME, ROLE_LABELS } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { API_BASE } from '../../core/api/endpoints';
 import { GardenSceneComponent } from '../../shared/components/garden-scene/garden-scene.component';
 
 type LoginChannel = 'sms' | 'password' | 'register';
@@ -24,6 +26,7 @@ interface FieldStatus {
 })
 export class AuthPortalComponent implements OnInit {
   private readonly auth = inject(AuthService);
+  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -32,7 +35,8 @@ export class AuthPortalComponent implements OnInit {
   readonly Role = Role;
 
   readonly activeRole = signal<Role>(Role.STUDENT);
-  readonly channel = signal<LoginChannel>('sms');
+  readonly channel = signal<LoginChannel>('password');
+  readonly smsAvailable = signal(false);
   readonly submitting = signal(false);
   readonly smsCountdown = signal(0);
 
@@ -76,6 +80,10 @@ export class AuthPortalComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.http.get<{ smsAvailable: boolean }>(`${API_BASE}/identity/auth/capabilities`).subscribe({
+      next: c => this.smsAvailable.set(c.smsAvailable === true),
+      error: () => this.smsAvailable.set(false),
+    });
     const param = this.route.snapshot.queryParamMap.get('role');
     const role = param ? (param.toUpperCase() as Role) : null;
     if (role && this.roles.includes(role)) {
@@ -94,7 +102,7 @@ export class AuthPortalComponent implements OnInit {
     if (role === Role.ADMIN || role === Role.PARENT) {
       this.channel.set('password');
     } else if (!this.registerAvailable()) {
-      this.channel.set('sms');
+      this.channel.set('password');
     }
   }
 
@@ -104,7 +112,7 @@ export class AuthPortalComponent implements OnInit {
   }
 
   async sendSmsCode(): Promise<void> {
-    if (!this.smsReady() || this.smsCountdown() > 0) {
+    if (!this.smsAvailable() || !this.smsReady() || this.smsCountdown() > 0) {
       return;
     }
     try {

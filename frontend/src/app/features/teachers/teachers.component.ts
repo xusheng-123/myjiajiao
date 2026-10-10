@@ -4,6 +4,7 @@ import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { TeacherCardComponent } from '../../shared/components/teacher-card/teacher-card.component';
 import { TeachersApi, TeacherQuery } from '../../core/api/teachers-api';
 import { TeacherSummary } from '../../shared/models/teacher.model';
+import { TeacherCompareComponent } from '../../shared/components/teacher-compare.component';
 
 /** 价格档位（分/小时） */
 interface PriceBand {
@@ -42,11 +43,20 @@ const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
 @Component({
   selector: 'nur-teachers-page',
   standalone: true,
-  imports: [FormsModule, RevealDirective, TeacherCardComponent],
+  imports: [FormsModule, RevealDirective, TeacherCardComponent, TeacherCompareComponent],
   templateUrl: './teachers.component.html',
   styleUrl: './teachers.component.css',
 })
 export class TeachersComponent {
+  readonly compared = signal<TeacherSummary[]>([]);
+  readonly compareNotice = signal('');
+  isCompared(id: string): boolean { return this.compared().some(t => t.teacherId === id); }
+  toggleCompare(t: TeacherSummary): void {
+    if (this.compared().some(c => c.teacherId === t.teacherId)) { this.removeCompare(t.teacherId); return; }
+    if (this.compared().length >= 3) { this.compareNotice.set('最多对比 3 位老师，请先移除一位。'); return; }
+    this.compared.update(rows => [...rows, t]); this.compareNotice.set('');
+  }
+  removeCompare(id: string): void { this.compared.update(rows => rows.filter(t => t.teacherId !== id)); this.compareNotice.set(''); }
   private readonly teachersApi = inject(TeachersApi);
 
   // ---------- 筛选状态 ----------

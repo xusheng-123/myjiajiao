@@ -1,11 +1,12 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
+import { TeacherCompareComponent, CompareTeacher } from '../../shared/components/teacher-compare.component';
 import { HttpClient } from '@angular/common/http';
 import { API } from '../../core/api/endpoints';
 import { AuthService } from '../../core/auth/auth.service';
 
-interface TeacherCandidate {
+interface TeacherCandidate extends CompareTeacher {
   teacherId: string;
   subject: string;
   gradeBand: string | null;
@@ -56,12 +57,33 @@ type TimeFilter = 'any' | 'today' | '3d' | '7d';
 @Component({
   selector: 'nur-match',
   standalone: true,
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, TeacherCompareComponent],
   templateUrl: './match.component.html',
   styleUrl: './match.component.css',
 })
 export class MatchComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  readonly compared = signal<TeacherCandidate[]>([]);
+  readonly selectedTeacherId = signal<string | null>(null);
+  isCompared(id: string): boolean { return this.compared().some(t => t.teacherId === id); }
+  toggleCompare(t: TeacherCandidate): void {
+    if (this.compared().some(c => c.teacherId === t.teacherId)) { this.removeCompare(t.teacherId); return; }
+    if (this.compared().length >= 3) { this.favNotice.set('最多对比 3 位老师，请先移除一位。'); return; }
+    this.compared.update(rows => [...rows, t]); this.favNotice.set('');
+  }
+  removeCompare(id: string): void { this.compared.update(rows => rows.filter(t => t.teacherId !== id)); }
+  readonly consultBusy = signal(false);
+
+  consult(t: TeacherCandidate): void {
+    if (this.consultBusy()) return;
+    this.consultBusy.set(true);
+    this.http.post<{ conversationId: string }>(API.messaging.conversations, { teacherId: t.teacherId, subject: t.subject }).subscribe({
+      next: c => { this.consultBusy.set(false); void this.router.navigate(['/messages'], { queryParams: { conversation: c.conversationId } }); },
+      error: e => { this.consultBusy.set(false); this.favNotice.set(e.error?.detail ?? '暂时无法发起咨询，请重试。'); },
+    });
+  }
   readonly auth = inject(AuthService);
 
   // ---------- 检索入口
@@ -102,6 +124,7 @@ export class MatchComponent implements OnInit {
 
   // ---------- 预约分步向导
   readonly wizardTeacher = signal<TeacherCandidate | null>(null);
+  readonly bookingType = signal<'TRIAL' | 'FORMAL'>('TRIAL');
   readonly wizardStep = signal(1); // 1 选时间 / 2 确认信息
   readonly wizardSlots = signal<OpenSlot[]>([]);
   readonly selectedSlot = signal<OpenSlot | null>(null);
@@ -116,6 +139,9 @@ export class MatchComponent implements OnInit {
   readonly priceYuan = computed(() => this.maxPriceInput().trim());
 
   ngOnInit(): void {
+    this.selectedTeacherId.set(this.route.snapshot.queryParamMap.get('teacher'));
+    const subject = this.route.snapshot.queryParamMap.get('subject');
+    if (subject) { this.subjectInput.set(subject); this.search(); }
     if (this.auth.isLoggedIn()) {
       this.loadFavoriteIds();
     }
@@ -125,6 +151,7 @@ export class MatchComponent implements OnInit {
     this.loading.set(true);
     this.searched.set(true);
     const params = new URLSearchParams();
+    if (this.selectedTeacherId()) params.set('teacherId', this.selectedTeacherId()!);
     if (this.subjectInput().trim()) {
       params.set('subject', this.subjectInput().trim());
     }
@@ -144,6 +171,7 @@ export class MatchComponent implements OnInit {
   }
 
   clearFilters(): void {
+    this.selectedTeacherId.set(null);
     this.subjectInput.set('');
     this.gradeBandInput.set('');
     this.maxPriceInput.set('');
@@ -379,7 +407,8 @@ export class MatchComponent implements OnInit {
   }
 
   // ---------------- 预约向导 ----------------
-  startWizard(teacher: TeacherCandidate): void {
+  startWizard(teacher: TeacherCandidate, type: 'TRIAL' | 'FORMAL' = 'TRIAL'): void {
+    this.bookingType.set(type);
     this.wizardTeacher.set(teacher);
     this.wizardStep.set(1);
     this.selectedSlot.set(null);
@@ -427,13 +456,15 @@ export class MatchComponent implements OnInit {
         teacherId: teacher.teacherId,
         slotId: slot.slotId,
         subject: teacher.subject,
-        bookingType: 'TRIAL',
+        bookingType: this.bookingType(),
       })
       .subscribe({
         next: () => {
           this.submitting.set(false);
           this.wizardSuccess.set(true);
-          this.wizardNotice.set('试听已预约成功，可在首页看到迫近课程与课前准备清单。');
+          this.wizardNotice.set(this.bookingType() === 'TRIAL'
+            ? '免费试听已预约成功，可在课程表查看。'
+            : '正式课申请已提交，等待教师确认；确认后可在课程表下单，由家长完成付款。');
         },
         error: (err: { status?: number; error?: { detail?: string } }) => {
           this.submitting.set(false);

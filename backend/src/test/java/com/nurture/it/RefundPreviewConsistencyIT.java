@@ -106,8 +106,8 @@ class RefundPreviewConsistencyIT {
         // ①文案与真实行为一致：订单将关闭（无「作废」承诺）+ 结算条目暂不自动调整
         assertThat(impact.get("orderAfterRefund").asText()).isEqualTo("已支付订单将关闭");
         assertThat(impact.get("settlementNote").asText())
-                .contains("暂不随退款自动调整")
-                .contains("不代表教师课酬已完成红冲");
+                .contains("退款执行时追加教师课酬红冲条目")
+                .contains("待结算净额相应扣减");
 
         // ②预览不是执行：退款案仅 EVALUATED，订单保持 PAID
         var caseAfter = Support.getJson(mvc, om,

@@ -60,6 +60,7 @@ public class SecurityConfig {
                                 : new String[]{})
                         .permitAll()
                         // 其余一律鉴权
+                        .requestMatchers(HttpMethod.GET, "/api/v1/matching/public/teachers", "/api/v1/matching/public/teachers/*").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -72,7 +73,7 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(List.of(corsAllowedOrigins));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key", "X-Confirmation-Token"));
-        config.setExposedHeaders(List.of("Location", "X-Idempotent-Replay"));
+        config.setExposedHeaders(List.of("Location", "X-Idempotent-Replay", "Content-Disposition"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

@@ -119,14 +119,7 @@
         </div>
 
         <div class="tq-filter-group tq-filter-group--inline">
-          <label class="tq-check">
-            <input
-              type="checkbox"
-              [checked]="includeUnverified()"
-              (change)="onIncludeUnverifiedChange($event)"
-            />
-            <span>显示审核中的导师</span>
-          </label>
+          <span>公开列表仅展示已认证、在售的导师。</span>
           <label class="tq-sort">
             <span class="tq-filter-label">排序</span>
             <select
@@ -168,6 +161,8 @@
   </div>
 
   <!-- 加载骨架 -->
+  @if (compareNotice()) { <p role="status">{{ compareNotice() }}</p> }
+  <nur-teacher-compare [teachers]="compared()" (remove)="removeCompare($event)" />
   @if (loading()) {
     <div class="tq-grid" aria-hidden="true">
       @for (n of [1, 2, 3, 4, 5, 6]; track n) {
@@ -196,9 +191,10 @@
   } @else {
     <!-- 结果网格 -->
     <div class="tq-grid">
-      @for (t of visibleTeachers(); track t.teacherId) {
+      @for (t of visibleTeachers(); track t.teacherId + t.subject + t.gradeBand) {
         <div class="tq-item" nurReveal [style.--stagger-index]="$index % 3">
           <nur-teacher-card [teacher]="t" />
+          <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="toggleCompare(t)" [attr.aria-pressed]="isCompared(t.teacherId)">{{ isCompared(t.teacherId) ? '移除对比' : '加入对比' }}</button>
         </div>
       }
     </div>

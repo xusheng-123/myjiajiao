@@ -48,9 +48,10 @@ public class RefundController {
     }
 
     @PostMapping("/cases")
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('STUDENT') or hasRole('PARENT')")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "发起退款申请", description = "仅已支付订单可申请；仲裁执行由运营两阶段完成")
-    public RefundCaseView request(@RequestBody RequestRefundRequest request) {
+    public RefundCaseView request(@jakarta.validation.Valid @RequestBody RequestRefundRequest request) {
         return RefundCaseView.from(refundService.request(request.orderId(), request.reason()));
     }
 

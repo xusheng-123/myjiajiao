@@ -679,12 +679,19 @@ def main():
 
     print("== 12. 安全加固：短信限频与登录防暴力破解 ==")
     sms_phone = "19" + "".join(rng.choice("0123456789") for _ in range(9))
-    st, _, _ = http("POST", "/identity/auth/sms-codes", {"role": "STUDENT", "phone": sms_phone}, idem=str(uuid.uuid4()))
-    check("短信验证码首次发送(204)", st == 204, f"{st}")
-    st, _, limited = http("POST", "/identity/auth/sms-codes", {"role": "STUDENT", "phone": sms_phone}, idem=str(uuid.uuid4()))
-    check("同号最小间隔内重发被限频(429)", st == 429, f"{st} {limited}")
-    st, hdrs, _ = http("POST", "/identity/auth/sms-codes", {"role": "STUDENT", "phone": sms_phone}, idem=str(uuid.uuid4()))
-    check("限频响应含 Retry-After 头", st == 429 and hdrs.get("Retry-After") is not None, f"{st} {hdrs.get('Retry-After')}")
+    st, _, capabilities = http("GET", "/identity/auth/capabilities")
+    check("认证能力可公开查询，密码通道可用", st == 200 and capabilities.get("passwordAvailable") is True)
+    st, _, result = http("POST", "/identity/auth/sms-codes", {"role": "STUDENT", "phone": sms_phone}, idem=str(uuid.uuid4()))
+    if capabilities.get("smsAvailable"):
+        check("短信通道可用时首次投递成功(204)", st == 204, f"{st}")
+        st, _, limited = http("POST", "/identity/auth/sms-codes", {"role": "STUDENT", "phone": sms_phone}, idem=str(uuid.uuid4()))
+        check("同号最小间隔内重发被限频(429)", st == 429, f"{st} {limited}")
+        st, hdrs, _ = http("POST", "/identity/auth/sms-codes", {"role": "STUDENT", "phone": sms_phone}, idem=str(uuid.uuid4()))
+        check("限频响应含 Retry-After 头", st == 429 and hdrs.get("Retry-After") is not None, f"{st}")
+    else:
+        check("未配置短信供应商明确拒绝(503)，无虚假成功", st == 503 and "账号密码" in result.get("detail", ""), f"{st}")
+        st, _, result = http("POST", "/identity/auth/login:sms", {"role": "STUDENT", "phone": sms_phone, "smsCode": "000000"}, idem=str(uuid.uuid4()))
+        check("未投递验证码不能通过认证", st == 400, f"{st}")
 
     thr_phone = "18" + "".join(rng.choice("0123456789") for _ in range(9))
     st, _, _ = http("POST", "/identity/auth/register:student",

@@ -34,11 +34,29 @@ public class OrderApplicationService {
     /** 导师未设置定价时的兜底课时费（300 元/课时）。 */
     private static final long DEFAULT_LESSON_PRICE_CENTS = 30_000L;
 
+    @Transactional(readOnly = true)
+    public Page<OrderView> refundEligibleOrdersForCaller(Pageable pageable) {
+        var caller = CallerContext.require();
+        if (caller.role() != CallerRole.STUDENT && caller.role() != CallerRole.PARENT) throw new AccessDeniedException("仅学生或家长可查看退款订单");
+        return orderRepository.findByPayerParentIdOrStudentIdOrderByCreatedAtDesc(caller.accountId(), caller.accountId(), pageable).map(OrderView::from);
+    }
+
     private final OrderRepository orderRepository;
     private final OutboxWriter outboxWriter;
     private final ObjectMapper objectMapper;
     private final ParentApplicationService parentService;
     private final TeacherApplicationService teacherService;
+
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
+    /** Serialize all refund entry points and refresh an order already loaded by a caller. */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public Order lockForRefund(UUID orderId) {
+        Order order = get(orderId);
+        entityManager.refresh(order, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        return order;
+    }
 
     public OrderApplicationService(OrderRepository orderRepository, OutboxWriter outboxWriter,
                                    ObjectMapper objectMapper,

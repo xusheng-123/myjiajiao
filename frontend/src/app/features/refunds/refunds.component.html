@@ -1,0 +1,32 @@
+<main class="refund-shell">
+  <header><h1 class="nur-serif">退款与处理进度</h1><a [routerLink]="home()">返回控制台</a><button type="button" (click)="refresh()" [disabled]="busy()">刷新</button></header>
+  <p>可为本人课程或本人付款的已支付订单申请退款。当前支持全额退款，需运营审核；款项退回付款人的平台钱包。</p>
+  @if (notice()) { <p role="status">{{ notice() }}</p> }
+  <section class="nur-card">
+    <h2 class="nur-serif">课程订单</h2>
+    @if (!loaded()) { <p role="status">正在加载…</p> }
+    @else if (!orders().length) { <p>暂无课程订单。</p> }
+    <ul>
+      @for (o of orders(); track o.orderId) {
+        <li><span>{{ o.orderNo }} · ¥{{ yuan(o.amountCents) }} · {{ status(o.status) }}</span>
+          @if (o.status === 'PAID') { <button type="button" (click)="select(o)" [disabled]="busy()">申请退款</button> }
+        </li>
+      }
+    </ul>
+    <div class="pager"><button type="button" [disabled]="orderPage() === 0 || busy()" (click)="move('orders', -1)">上一页</button><span>第 {{ orderPage() + 1 }} 页</span><button type="button" [disabled]="orderPage() + 1 >= orderPages() || busy()" (click)="move('orders', 1)">下一页</button></div>
+    @if (selected(); as o) {
+      <form (submit)="$event.preventDefault(); submit()">
+        <h3>确认申请 {{ o.orderNo }} 的全额退款</h3><p>申请金额 ¥{{ yuan(o.amountCents) }}。提交申请后等待审核，提交本身不会自动退款或取消课程。</p>
+        <label for="refund-reason">退款原因（必填，最多 512 字）</label>
+        <textarea id="refund-reason" rows="3" maxlength="512" required [value]="reason()" [disabled]="busy()" (input)="reason.set($any($event.target).value)"></textarea>
+        <button type="submit" [disabled]="busy() || !reason().trim()">{{ busy() ? '提交中…' : '确认提交申请' }}</button>
+        <button type="button" (click)="selected.set(null)" [disabled]="busy()">返回</button>
+      </form>
+    }
+  </section>
+  <section class="nur-card"><h2 class="nur-serif">我的退款申请</h2>
+    @if (!cases().length) { <p>暂无申请记录。</p> }
+    <ul>@for (c of cases(); track c.caseId) { <li><div><p>订单 {{ c.orderId.slice(0, 8) }} · ¥{{ yuan(c.computedAmountCents) }} · {{ status(c.status) }}</p><p>原因：{{ c.reason }}</p>@if (c.decisionNote) { <p>处理说明：{{ c.decisionNote }}</p> }</div></li> }</ul>
+    <div class="pager"><button type="button" [disabled]="casePage() === 0 || busy()" (click)="move('cases', -1)">上一页</button><span>第 {{ casePage() + 1 }} 页</span><button type="button" [disabled]="casePage() + 1 >= casePages() || busy()" (click)="move('cases', 1)">下一页</button></div>
+  </section>
+</main>

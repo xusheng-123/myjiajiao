@@ -2,7 +2,9 @@
 
 > 因材施以微雨，静候学海生花
 
-生产级全栈实现 · 领域驱动设计 (DDD) · 模块化单体 · AI Agent 双客户端平等模型 · ADHD 友好交互
+全栈实现 · 领域驱动设计 (DDD) · 模块化单体 · AI Agent 双客户端平等模型 · ADHD 友好交互
+
+当前交付状态（2026-10-10）：核心旅程与退款红冲增量已通过本地隔离验收，真实短信/支付与完整Staging仍待外部资源。续作先读 [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md)，本机最新启动命令见其§5；本轮三份交付报告与剩余功能清单位于 `docs/`。历史业务库仍V10，新代码启动会应用V11/V12，开发验收必须显式使用隔离库，不直接升级历史库。
 
 ---
 
@@ -20,12 +22,13 @@
 │               ├── landing/  # 首页：Hero → 理念 → 服务 → 导师 → 学科 → 流程 → 心声 → 愿景 → CTA（规范锁定文案）
 │               ├── auth/     # 统一多角色登录门户（学生/家长/导师/运营 四 Tab）
 │               ├── match/    # 找老师（筛选+需求发布双入口、预约分步向导）
+│               ├── teachers/ messages/ refunds/ # 真实教师详情/对比、咨询、退款申请进度
 │               └── student|parent|teacher|admin/  # 四大角色控制台
 ├── backend/                  # Java 25 + Spring Boot 3.5 模块化单体
 │   └── src/main/java/com/nurture/
 │       ├── shared/           # 内核：security / idempotency / audit(含Agent写审计) / outbox / twophase / storage / mcp / config
-│       └── 16 个业务模块       # identity student parent teacher verification matching(含需求发布)
-│                              # scheduling booking classroom(含考勤) order payment refund settlement messaging review admin
+│       └── 17 个业务模块       # identity student parent teacher verification matching(含需求发布)
+│                              # scheduling booking classroom(含考勤) order payment refund settlement messaging review admin learning
 │           └── api|app|domain|infra   # Package-by-Feature 分层
 ├── deploy/docker-compose.yml # PostgreSQL + 后端容器 + Cloudflare Tunnel
 ├── backend/Dockerfile        # 标准 OCI 单体镜像（严禁 K8s / Service Mesh）
@@ -51,7 +54,7 @@ NURTURE_ADMIN_PASSWORD='Admin#2026' \
 mvn spring-boot:run
 ```
 
-启动后自动执行 Flyway 迁移（V1 全量 Schema + V2 参考数据），并创建初始运营管理员。
+启动后自动执行当前 Flyway V1–V12（新V11=退款红冲、V12=会话唯一），并创建初始运营管理员。下面示例应显式设置 `NURTURE_DB_URL` 指向隔离开发数据库；本次Windows已验证命令以PROJECT_HANDOFF §5为准。
 
 - OpenAPI 3.0 契约：http://localhost:8080/api/v1/api-docs
 - Swagger UI：http://localhost:8080/api/v1/swagger-ui

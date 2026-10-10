@@ -39,19 +39,25 @@ public class SmsCodeStore {
 
     private final SmsRateLimiter rateLimiter;
     private final SmsProperties properties;
+    private final SmsDelivery delivery;
 
-    public SmsCodeStore(SmsRateLimiter rateLimiter, SmsProperties properties) {
+    public SmsCodeStore(SmsRateLimiter rateLimiter, SmsProperties properties, SmsDelivery delivery) {
         this.rateLimiter = rateLimiter;
         this.properties = properties;
+        this.delivery = delivery;
     }
 
+    public boolean available() { return delivery.available(); }
+
     public void send(String role, String phone) {
+        if (!delivery.available()) throw new com.nurture.shared.web.ServiceUnavailableException("短信服务尚未开通，请使用账号密码登录");
         rateLimiter.checkAndConsume(phone);
         String code = String.format("%06d", RANDOM.nextInt(1_000_000));
+        delivery.send(phone, code);
         codes.put(key(role, phone), code);
         failedVerifications.invalidate(key(role, phone));
         // 安全纪律（Release P1-3）：验证码严禁出现在任何日志中；手机号脱敏
-        log.info("[SmsSender] 已向 {}（{}角色）发送验证码短信；验证码内容不落日志，试错上限 {} 次",
+        log.info("[SmsSender] 短信投递通道已接受 {}（{}角色）的验证码请求；验证码内容不落日志，试错上限 {} 次",
                 maskPhone(phone), role, properties.verifyAttempts());
     }
 

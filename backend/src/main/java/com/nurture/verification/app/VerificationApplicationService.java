@@ -104,6 +104,26 @@ public class VerificationApplicationService {
                 .orElse(false);
     }
 
+    public record Material(byte[] content, String filename) {}
+
+    /** Private documents are resolved by case ID; storage keys never leave this module. */
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public Material material(UUID caseId, String kind) {
+        if (!"identity".equals(kind) && !"degree".equals(kind)) throw new IllegalArgumentException("材料类型无效");
+        VerificationCase c = verificationRepository.findById(caseId)
+                .orElseThrow(() -> new IllegalArgumentException("审核案例不存在"));
+        String key = "identity".equals(kind) ? c.getIdDocumentKey() : c.getDegreeCertKey();
+        byte[] content;
+        try { content = fileStorageService.load(key); }
+        catch (IllegalArgumentException e) { throw new IllegalArgumentException("材料不存在或不可读，请联系导师补交"); }
+        int dot = key.lastIndexOf('.');
+        String ext = dot >= 0 ? key.substring(dot).toLowerCase(java.util.Locale.ROOT) : ".bin";
+        if (!java.util.Set.of(".pdf", ".jpg", ".jpeg", ".png", ".webp").contains(ext)) ext = ".bin";
+        auditService.record("verification:material-view", "SUCCESS", java.util.Map.of("caseId", caseId, "kind", kind), "运营读取资质材料");
+        return new Material(content, kind + "-" + caseId + ext);
+    }
+
     /** 资质材料允许的格式：扩展名 → MIME → 文件魔数三重校验（客户端字段可伪造，以内容为准）。 */
     private static final java.util.Map<String, String> ALLOWED_MATERIAL_TYPES = java.util.Map.of(
             "pdf", "application/pdf",

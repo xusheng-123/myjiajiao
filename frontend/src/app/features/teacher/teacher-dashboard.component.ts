@@ -1,9 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { API } from '../../core/api/endpoints';
 import { NoticeCenterComponent } from '../../shared/components/notice-center.component';
+import { TeacherProfileEditorComponent } from '../../shared/components/teacher-profile-editor.component';
 
 interface VerificationStatus {
   status: string;
@@ -66,6 +68,8 @@ interface Settlement {
     netCents: number;
     status: string;
     settledAt: string | null;
+    entryKind: 'EARNING' | 'REVERSAL';
+    reversesEntryId: string | null;
   }[];
 }
 
@@ -82,7 +86,7 @@ interface AvailabilitySlot {
 @Component({
   selector: 'nur-teacher-dashboard',
   standalone: true,
-  imports: [DatePipe, NoticeCenterComponent],
+  imports: [DatePipe, NoticeCenterComponent, RouterLink, TeacherProfileEditorComponent],
   templateUrl: './teacher-dashboard.component.html',
   styleUrl: './teacher-dashboard.component.css',
 })

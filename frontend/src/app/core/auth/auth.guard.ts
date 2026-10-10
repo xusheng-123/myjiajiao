@@ -3,6 +3,17 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { Role } from './auth.models';
 
+export const sessionGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.isLoggedIn() || inject(Router).createUrlTree(['/auth']);
+};
+
+export const refundGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.isLoggedIn() && (auth.role() === Role.STUDENT || auth.role() === Role.PARENT)
+    || inject(Router).createUrlTree(['/auth']);
+};
+
 /**
  * 角色路由守卫 — 依据 JWT 角色凭证保护四端控制台。
  */

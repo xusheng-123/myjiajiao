@@ -50,16 +50,18 @@
       <p class="quiet-note">暂无待处理的资质审核案例。</p>
     } @else {
       <ul class="case-list">
-        @for (c of verificationCases(); track c.id) {
+        @for (c of verificationCases(); track c.caseId) {
           <li class="case-item">
             <div>
               <p class="case-title">导师 {{ c.teacherId.slice(0, 8) }} · 提交于 {{ c.submittedAt | date:'M月d日 HH:mm' }}</p>
               <p class="quiet-note">状态：{{ c.status }}</p>
+              <button type="button" class="btn-ghost-sm" (click)="downloadMaterial(c.caseId, 'identity')" [disabled]="materialBusy()">下载身份证明</button>
+              <button type="button" class="btn-ghost-sm" (click)="downloadMaterial(c.caseId, 'degree')" [disabled]="materialBusy()">下载学历证明</button>
             </div>
             @if (c.status === 'SUBMITTED' || c.status === 'UNDER_REVIEW') {
               <div class="case-actions">
-                <button type="button" class="btn-primary-sm" (click)="decideVerification(c.id, true)">通过</button>
-                <button type="button" class="btn-ghost-sm" (click)="decideVerification(c.id, false)">驳回</button>
+                <button type="button" class="btn-primary-sm" (click)="decideVerification(c.caseId, true)">通过</button>
+                <button type="button" class="btn-ghost-sm" (click)="decideVerification(c.caseId, false)">驳回</button>
               </div>
             }
           </li>
@@ -75,7 +77,7 @@
       <p class="quiet-note">暂无退款案例。</p>
     } @else {
       <ul class="case-list">
-        @for (c of refundCases(); track c.id) {
+        @for (c of refundCases(); track c.caseId) {
           <li class="case-item">
             <div>
               <p class="case-title">订单 {{ c.orderId.slice(0, 8) }} · ¥{{ yuan(c.computedAmountCents) }}</p>
@@ -83,12 +85,13 @@
             </div>
             @if (c.status === 'REQUESTED' || c.status === 'EVALUATED') {
               <div class="case-actions">
-                <button type="button" class="btn-ghost-sm" (click)="arbitrationPreview(c.id)">① 评估影响</button>
-                <button type="button" class="btn-primary-sm" (click)="arbitrationExecute(c.id, true)">② 执行退款</button>
+                <button type="button" class="btn-ghost-sm" (click)="arbitrationPreview(c.caseId)" [disabled]="arbitrationBusy()">① 评估影响</button>
+                <button type="button" class="btn-primary-sm" (click)="arbitrationExecute(c.caseId, true)" [disabled]="arbitrationBusy()">② 执行退款</button>
+                <button type="button" class="btn-ghost-sm" (click)="arbitrationExecute(c.caseId, false)" [disabled]="arbitrationBusy()">驳回申请</button>
               </div>
             }
             @if (preview(); as current) {
-              @if (current.caseId === c.id) {
+              @if (current.caseId === c.caseId) {
                 <div class="impact-box">
                   <p class="impact-title">级联影响预览（凭证 10 分钟有效）</p>
                   <ul>
@@ -155,7 +158,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (log of auditLogs(); track log.id) {
+        @for (log of auditLogs(); track log.auditId) {
           <tr>
             <td>{{ log.occurredAt | date:'MM-dd HH:mm:ss' }}</td>
             <td>{{ log.actionType }}</td>

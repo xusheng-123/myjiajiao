@@ -30,19 +30,22 @@ public class RefundApplicationService {
     private final TwoPhaseService twoPhaseService;
     private final AuditService auditService;
     private final MessagingApplicationService messagingService;
+    private final com.nurture.settlement.app.SettlementApplicationService settlementService;
 
     public RefundApplicationService(RefundCaseRepository refundRepository,
                                     OrderApplicationService orderService,
                                     ParentApplicationService parentService,
                                     TwoPhaseService twoPhaseService,
                                     AuditService auditService,
-                                    MessagingApplicationService messagingService) {
+                                    MessagingApplicationService messagingService,
+                                    com.nurture.settlement.app.SettlementApplicationService settlementService) {
         this.refundRepository = refundRepository;
         this.orderService = orderService;
         this.parentService = parentService;
         this.twoPhaseService = twoPhaseService;
         this.auditService = auditService;
         this.messagingService = messagingService;
+        this.settlementService = settlementService;
     }
 
     /** 退款案件视图（供 admin DTO 化返回）。 */
@@ -59,7 +62,15 @@ public class RefundApplicationService {
     /** 家长/学生发起退款申请（首笔评估金额 = 订单实付）。 */
     @Transactional
     public RefundCase request(UUID orderId, String reason) {
-        Order order = orderService.get(orderId);
+        Order order = orderService.lockForRefund(orderId);
+        var caller = CallerContext.require();
+        if (!order.getPayerParentId().equals(caller.accountId()) && !order.getStudentId().equals(caller.accountId())) {
+            throw new org.springframework.security.access.AccessDeniedException("仅付款人或课程学生本人可申请退款");
+        }
+        if (reason == null || reason.isBlank() || reason.length() > 512) {
+            throw new IllegalArgumentException("退款原因须为 1–512 字");
+        }
+        if (refundRepository.existsByOrderId(orderId)) throw new IllegalStateException("该订单已存在退款申请，请查看处理进度");
         if (order.getStatus() != Order.OrderStatus.PAID) {
             throw new IllegalStateException("仅已支付订单可申请退款");
         }
@@ -71,6 +82,10 @@ public class RefundApplicationService {
     /** 供 booking 域调用：取消已付课时时的自动全额退款闭环（原路入账家庭钱包）。 */
     @Transactional
     public RefundCase executeForBookingCancellation(Order order, String reason) {
+        order = orderService.lockForRefund(order.getId());
+        if (order.getStatus() != Order.OrderStatus.PAID) throw new IllegalStateException("订单已处理，请刷新课程和退款进度");
+        if (refundRepository.existsByOrderId(order.getId())) throw new IllegalStateException("订单已有退款申请，请联系运营处理课程取消");
+        settlementService.reverseForRefund(order);
         RefundCase refundCase = new RefundCase(order.getId(), order.getPayerParentId(), reason,
                 order.getAmountCents(), 1);
         refundCase.approve(order.getPayerParentId(), "取消课时自动全额退款");
@@ -88,8 +103,11 @@ public class RefundApplicationService {
     /** 仲裁 Preview：预计算退款金额、影响课时与钱包入账，签发短效确认凭证。 */
     @Transactional
     public ArbitrationPreview previewArbitration(UUID refundCaseId) {
-        RefundCase refundCase = refundRepository.findById(refundCaseId)
+        RefundCase refundCase = refundRepository.lockById(refundCaseId)
                 .orElseThrow(() -> new IllegalArgumentException("退款案例不存在"));
+        if (refundCase.getStatus() != RefundCase.RefundStatus.REQUESTED && refundCase.getStatus() != RefundCase.RefundStatus.EVALUATED) {
+            throw new IllegalStateException("退款已处理，不能重新评估");
+        }
         Order order = orderService.get(refundCase.getOrderId());
 
         Map<String, Object> impact = new LinkedHashMap<>();
@@ -100,13 +118,12 @@ public class RefundApplicationService {
         impact.put("affectedLessons", refundCase.getAffectedLessons());
         impact.put("walletCreditTarget", "家庭统一教育支付钱包（原路入账）");
         impact.put("orderAfterRefund", "已支付订单将关闭");
-        // 如实告知（2026-10-10 核实）：当前执行路径不调整教师课酬结算条目——退款成功 ≠ 课酬已冲回；
-        // 红冲机制待负责人批准后实施（docs/PRODUCT_DECISIONS_PENDING.md §9），届时本文案随之更新。
-        impact.put("settlementNote", "教师课酬结算条目暂不随退款自动调整；退款成功不代表教师课酬已完成红冲");
+        // Preview describes the actual reversal behavior without mutating accounting entries.
+        impact.put("settlementNote", settlementService.refundNote(order));
         impact.put("reason", refundCase.getReason());
 
         var grant = twoPhaseService.issue("refund:arbitrate", refundCaseId, impact.toString());
-        refundCase.evaluate(refundCase.getComputedAmountCents(), refundCase.getAffectedLessons());
+        if (refundCase.getStatus() == RefundCase.RefundStatus.REQUESTED) refundCase.evaluate(refundCase.getComputedAmountCents(), refundCase.getAffectedLessons());
         return new ArbitrationPreview(impact, grant.confirmationToken(), grant.expiresAt());
     }
 
@@ -114,14 +131,22 @@ public class RefundApplicationService {
     @Transactional
     public RefundCase executeArbitration(UUID refundCaseId, boolean approve, String decisionNote,
                                          String confirmationToken) {
-        RefundCase refundCase = refundRepository.findById(refundCaseId)
+        if (decisionNote != null && decisionNote.length() > 512) throw new IllegalArgumentException("处理说明不能超过 512 字");
+        RefundCase refundCase = refundRepository.lockById(refundCaseId)
                 .orElseThrow(() -> new IllegalArgumentException("退款案例不存在"));
         UUID arbiterId = CallerContext.require().accountId();
+
+        if (refundCase.getStatus() != RefundCase.RefundStatus.REQUESTED
+                && refundCase.getStatus() != RefundCase.RefundStatus.EVALUATED) {
+            throw new IllegalStateException("退款已处理，不可重复执行或驳回");
+        }
 
         if (approve) {
             twoPhaseService.consume("refund:arbitrate", refundCaseId, confirmationToken);
             refundCase.approve(arbiterId, decisionNote);
-            Order order = orderService.get(refundCase.getOrderId());
+            Order order = orderService.lockForRefund(refundCase.getOrderId());
+            if (order.getStatus() != Order.OrderStatus.PAID) throw new IllegalStateException("订单已非已支付状态，请核对退款结果");
+            settlementService.reverseForRefund(order);
             parentService.creditRefund(order.getPayerParentId(), order.getId(),
                     refundCase.getComputedAmountCents(), "差错退款入账（仲裁通过）");
             orderService.closeIfPresent(order.getBookingId());

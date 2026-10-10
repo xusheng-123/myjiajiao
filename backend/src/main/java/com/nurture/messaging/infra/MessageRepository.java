@@ -8,5 +8,11 @@ import java.util.UUID;
 
 public interface MessageRepository extends JpaRepository<Message, UUID> {
 
-    List<Message> findTop100ByConversationIdOrderBySentAtAsc(UUID conversationId);
+    List<Message> findByConversationIdOrderBySentAtDescIdDesc(UUID conversationId, org.springframework.data.domain.Pageable pageable);
+
+    long countByConversationIdAndSenderIdNotAndReadAtIsNull(UUID conversationId, UUID senderId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("update Message m set m.readAt = :at where m.conversationId = :conversationId and m.senderId <> :readerId and m.readAt is null")
+    int markRead(UUID conversationId, UUID readerId, java.time.Instant at);
 }

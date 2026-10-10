@@ -16,12 +16,34 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "settlement_entries", indexes = {
-        @Index(name = "ix_settlement_teacher", columnList = "teacherId, status"),
-        @Index(name = "ux_settlement_booking", columnList = "bookingId", unique = true)
+        @Index(name = "ix_settlement_teacher", columnList = "teacherId, status")
 })
 public class SettlementEntry extends AggregateRoot {
 
     public enum SettlementStatus { PENDING, SETTLED, PAID_OUT }
+    public enum EntryKind { EARNING, REVERSAL }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entry_kind", nullable = false, length = 16)
+    private EntryKind entryKind = EntryKind.EARNING;
+
+    @Column(name = "reverses_entry_id")
+    private UUID reversesEntryId;
+
+    public static SettlementEntry reversalOf(SettlementEntry earning) {
+        if (earning.entryKind != EntryKind.EARNING || earning.status != SettlementStatus.PENDING) {
+            throw new IllegalStateException("仅待结算收益可自动冲回，已结算或已提现请联系运营处理");
+        }
+        SettlementEntry reversal = new SettlementEntry(earning.teacherId, earning.bookingId,
+                earning.orderId, Math.negateExact(earning.grossCents), 0);
+        reversal.netCents = Math.negateExact(earning.netCents);
+        reversal.entryKind = EntryKind.REVERSAL;
+        reversal.reversesEntryId = earning.getId();
+        return reversal;
+    }
+
+    public EntryKind getEntryKind() { return entryKind; }
+    public UUID getReversesEntryId() { return reversesEntryId; }
 
     @Column(name = "teacher_id", nullable = false)
     private UUID teacherId;

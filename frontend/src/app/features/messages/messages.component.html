@@ -1,0 +1,36 @@
+<main class="message-shell">
+  <header><h1 class="nur-serif">课前咨询</h1><a [routerLink]="home()">返回控制台</a><button type="button" (click)="refresh()">刷新</button></header>
+  <p class="hint">与老师沟通学习目标和课程安排。页面每 15 秒更新，老师回复后可在这里查看。</p>
+  @if (notice()) { <p role="status">{{ notice() }}</p> }
+  <div class="message-layout">
+    <nav aria-label="咨询会话" class="nur-card conversations">
+      @if (!loaded()) { <p role="status">正在加载…</p> }
+      @else if (!conversations().length) { <p>还没有咨询会话。学生可以从「找老师」发起咨询。</p> }
+      @for (c of conversations(); track c.conversationId) {
+        <button type="button" [class.selected]="active()?.conversationId === c.conversationId" [disabled]="sending() || busy()" (click)="select(c)">
+          {{ c.counterpartName }} · {{ c.subject ?? '课程咨询' }}
+          @if (c.unreadCount) { <span class="unread">{{ c.unreadCount }} 条未读</span> }
+        </button>
+      }
+    </nav>
+    <section class="nur-card thread" aria-label="消息记录">
+      @if (active(); as c) {
+        <h2 class="nur-serif">{{ c.counterpartName }} · {{ c.subject ?? '课程咨询' }}</h2>
+        @if (hasOlder()) { <button type="button" (click)="loadMessages(true)" [disabled]="busy()">查看更早消息</button> }
+        <ol class="messages" aria-live="polite" aria-relevant="additions">
+          @for (m of messages(); track m.messageId) {
+            <li [class.mine]="m.mine"><small>{{ m.mine ? '我' : c.counterpartName }} · {{ m.sentAt | date:'M月d日 HH:mm' }}</small>
+              <p>{{ m.body }}</p>@if (m.mine) { <small>{{ m.readAt ? '对方已读' : '已发送' }}</small> }
+            </li>
+          }
+        </ol>
+        @if (busy()) { <p role="status">正在更新消息…</p> }
+        <form (submit)="$event.preventDefault(); send()">
+          <label for="message-draft">发送消息</label>
+          <textarea id="message-draft" rows="3" maxlength="4000" [value]="draft()" [disabled]="sending()" (input)="draft.set($any($event.target).value)"></textarea>
+          <button type="submit" [disabled]="sending() || !draft().trim()">{{ sending() ? '发送中…' : '发送' }}</button>
+        </form>
+      } @else { <p>选择一段会话，按自己的节奏聊一聊。</p> }
+    </section>
+  </div>
+</main>

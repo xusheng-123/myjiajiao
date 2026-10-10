@@ -5,13 +5,13 @@
 ## 一、接手流程（每次新会话/新模型必做）
 
 1. 读 `PROJECT_HANDOFF.md`（唯一入口）→ 按其文档地图读 `项目交接.md` 相关节与 `docs/`。
-2. 核实状态：迁移清单应为 V1–V10；`netstat` 查 8080/4200；Docker Desktop 是否在运行。
+2. 核实状态：迁移清单应为 V1–V12；`netstat` 查 8080/4200；Docker Desktop 是否在运行。
 3. 交接文档与代码不一致时：**以代码为准**，先在交接文档记录差异再继续。
 4. 从 PROJECT_HANDOFF §7「下一步开发计划」第一项开始，勿自行改优先级（用户明确要求除外）。
 
 ## 二、硬约束速查（完整版见 docs/PROJECT_CONTEXT.md）
 
-- 禁：微服务化、Redis/Kafka/K8s/OpenSearch、自研 RTC、大模型 API、改品牌/深色主题、重写核心交易链路、改历史 Migration、生产部署/生产库操作、git reset/clean（本项目**无 git**，误删不可恢复）。
+- 禁：微服务化、Redis/Kafka/K8s/OpenSearch、自研 RTC、大模型 API、改品牌/深色主题、重写核心交易链路、改历史 Migration、生产部署/生产库操作、git reset/clean（本项目已有**本地 Git、无远端**；未提交文件与历史必须保护）。
 - 安全永不妥协：不为过测试降低校验；新写操作必须幂等 + 权限 + 输入校验；高后果操作落审计。
 
 ## 三、每次重要任务完成后（经验证后执行）

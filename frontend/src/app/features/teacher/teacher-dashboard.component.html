@@ -8,6 +8,8 @@
       退出
     </button>
   </header>
+  <nav aria-label="课程服务"><a routerLink="/messages">课前咨询与回复</a></nav>
+  <nur-teacher-profile-editor />
 
   @if (!loaded()) {
     <p class="quiet-note" role="status">正在准备你的工作台…</p>
@@ -347,7 +349,7 @@
       <ul class="settle-list">
         @for (entry of s.entries; track entry.entryId) {
           <li>
-            <span>课程 {{ entry.bookingId.slice(0, 8) }} · 课酬 ¥{{ yuan(entry.netCents) }}（平台服务费 ¥{{ yuan(entry.platformFeeCents) }}）</span>
+            <span>课程 {{ entry.bookingId.slice(0, 8) }} · {{ entry.entryKind === 'REVERSAL' ? '退款冲回' : '课酬' }} ¥{{ yuan(entry.netCents) }}@if (entry.entryKind !== 'REVERSAL') {（平台服务费 ¥{{ yuan(entry.platformFeeCents) }}）}</span>
             <span class="status-pill">{{ entry.status === 'PENDING' ? '待结算' : entry.status === 'SETTLED' ? '已结算' : '已提现' }}</span>
           </li>
         }

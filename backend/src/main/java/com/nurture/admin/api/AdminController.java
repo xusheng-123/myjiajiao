@@ -61,7 +61,7 @@ public class AdminController {
     public record DecideVerificationRequest(boolean approve, String note) {
     }
 
-    public record ArbitrationExecuteRequest(boolean approve, String decisionNote, String confirmationToken) {
+    public record ArbitrationExecuteRequest(boolean approve, @jakarta.validation.constraints.Size(max = 512) String decisionNote, String confirmationToken) {
     }
 
     public record UpdateConfigRequest(String value) {
@@ -91,7 +91,7 @@ public class AdminController {
             @RequestParam(required = false) String actionType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return adminService.auditLogViews(actionType, PageRequest.of(page, size));
+        return adminService.auditLogViews(actionType, PageRequest.of(page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "occurredAt")));
     }
 
     // ------------------------------------------------------------ 资质审核
@@ -114,6 +114,19 @@ public class AdminController {
         return adminService.decideVerification(caseId, request.approve(), request.note());
     }
 
+    @GetMapping("/verification-cases/{caseId}/materials/{kind}")
+    @Operation(summary = "受控下载资质材料", description = "仅运营可访问，读取落审计，禁止缓存，不暴露存储键")
+    public org.springframework.http.ResponseEntity<byte[]> verificationMaterial(@PathVariable UUID caseId, @PathVariable String kind) {
+        var material = verificationService.material(caseId, kind);
+        return org.springframework.http.ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+                .header("Content-Disposition", org.springframework.http.ContentDisposition.attachment().filename(material.filename()).build().toString())
+                .header("Cache-Control", "no-store, private")
+                .header("X-Content-Type-Options", "nosniff")
+                .header("Content-Security-Policy", "sandbox; default-src 'none'")
+                .body(material.content());
+    }
+
     // ------------------------------------------------------------ 退款仲裁
 
     @GetMapping("/refund-cases")
@@ -121,7 +134,7 @@ public class AdminController {
     public Page<com.nurture.refund.app.RefundApplicationService.RefundCaseView> refundCases(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return refundService.listAllViews(PageRequest.of(page, size));
+        return refundService.listAllViews(PageRequest.of(page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")));
     }
 
     @PostMapping("/refund-cases/{caseId}/arbitration:preview")

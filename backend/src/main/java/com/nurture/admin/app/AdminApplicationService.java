@@ -26,7 +26,7 @@ import java.util.Map;
  * 运营治理应用服务 — 跨模块聚合查询（经各模块 app 服务，不直取仓储）。
  */
 @Service
-public class AdminApplicationService implements com.nurture.shared.config.PlatformConfigReader {
+public class AdminApplicationService {
 
     private final PlatformConfigRepository configRepository;
     private final AuditLogRepository auditLogRepository;
@@ -60,7 +60,6 @@ public class AdminApplicationService implements com.nurture.shared.config.Platfo
 
     // ------------------------------------------------------------ 平台参数
 
-    @Override
     public java.util.Optional<String> get(String key) {
         return configRepository.findById(key).map(PlatformConfig::getValue);
     }

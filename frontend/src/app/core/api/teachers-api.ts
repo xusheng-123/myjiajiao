@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { API } from './endpoints';
+import { API_BASE } from './endpoints';
 import { TeacherSummary } from '../../shared/models/teacher.model';
 
 /**
@@ -46,7 +46,6 @@ export class HttpTeachersApiService extends TeachersApi {
       params = params.set('maxPricePerHourCents', String(query.maxPricePerHourCents));
     }
     if (query.styleTag) params = params.set('styleTag', query.styleTag);
-    params = params.set('includeUnverified', String(query.includeUnverified ?? false));
-    return this.http.get<TeacherSummary[]>(API.matching.search, { params });
+    return this.http.get<TeacherSummary[]>(`${API_BASE}/matching/public/teachers`, { params });
   }
 }

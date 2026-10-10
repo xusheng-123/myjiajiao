@@ -17,4 +17,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findByPayerParentIdOrderByCreatedAtDesc(UUID payerParentId, Pageable pageable);
 
     Page<Order> findByStatus(com.nurture.order.domain.Order.OrderStatus status, Pageable pageable);
+
+    Page<Order> findByPayerParentIdOrStudentIdOrderByCreatedAtDesc(UUID payerParentId, UUID studentId, Pageable pageable);
 }

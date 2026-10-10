@@ -103,7 +103,7 @@
     </header>
 
     <div class="teachers-grid">
-      @for (t of teachers; track t.teacherId) {
+      @for (t of teachers(); track t.teacherId) {
         <div class="teachers-item nur-reveal" nurReveal [style.--stagger-index]="$index % 3">
           <nur-teacher-card [teacher]="t" />
         </div>
@@ -111,8 +111,9 @@
     </div>
 
     <p class="teachers-more">
+      @if (teachersError()) { <span>师资数据暂时无法读取，请稍后重试。</span> }
       <a class="nur-link-arrow" routerLink="/teachers">
-        查看全部 20 位导师，按学科与学段细筛
+        查看在售导师，按学科与学段细筛
         <span class="arrow" aria-hidden="true">→</span>
       </a>
     </p>

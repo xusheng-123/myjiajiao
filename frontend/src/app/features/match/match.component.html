@@ -76,6 +76,8 @@
     </div>
 
     <!-- 结果区：区分 加载中 / 空 / 时间筛空 / 结果 -->
+    @if (selectedTeacherId()) { <p>正在查看选定导师的课程。<button type="button" class="btn-ghost" (click)="clearFilters()">查看全部导师</button></p> }
+    <nur-teacher-compare [teachers]="compared()" (remove)="removeCompare($event)" />
     @if (loading()) {
       <p class="state-note" role="status">正在为你挑选合适的老师…</p>
     } @else if (searched() && candidates().length === 0) {
@@ -92,11 +94,11 @@
       </section>
     } @else if (searched()) {
       <ul class="candidate-list">
-        @for (t of filteredCandidates(); track t.teacherId) {
+        @for (t of filteredCandidates(); track t.teacherId + t.subject + t.gradeBand) {
           <li class="candidate-card nur-card nur-card--interactive">
             <div class="candidate-main">
               <div class="candidate-title-row">
-                <h2 class="nur-serif">老师 · {{ t.subject }}</h2>
+                <h2 class="nur-serif">{{ t.displayName }} · {{ t.subject }}</h2>
                 @if (t.verificationApproved) {
                   <span class="badge badge--verified"><span aria-hidden="true">✔</span> 已认证</span>
                 } @else {
@@ -136,6 +138,9 @@
                 {{ isFavorite(t.teacherId) ? '♥ 已收藏' : '♡ 收藏' }}
               </button>
               <button type="button" class="btn-primary-sm" (click)="startWizard(t)">预约试听</button>
+              <button type="button" class="btn-ghost" (click)="toggleCompare(t)" [attr.aria-pressed]="isCompared(t.teacherId)">{{ isCompared(t.teacherId) ? '移除对比' : '加入对比' }}</button>
+              <button type="button" class="btn-ghost" (click)="consult(t)" [disabled]="consultBusy()">课前咨询</button>
+              <button type="button" class="btn-ghost" (click)="startWizard(t, 'FORMAL')">预约正式课 / 续课</button>
             </div>
           </li>
         }
@@ -244,7 +249,7 @@
   @if (wizardTeacher(); as t) {
     <div class="wizard-backdrop" (click)="closeWizard()">
       <div class="wizard-panel nur-card" role="dialog" aria-modal="true" aria-labelledby="wizard-title" (click)="$event.stopPropagation()">
-        <h2 id="wizard-title" class="nur-serif">预约试听 · {{ t.subject }}</h2>
+        <h2 id="wizard-title" class="nur-serif">{{ bookingType() === 'TRIAL' ? '预约试听' : '预约正式课' }} · {{ t.subject }}</h2>
 
         <!-- 步骤指示：当前步骤 / 总步数 / 下一步 -->
         <ol class="wizard-steps" aria-label="预约步骤">
@@ -296,11 +301,11 @@
           <!-- 步骤 2：完整保留前文上下文 -->
           <dl class="confirm-list">
             <div><dt>科目</dt><dd>{{ t.subject }}</dd></div>
-            <div><dt>类型</dt><dd>免费试听</dd></div>
+            <div><dt>类型</dt><dd>{{ bookingType() === 'TRIAL' ? '免费试听' : '正式课（待教师确认）' }}</dd></div>
             <div><dt>时间</dt><dd>{{ selectedSlot()?.startAt | date: 'M月d日 HH:mm' }} – {{ selectedSlot()?.endAt | date: 'HH:mm' }}</dd></div>
-            <div><dt>单价参考</dt><dd>¥{{ yuan(t.pricePerHourCents) }}/小时（试听不收费）</dd></div>
+            <div><dt>单价参考</dt><dd>¥{{ yuan(t.pricePerHourCents) }}/小时{{ bookingType() === 'TRIAL' ? '（试听不收费）' : '（下单金额以服务端为准）' }}</dd></div>
           </dl>
-          <p class="state-note">确认无误后提交；提交后导师会收到申请，试听自动确认。</p>
+          <p class="state-note">{{ bookingType() === 'TRIAL' ? '试听免费，提交后自动确认。' : '提交后等待教师确认，确认后再下单付款。本次提交不扣款。' }}</p>
           <div class="wizard-actions">
             <button type="button" class="btn-ghost" (click)="backToSlots()">← 上一步</button>
             <button type="button" class="btn-primary" [disabled]="submitting()" (click)="submitBooking()">

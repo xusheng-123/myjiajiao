@@ -117,6 +117,7 @@ export const API = {
   order: {
     create: `${API_BASE}/order/orders`,
     mine: `${API_BASE}/order/me/orders`,
+    related: `${API_BASE}/order/me/refundable-orders`,
     orderable: (studentId: string) => `${API_BASE}/order/bookings:orderable?studentId=${studentId}`,
   },
   payment: {

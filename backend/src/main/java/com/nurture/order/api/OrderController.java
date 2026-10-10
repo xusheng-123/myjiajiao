@@ -71,6 +71,14 @@ public class OrderController {
         return orderService.detailsForCaller(orderId);
     }
 
+    @GetMapping("/me/refundable-orders")
+    @PreAuthorize("hasRole('STUDENT') or hasRole('PARENT')")
+    public Page<OrderApplicationService.OrderView> refundableOrders(@RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (page < 0 || size < 1 || size > 50) throw new IllegalArgumentException("页码或每页数量无效");
+        return orderService.refundEligibleOrdersForCaller(PageRequest.of(page, size));
+    }
+
     @GetMapping("/bookings:orderable")
     @PreAuthorize("hasRole('PARENT') or hasRole('ADMIN')")
     @Operation(summary = "孩子的可下单课程（ACTIVE 监护家长视角）",

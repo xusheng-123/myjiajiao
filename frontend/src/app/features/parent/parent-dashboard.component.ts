@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { API } from '../../core/api/endpoints';
@@ -48,7 +49,7 @@ interface FamilyOrder {
 @Component({
   selector: 'nur-parent-dashboard',
   standalone: true,
-  imports: [NoticeCenterComponent, DatePipe],
+  imports: [NoticeCenterComponent, DatePipe, RouterLink],
   templateUrl: './parent-dashboard.component.html',
   styleUrl: './parent-dashboard.component.css',
 })

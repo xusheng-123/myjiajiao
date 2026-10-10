@@ -2,11 +2,11 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { DatePipe, KeyValuePipe } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { API } from '../../core/api/endpoints';
+import { API, API_BASE } from '../../core/api/endpoints';
 import { NoticeCenterComponent } from '../../shared/components/notice-center.component';
 
 interface VerificationCase {
-  id: string;
+  caseId: string;
   teacherId: string;
   status: string;
   decisionNote: string | null;
@@ -23,7 +23,7 @@ interface AccountView {
 }
 
 interface RefundCase {
-  id: string;
+  caseId: string;
   orderId: string;
   status: string;
   computedAmountCents: number;
@@ -38,7 +38,7 @@ interface ArbitrationPreview {
 }
 
 interface AuditLog {
-  id: string;
+  auditId: string;
   callerId: string | null;
   callerRole: string | null;
   occurredAt: string;
@@ -58,6 +58,24 @@ interface AuditLog {
   styleUrl: './admin-dashboard.component.css',
 })
 export class AdminDashboardComponent implements OnInit {
+  readonly materialBusy = signal(false);
+  readonly arbitrationBusy = signal(false);
+
+  downloadMaterial(caseId: string, kind: 'identity' | 'degree'): void {
+    if (this.materialBusy()) return;
+    this.materialBusy.set(true);
+    this.http.get(`${API_BASE}/admin/verification-cases/${caseId}/materials/${kind}`, { responseType: 'blob', observe: 'response' }).subscribe({
+      next: response => {
+        this.materialBusy.set(false);
+        if (!response.body) { this.notice.set('材料内容为空，请联系导师补交。'); return; }
+        const url = URL.createObjectURL(response.body), a = document.createElement('a');
+        a.href = url;
+        a.download = response.headers.get('Content-Disposition')?.match(/filename="?([^";]+)"?/)?.[1] ?? `${kind}-${caseId}.bin`;
+        a.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+        this.notice.set('材料已下载，请核对后完成审核。'); this.loadAuditLogs();
+      }, error: () => { this.materialBusy.set(false); this.notice.set('材料下载失败，请确认权限和材料是否仍可读取。'); },
+    });
+  }
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
 
@@ -136,32 +154,39 @@ export class AdminDashboardComponent implements OnInit {
 
   /** 两阶段仲裁第一阶段：Preview 预计算级联影响。 */
   arbitrationPreview(caseId: string): void {
+    if (this.arbitrationBusy()) return;
+    this.arbitrationBusy.set(true);
     this.http.post<ArbitrationPreview>(API.admin.arbitrationPreview(caseId), {}).subscribe({
-      next: (data) => this.preview.set({ caseId, data }),
-      error: () => this.notice.set('影响评估未成功，请稍后重试。'),
+      next: (data) => { this.arbitrationBusy.set(false); this.preview.set({ caseId, data }); },
+      error: e => { this.arbitrationBusy.set(false); this.notice.set(e.error?.detail ?? '影响评估未成功，请稍后重试。'); },
     });
   }
 
   /** 两阶段仲裁第二阶段：Execute 终态执行。 */
   arbitrationExecute(caseId: string, approve: boolean): void {
+    if (this.arbitrationBusy()) return;
     const current = this.preview();
-    if (!current || current.caseId !== caseId) {
+    if (approve && (!current || current.caseId !== caseId)) {
       this.notice.set('请先完成第一阶段 Preview 评估。');
       return;
     }
+    const decisionNote = approve ? '仲裁通过，退款原路入账' : window.prompt('请输入驳回原因（最多 512 字，将向申请人展示）：')?.trim();
+    if (!decisionNote || decisionNote.length > 512) { this.notice.set('请输入 1–512 字的处理说明。'); return; }
+    this.arbitrationBusy.set(true);
     this.http
       .post(API.admin.arbitrationExecute(caseId), {
         approve,
-        decisionNote: approve ? '仲裁通过，退款原路入账' : '驳回：证据不足',
-        confirmationToken: current.data.confirmationToken,
+        decisionNote,
+        confirmationToken: approve ? current!.data.confirmationToken : undefined,
       })
       .subscribe({
         next: () => {
+          this.arbitrationBusy.set(false);
           this.notice.set(approve ? '退款已执行并入账家庭钱包。' : '已驳回该退款申请。');
           this.preview.set(null);
           this.loadRefunds();
         },
-        error: () => this.notice.set('执行未成功：凭证可能已过期，请重新 Preview。'),
+        error: e => { this.arbitrationBusy.set(false); this.notice.set(e.error?.detail ?? '执行未成功：请重新评估影响后重试。'); },
       });
   }
 

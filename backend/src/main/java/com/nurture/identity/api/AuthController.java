@@ -28,15 +28,23 @@ public class AuthController {
 
     private final IdentityApplicationService identityService;
     private final SmsCodeStore smsCodeStore;
+    private final com.nurture.identity.app.TeacherRegistrationService teacherRegistration;
 
-    public AuthController(IdentityApplicationService identityService, SmsCodeStore smsCodeStore) {
+    public AuthController(IdentityApplicationService identityService, SmsCodeStore smsCodeStore,
+                           com.nurture.identity.app.TeacherRegistrationService teacherRegistration) {
         this.identityService = identityService;
         this.smsCodeStore = smsCodeStore;
+        this.teacherRegistration = teacherRegistration;
     }
 
     public record SmsCodeRequest(
-            @Parameter(description = "角色门户", required = true) CallerRole role,
-            @Pattern(regexp = "1\\d{10}", message = "手机号需为 11 位数字") String phone) {
+            @jakarta.validation.constraints.NotNull @Parameter(description = "角色门户", required = true) CallerRole role,
+            @NotBlank @Pattern(regexp = "1\\d{10}", message = "手机号需为 11 位数字") String phone) {
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/capabilities")
+    public java.util.Map<String, Object> capabilities() {
+        return java.util.Map.of("smsAvailable", smsCodeStore.available(), "passwordAvailable", true);
     }
 
     public record LoginByPasswordRequest(CallerRole role, String account, String password) {
@@ -57,9 +65,9 @@ public class AuthController {
             @NotBlank @Size(max = 64) String displayName,
             @Pattern(regexp = "1\\d{10}") String phone,
             @NotBlank @Size(min = 8, max = 64) String password,
-            @NotBlank String school,
-            @NotBlank String highestDegree,
-            int yearsOfTeaching) {
+            @NotBlank @Size(max = 128) String school,
+            @NotBlank @Size(max = 32) String highestDegree,
+            @jakarta.validation.constraints.Min(0) @jakarta.validation.constraints.Max(80) int yearsOfTeaching) {
     }
 
     public record AuthResponse(String accessToken, String refreshToken, String accountNo,
@@ -137,9 +145,8 @@ public class AuthController {
     public AuthResponse registerTeacher(@Valid @RequestBody RegisterTeacherRequest request,
                                         jakarta.servlet.http.HttpServletRequest httpRequest,
                                         jakarta.servlet.http.HttpServletResponse httpResponse) {
-        var account = identityService.register(CallerRole.TEACHER, request.displayName(),
-                request.phone(), request.password(), clientIp(httpRequest));
-        var session = identityService.issueSession(account);
+        var session = teacherRegistration.register(request.displayName(), request.phone(), request.password(),
+                request.school(), request.highestDegree(), request.yearsOfTeaching(), clientIp(httpRequest));
         AuthCookies.attach(httpResponse, httpRequest, session.accessToken(), session.refreshToken());
         return toResponse(session);
     }

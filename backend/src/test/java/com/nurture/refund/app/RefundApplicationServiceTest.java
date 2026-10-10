@@ -36,16 +36,18 @@ class RefundApplicationServiceTest {
     @Mock TwoPhaseService twoPhaseService;
     @Mock AuditService auditService;
     @Mock MessagingApplicationService messagingService;
+    @Mock com.nurture.settlement.app.SettlementApplicationService settlementService;
     @InjectMocks RefundApplicationService service;
 
     @Test
     void 预览文案如实描述订单关闭与结算条目不自动调整() {
         UUID orderId = UUID.randomUUID();
         RefundCase refundCase = new RefundCase(orderId, UUID.randomUUID(), "课程质量争议", 30000, 1);
-        when(refundRepository.findById(refundCase.getId())).thenReturn(java.util.Optional.of(refundCase));
+        when(refundRepository.lockById(refundCase.getId())).thenReturn(java.util.Optional.of(refundCase));
         Order order = org.mockito.Mockito.mock(Order.class);
         when(orderService.get(orderId)).thenReturn(order);
         when(order.getOrderNo()).thenReturn("NUR-ORD-TEST");
+        when(settlementService.refundNote(order)).thenReturn("退款执行时追加教师课酬红冲条目，待结算净额相应扣减 ¥255.00");
         when(twoPhaseService.issue(anyString(), any(), anyString()))
                 .thenReturn(new TwoPhaseService.Grant("token-xyz", Instant.now().plusSeconds(600)));
 
@@ -58,8 +60,8 @@ class RefundApplicationServiceTest {
         assertThat(String.valueOf(impact.get("orderAfterRefund"))).doesNotContain("作废");
         assertThat(String.valueOf(impact.get("settlementNote")))
                 .as("结算条目现状必须如实：不自动调整、退款成功≠课酬已红冲")
-                .contains("暂不随退款自动调整")
-                .contains("不代表教师课酬已完成红冲");
+                .contains("退款执行时追加教师课酬红冲条目")
+                .contains("待结算净额相应扣减");
         assertThat(((Number) impact.get("refundAmountCents")).longValue()).isEqualTo(30000L);
         // 预览仅评估（签发凭证 + 置为已评估），不得直接进入已批准/已执行
         assertThat(refundCase.getStatus().name()).isEqualTo("EVALUATED");

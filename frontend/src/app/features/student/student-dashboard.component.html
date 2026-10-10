@@ -11,6 +11,7 @@
       退出
     </button>
   </header>
+  <nav aria-label="课程服务"><a routerLink="/messages">课前咨询</a> · <a routerLink="/refunds">退款与处理进度</a></nav>
 
   <!-- 次级入口：找老师（不与主 CTA 争抢，弱化为文本链接样式） -->
   <p class="find-teacher-line">
@@ -102,19 +103,12 @@
                   </span>
                   @if (lesson.status === 'CONFIRMED') {
                     @if (orderOf(lesson.bookingId); as ord) {
-                      <span class="status-pill">{{ ord.status === 'PAID' ? '✓ 已支付' : '◷ 待支付' }}</span>
+                      <span class="status-pill">{{ ord.status === 'PAID' ? '✓ 已支付' : ord.status === 'CLOSED' ? '订单已关闭' : ord.status === 'CANCELLED' ? '订单已取消' : '◷ 待支付' }}</span>
                     } @else if (lesson.type === 'TRIAL') {
                       <!-- 试听免费（2026-10-10 决策）：试听预约不提供付费下单入口，服务端同样拒绝 -->
                       <span class="status-pill">免费试听</span>
                     } @else {
-                      <button
-                        type="button"
-                        class="btn-ghost-sm reschedule-entry"
-                        [disabled]="orderBusy()"
-                        (click)="orderFor(lesson.bookingId)"
-                      >
-                        {{ orderBusy() ? '下单中…' : '下单' }}
-                      </button>
+                      <span class="status-pill">请家长在家长中心下单付款</span>
                     }
                   }
                   @if (lesson.status === 'CONFIRMED' || lesson.status === 'REQUESTED') {

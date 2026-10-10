@@ -73,19 +73,19 @@ public class TeacherController {
     @GetMapping("/profile")
     @Operation(summary = "我的导师档案")
     public ProfileResponse profile() {
-        TeacherProfile p = teacherService.byAccountId(CallerContext.require().accountId());
-        return new ProfileResponse(p.getId(), p.getTeacherNo(), null, p.getSchool(), p.getHighestDegree(),
-                p.getYearsOfTeaching(), p.getIntro(), p.getTeachingStyleTags());
+        var p = teacherService.profileViewOf(CallerContext.require().accountId());
+        return new ProfileResponse(p.profileId(), p.teacherNo(), null, p.school(), p.highestDegree(),
+                p.yearsOfTeaching(), p.intro(), p.styleTags());
     }
 
     @PutMapping("/profile")
     @Operation(summary = "更新导师档案", description = "院校、学历、教龄、个人介绍与教学风格标签")
     public ProfileResponse updateProfile(@RequestBody UpdateProfileRequest request) {
-        TeacherProfile p = teacherService.updateProfile(CallerContext.require().accountId(),
+        var p = teacherService.updateProfileView(CallerContext.require().accountId(),
                 request.school(), request.highestDegree(), request.yearsOfTeaching(),
                 request.intro(), request.styleTags());
-        return new ProfileResponse(p.getId(), p.getTeacherNo(), null, p.getSchool(), p.getHighestDegree(),
-                p.getYearsOfTeaching(), p.getIntro(), p.getTeachingStyleTags());
+        return new ProfileResponse(p.profileId(), p.teacherNo(), null, p.school(), p.highestDegree(),
+                p.yearsOfTeaching(), p.intro(), p.styleTags());
     }
 
     @GetMapping("/subjects")

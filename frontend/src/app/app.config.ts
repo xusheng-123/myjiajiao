@@ -13,10 +13,10 @@ registerLocaleData(localeZh);
 /**
  * 教师检索数据源开关（PHASE 4）：
  * true  = Mock（20 名内置教师，联调与演示）；
- * false = HTTP（GET /api/v1/matching/teachers:search，需登录态）。
+ * false = HTTP（GET /api/v1/matching/public/teachers，只展示真实已认证在售导师）。
  * 切换只改此一行，页面与组件零改动。
  */
-const USE_MOCK_TEACHERS_API = true;
+const USE_MOCK_TEACHERS_API = false;
 
 export const appConfig: ApplicationConfig = {
   providers: [
