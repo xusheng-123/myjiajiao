@@ -7,17 +7,29 @@
     <a routerLink="/student/dashboard" class="back-link">← 返回首页</a>
   </header>
 
-  <!-- 双入口切换：搜索/筛选（默认） + 告诉平台我的需求 -->
+  <!-- 三入口切换：搜索/筛选（默认） + 告诉平台我的需求 + 我的收藏（G10） -->
   <div class="entry-switch" role="group" aria-label="选择找老师方式">
-    <button type="button" class="entry-pill" [class.entry-pill--active]="!demandMode()" (click)="demandMode.set(false)">
+    <button type="button" class="entry-pill" [class.entry-pill--active]="entryMode() === 'search'" (click)="showEntry('search')">
       ① 搜索 / 筛选
     </button>
-    <button type="button" class="entry-pill" [class.entry-pill--active]="demandMode()" (click)="toggleDemandMode()">
+    <button type="button" class="entry-pill" [class.entry-pill--active]="entryMode() === 'demand'" (click)="showEntry('demand')">
       ② 告诉平台我的需求
+    </button>
+    <button type="button" class="entry-pill" [class.entry-pill--active]="entryMode() === 'favorites'" (click)="showEntry('favorites')">
+      ③ 我的收藏
     </button>
   </div>
 
-  @if (!demandMode()) {
+  @if (favNotice()) {
+    <p class="form-status" role="status">
+      <span aria-hidden="true">ℹ</span> {{ favNotice() }}
+      @if (!auth.isLoggedIn()) {
+        <a routerLink="/auth?role=student" class="fav-login-link">去登录</a>
+      }
+    </p>
+  }
+
+  @if (entryMode() === 'search') {
     <!-- ---------- 入口一：搜索 / 筛选 ---------- -->
     <section class="search-bar nur-card" aria-label="搜索与筛选">
       <input
@@ -52,18 +64,35 @@
       <button type="button" class="btn-clear" (click)="clearFilters()">查看全部</button>
     </section>
 
-    <!-- 结果区：区分 加载中 / 空 / 结果 -->
+    <!-- 最近可约时间筛选（G10）：仅过滤当前真实检索结果，切换不重新请求 -->
+    <div class="time-filter" role="group" aria-label="按最近可约时间筛选">
+      <button type="button" class="time-chip" [class.time-chip--active]="timeFilter() === 'any'" [attr.aria-pressed]="timeFilter() === 'any'" (click)="setTimeFilter('any')">不限时间</button>
+      <button type="button" class="time-chip" [class.time-chip--active]="timeFilter() === 'today'" [attr.aria-pressed]="timeFilter() === 'today'" (click)="setTimeFilter('today')">今日可约</button>
+      <button type="button" class="time-chip" [class.time-chip--active]="timeFilter() === '3d'" [attr.aria-pressed]="timeFilter() === '3d'" (click)="setTimeFilter('3d')">3 天内可约</button>
+      <button type="button" class="time-chip" [class.time-chip--active]="timeFilter() === '7d'" [attr.aria-pressed]="timeFilter() === '7d'" (click)="setTimeFilter('7d')">7 天内可约</button>
+      @if (timeFilter() !== 'any' && searched() && !loading()) {
+        <span class="time-filter-note" role="status">按可约时间筛出 {{ filteredCandidates().length }}/{{ candidates().length }} 位老师（基于当前检索结果；预约以导师档期实际确认为准）</span>
+      }
+    </div>
+
+    <!-- 结果区：区分 加载中 / 空 / 时间筛空 / 结果 -->
     @if (loading()) {
       <p class="state-note" role="status">正在为你挑选合适的老师…</p>
     } @else if (searched() && candidates().length === 0) {
       <section class="state-card nur-card">
         <p class="state-note">没有找到符合条件的老师。可以放宽价格或学段，</p>
         <p class="state-note">或者切换到「告诉平台我的需求」，让合适的老师来找你。</p>
-        <button type="button" class="btn-ghost" (click)="toggleDemandMode()">发布我的需求</button>
+        <button type="button" class="btn-ghost" (click)="showEntry('demand')">发布我的需求</button>
       </section>
-    } @else {
+    } @else if (searched() && candidates().length > 0 && filteredCandidates().length === 0) {
+      <section class="state-card nur-card">
+        <p class="state-note">当前时间范围内暂无可约教师。可以放宽时间范围，</p>
+        <p class="state-note">或切换回「不限时间」查看全部检索结果。</p>
+        <button type="button" class="btn-ghost" (click)="setTimeFilter('any')">不限时间</button>
+      </section>
+    } @else if (searched()) {
       <ul class="candidate-list">
-        @for (t of candidates(); track t.teacherId) {
+        @for (t of filteredCandidates(); track t.teacherId) {
           <li class="candidate-card nur-card nur-card--interactive">
             <div class="candidate-main">
               <div class="candidate-title-row">
@@ -95,12 +124,71 @@
               }
             </div>
             <div class="candidate-actions">
+              <button
+                type="button"
+                class="btn-fav"
+                [class.btn-fav--active]="isFavorite(t.teacherId)"
+                [disabled]="favBusyIds().has(t.teacherId)"
+                [attr.aria-pressed]="isFavorite(t.teacherId)"
+                [attr.aria-label]="(isFavorite(t.teacherId) ? '取消收藏老师（' : '收藏老师（') + t.subject + '）'"
+                (click)="toggleFavorite(t)"
+              >
+                {{ isFavorite(t.teacherId) ? '♥ 已收藏' : '♡ 收藏' }}
+              </button>
               <button type="button" class="btn-primary-sm" (click)="startWizard(t)">预约试听</button>
             </div>
           </li>
         }
       </ul>
     }
+  } @else if (entryMode() === 'favorites') {
+    <!-- ---------- 入口三：我的收藏（G10） ---------- -->
+    <section class="favorites-panel nur-card" aria-labelledby="fav-title">
+      <h2 id="fav-title" class="nur-serif">我的收藏</h2>
+      @if (favLoading()) {
+        <p class="state-note" role="status">正在读取收藏…</p>
+      } @else if (favError()) {
+        <p class="state-note">收藏列表读取失败，<button type="button" class="btn-ghost" (click)="openFavorites()">重试</button></p>
+      } @else if (favoritesList().length === 0) {
+        <p class="state-note">还没有收藏的老师。在「搜索 / 筛选」结果里点「♡ 收藏」，合适的老师就会出现在这里。</p>
+        <button type="button" class="btn-ghost" (click)="showEntry('search')">去找老师</button>
+      } @else {
+        <ul class="fav-list">
+          @for (f of favoritesList(); track f.teacherId) {
+            <li class="fav-item">
+              <div class="fav-main">
+                @if (f.retrievable) {
+                  <p class="fav-title">{{ f.displayName }} · {{ f.subject }}<span class="fav-meta"> · {{ f.gradeBand ?? '学段不限' }} · ¥{{ yuan(f.pricePerHourCents ?? 0) }}/小时</span></p>
+                  <p class="fav-meta">
+                    @if (f.averageRating !== null) {
+                      ★ {{ f.averageRating }} ·
+                    }
+                    @if (f.nextOpenSlotAt) {
+                      最近可约 {{ f.nextOpenSlotAt | date: 'M月d日 HH:mm' }}（以档期实际确认为准）
+                    } @else {
+                      近期暂无可约时段
+                    }
+                  </p>
+                } @else {
+                  <p class="fav-title">{{ f.displayName }}</p>
+                  <p class="fav-meta">当前未出现在检索结果中（可能资质审核未通过或课程已停止销售），暂时无法预约。</p>
+                }
+              </div>
+              <div class="fav-actions">
+                <button
+                  type="button"
+                  class="btn-ghost"
+                  [disabled]="favBusyIds().has(f.teacherId)"
+                  (click)="unfavorite(f)"
+                >
+                  {{ favBusyIds().has(f.teacherId) ? '处理中…' : '取消收藏' }}
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
   } @else {
     <!-- ---------- 入口二：告诉平台我的需求 ---------- -->
     <section class="demand-panel nur-card" aria-labelledby="demand-title">

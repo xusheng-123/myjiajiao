@@ -824,6 +824,41 @@ def main():
     given_hit = st == 200 and isinstance(given, list) and any(r.get("bookingId") == bk1["bookingId"] for r in given)
     check("我发出的评价含已评课（已评价标记数据源）", given_hit, f"{st} {str(given)[:160]}")
 
+    print("== 19. G10 教师收藏与可约时间筛选（API 层；UI 过滤行为走浏览器走查） ==")
+    # 起始状态收敛：上一轮可能残留收藏，先取消保证从确定状态开始
+    st, _, g10fav0 = http("GET", "/matching/favorites", token=t_student)
+    g10_tid = found["teacherId"]
+    if st == 200 and any(f.get("teacherId") == g10_tid for f in g10fav0 or []):
+        st, _, _ = http("POST", "/matching/teachers/%s:favorite" % g10_tid, {}, token=t_student, idem=str(uuid.uuid4()))
+    check("G10 起始状态收敛(未收藏)", st in (200, 201), f"{st}")
+    st, _, g10f1 = http("POST", "/matching/teachers/%s:favorite" % g10_tid, {}, token=t_student, idem=str(uuid.uuid4()))
+    check("G10 收藏成功(favorited=true 以服务端响应为准)", st == 200 and g10f1.get("favorited") is True, f"{st} {g10f1}")
+    st, _, g10list = http("GET", "/matching/favorites", token=t_student)
+    check("G10 收藏列表含该教师且恰好一条(不产生重复记录)",
+          st == 200 and sum(1 for f in g10list or [] if f.get("teacherId") == g10_tid) == 1, f"{st}")
+    check("G10 收藏列表含服务端字段(displayName/favoritedAt)",
+          any(f.get("teacherId") == g10_tid and f.get("displayName") and f.get("favoritedAt") for f in g10list or []),
+          f"{str(g10list)[:160]}")
+    st, _, g10anon = http("POST", "/matching/teachers/%s:favorite" % g10_tid, {}, idem=str(uuid.uuid4()))
+    check("G10 匿名收藏被拒(4xx)", 400 <= st < 500, f"{st} {g10anon}")
+    # 授权面如实记录：服务端未做角色限制（任意已登录角色可收藏），教师收藏另一位教师实测可达
+    st, _, g10sr = http("GET", "/matching/teachers:search", token=t_student)
+    g10_other = next((t.get("teacherId") for t in g10sr or [] if t.get("teacherId") != g10_tid), g10_tid)
+    st, _, g10tf = http("POST", "/matching/teachers/%s:favorite" % g10_other, {}, token=t_teacher, idem=str(uuid.uuid4()))
+    check("G10 教师角色收藏可达(服务端授权面=任意登录角色，前端不扩大)", st == 200 and g10tf.get("favorited") is True, f"{st} {g10tf}")
+    st, _, _ = http("POST", "/matching/teachers/%s:favorite" % g10_other, {}, token=t_teacher, idem=str(uuid.uuid4()))
+    check("G10 教师侧取消恢复原状", st == 200, f"{st}")
+    st, _, g10f2 = http("POST", "/matching/teachers/%s:favorite" % g10_tid, {}, token=t_student, idem=str(uuid.uuid4()))
+    check("G10 再调用=取消收藏(toggle 双向语义：两次调用不保持收藏)", st == 200 and g10f2.get("favorited") is False, f"{st} {g10f2}")
+    st, _, g10list2 = http("GET", "/matching/favorites", token=t_student)
+    check("G10 取消后收藏列表不再含该教师", st == 200 and not any(f.get("teacherId") == g10_tid for f in g10list2 or []), f"{st}")
+    st, _, g10f3 = http("POST", "/matching/teachers/%s:favorite" % g10_tid, {}, token=t_student, idem=str(uuid.uuid4()))
+    check("G10 恢复收藏(供浏览器走查展示真实状态)", st == 200 and g10f3.get("favorited") is True, f"{st} {g10f3}")
+    st, _, g10sr2 = http("GET", "/matching/teachers:search?subject=数学", token=t_student)
+    check("G10 检索结果均含 nextOpenSlotAt 字段(前端筛选数据源)",
+          st == 200 and isinstance(g10sr2, list) and len(g10sr2) > 0 and all("nextOpenSlotAt" in t for t in g10sr2),
+          f"{st} count={len(g10sr2) if isinstance(g10sr2, list) else 'n/a'}")
+
     print()
     print(f"通过 {PASS} 项，失败 {FAIL} 项")
     if failures:

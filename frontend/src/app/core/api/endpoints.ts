@@ -67,6 +67,9 @@ export const API = {
     search: `${API_BASE}/matching/teachers:search`,
     demands: `${API_BASE}/matching/demands`,
     openDemands: `${API_BASE}/matching/demands:open`,
+    favorites: `${API_BASE}/matching/favorites`,
+    toggleFavorite: (tid: string) => `${API_BASE}/matching/teachers/${tid}:favorite`,
+    recommend: `${API_BASE}/matching/teachers:recommend`,
   },
   scheduling: {
     openSlots: (teacherId: string) => `${API_BASE}/scheduling/teachers/${teacherId}/open-slots`,
@@ -102,9 +105,6 @@ export const API = {
     teacherQuestions: `${API_BASE}/learning/teacher/questions`,
     answerQuestion: (id: string) => `${API_BASE}/learning/questions/${id}:answer`,
     weeklyReport: (sid: string) => `${API_BASE}/parent/me/weekly-report?studentId=${sid}`,
-    favorites: `${API_BASE}/matching/favorites`,
-    toggleFavorite: (tid: string) => `${API_BASE}/matching/teachers/${tid}:favorite`,
-    recommend: `${API_BASE}/matching/teachers:recommend`,
   },
   adminOrders: {
     pending: `${API_BASE}/admin/orders/pending-payment`,
