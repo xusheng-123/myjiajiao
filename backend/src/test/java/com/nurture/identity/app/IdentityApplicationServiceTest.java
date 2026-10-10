@@ -60,7 +60,8 @@ class IdentityApplicationServiceTest {
                 new SecurityProperties.BruteForce(5L, 15L, 15L, 100L));
         service = new IdentityApplicationService(accountRepository, apiTokenRepository,
                 refreshTokenRepository, passwordEncoder, jwtService,
-                properties, outboxWriter, loginThrottleService, registrationRateLimiter);
+                properties, outboxWriter, loginThrottleService, registrationRateLimiter,
+                org.mockito.Mockito.mock(com.nurture.shared.numbering.BusinessNumberGenerator.class));
         // 供 issueSession 使用
         when(jwtService.issueAccessToken(any(), any(), anyString(), any())).thenReturn("access-token");
         when(refreshTokenRepository.save(any(RefreshToken.class)))

@@ -594,11 +594,14 @@ def main():
         if st not in (200, 201):
             base = new_base(); continue
         st, _, bk_res = http("POST", "/booking/bookings",
-            {"teacherId": found["teacherId"], "slotId": slot3["slotId"], "subject": "数学", "bookingType": "TRIAL"},
+            {"teacherId": found["teacherId"], "slotId": slot3["slotId"], "subject": "数学", "bookingType": "FORMAL"},
             token=t_student, idem=str(uuid.uuid4()))
         if st != 201:
             base = new_base(); continue
-        check("改期用试听预约创建(已确认)", True, "")
+        check("改期用正式课申请创建", bk_res.get("status") == "REQUESTED", str(bk_res))
+        st, _, confirmed_res = http("POST", "/teacher/me/booking-requests/%s:decide?decision=approve" % bk_res["bookingId"],
+            {}, token=t_teacher, idem=str(uuid.uuid4()))
+        check("改期用正式课确认", st == 200 and confirmed_res.get("status") == "CONFIRMED", f"{st} {confirmed_res}")
         st, _, _ = http("POST", "/booking/bookings/%s:reschedule" % bk_res["bookingId"],
             {"newSlotId": slot2["slotId"]}, token=t_student, idem=str(uuid.uuid4()))
         check("改期到已占用档期被拒(409)", st == 409, f"{st}")
@@ -770,13 +773,16 @@ def main():
     check("合法 Origin 放行 CORS", st_ok == 200 and allow_ok == "http://localhost:4200",
           f"st={st_ok} allow-origin={allow_ok}")
 
-    # 15.3 课堂链路（P1-4）：新档期 → 试听（自动确认）→ 导师登记会议链接 → 学生入会 → 结课 → 考勤
+    # 15.3 同师试听已消耗：用正式课经审批验证课堂链路，保留每生每师一次规则。
     slot2, _at2 = publish_slot_retry(t_teacher, None, 2, 3)
     check("发布课堂链路用档期", slot2.get("slotId") is not None, f"{slot2}")
     st, _, bk3 = http("POST", "/booking/bookings",
         {"teacherId": teacher_id, "slotId": slot2["slotId"],
-         "subject": "物理", "bookingType": "TRIAL"}, token=t_student, idem=str(uuid.uuid4()))
-    check("创建课堂链路用试听预约", st in (200, 201) and bk3.get("status") == "CONFIRMED", f"{st} {bk3}")
+         "subject": "物理", "bookingType": "FORMAL"}, token=t_student, idem=str(uuid.uuid4()))
+    check("创建课堂链路用正式课申请", st == 201 and bk3.get("status") == "REQUESTED", f"{st} {bk3}")
+    st, _, confirmed3 = http("POST", "/teacher/me/booking-requests/%s:decide?decision=approve" % bk3["bookingId"],
+        {}, token=t_teacher, idem=str(uuid.uuid4()))
+    check("课堂链路正式课经教师确认", st == 200 and confirmed3.get("status") == "CONFIRMED", f"{st} {confirmed3}")
     st, _, sess = http("POST", "/classroom/bookings/%s/session" % bk3["bookingId"],
         {"meetingUrl": "https://meeting.tencent.com/dm/r/DRILLMEETING"}, token=t_teacher, idem=str(uuid.uuid4()))
     check("导师登记会议链接", st in (200, 201) and sess.get("meetingUrl"), f"{st} {sess}")

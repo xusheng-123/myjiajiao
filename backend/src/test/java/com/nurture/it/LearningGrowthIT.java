@@ -44,7 +44,7 @@ class LearningGrowthIT {
 
     private String tTeacher, tStudent, tParent, tOtherTeacher, tOutsider;
     private String teacherId, otherTeacherId;
-    private UUID bookingA, bookingB;     // 两节已确认试听课
+    private UUID bookingA, bookingB;     // 两节经审批的正式课；同师仅有一次试听
     private UUID taskId;
     private UUID otherBookingId;         // 无关教师的课程
 
@@ -70,9 +70,9 @@ class LearningGrowthIT {
                 new java.util.HashMap<>() {{ put("studentNo", studentNo); put("relation", "母亲"); }});
         Support.postJson(mvc, om, "/api/v1/parent/me/children:confirm", tStudent, new java.util.HashMap<>());
 
-        // 两条已确认试听课程（不同档期）
-        bookingA = createConfirmedTrial(tTeacher, tStudent, 20);
-        bookingB = createConfirmedTrial(tTeacher, tStudent, 40);
+        // 学习任务不依赖试听类型，使用真实正式课审批链路。
+        bookingA = createConfirmedLesson(tTeacher, tStudent, 20);
+        bookingB = createConfirmedLesson(tTeacher, tStudent, 40);
         otherBookingId = UUID.fromString(Support.postJson(mvc, om, "/api/v1/booking/bookings", tOutsider,
                 new java.util.HashMap<>() {{
                     put("teacherId", otherTeacherId);
@@ -100,14 +100,9 @@ class LearningGrowthIT {
         return t.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssxxx"));
     }
 
-    private UUID createConfirmedTrial(String teacher, String student, int day) throws Exception {
+    private UUID createConfirmedLesson(String teacher, String student, int day) throws Exception {
         var slot = Support.postJson(mvc, om, "/api/v1/scheduling/availability-slots", teacher,
                 new java.util.HashMap<>() {{ put("startAt", plusDays(day, 9)); put("endAt", plusDays(day, 10)); }});
-        var bk = Support.postJson(mvc, om, "/api/v1/booking/bookings", student,
-                new java.util.HashMap<>() {{
-                    put("teacherId", UUID.randomUUID()); // 占位，下一行覆盖
-                }});
-        // Support.postJson 不便传变量：直接用原生构建
         var builder = post("/api/v1/booking/bookings").contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .header("Idempotency-Key", UUID.randomUUID().toString())
                 .header("Authorization", "Bearer " + student)
@@ -115,10 +110,15 @@ class LearningGrowthIT {
                     put("teacherId", UUID.fromString(teacherId));
                     put("slotId", slot.get("slotId").asText());
                     put("subject", "学习成长IT");
-                    put("bookingType", "TRIAL");
+                    put("bookingType", "FORMAL");
                 }}));
         MvcResult r = mvc.perform(builder).andExpect(status().is2xxSuccessful()).andReturn();
-        return UUID.fromString(om.readTree(r.getResponse().getContentAsString()).get("bookingId").asText());
+        var id = UUID.fromString(om.readTree(r.getResponse().getContentAsString()).get("bookingId").asText());
+        var confirmed = sendPost("/api/v1/booking/booking-requests/"+id+":decide?decision=approve",
+                teacher, java.util.Map.of(), UUID.randomUUID().toString());
+        assertThat(confirmed.getResponse().getStatus()).isEqualTo(200);
+        assertThat(om.readTree(confirmed.getResponse().getContentAsString()).path("status").asText()).isEqualTo("CONFIRMED");
+        return id;
     }
 
     private MvcResult sendPost(String url, String token, Object body, String idem) throws Exception {

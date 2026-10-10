@@ -19,11 +19,14 @@ public class StudentApplicationService {
 
     private final StudentProfileRepository profileRepository;
     private final MessagingApplicationService messagingService;
+    private final com.nurture.shared.numbering.BusinessNumberGenerator businessNumbers;
 
     public StudentApplicationService(StudentProfileRepository profileRepository,
-                                     MessagingApplicationService messagingService) {
+                                     MessagingApplicationService messagingService,
+                                     com.nurture.shared.numbering.BusinessNumberGenerator businessNumbers) {
         this.profileRepository = profileRepository;
         this.messagingService = messagingService;
+        this.businessNumbers = businessNumbers;
     }
 
     @Transactional
@@ -68,7 +71,7 @@ public class StudentApplicationService {
     }
 
     private String nextNo() {
-        return "NUR-STU-" + String.format("%06d", 1 + new java.security.SecureRandom().nextInt(999_999));
+        return businessNumbers.student();
     }
 
     /** 学习成长：学生档案 profileId → accountId（不存在返回 null）。 */

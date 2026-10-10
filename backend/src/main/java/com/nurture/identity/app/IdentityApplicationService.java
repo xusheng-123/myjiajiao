@@ -52,6 +52,7 @@ public class IdentityApplicationService implements ApiTokenVerifier, AccountStat
     private final OutboxWriter outboxWriter;
     private final LoginThrottleService loginThrottleService;
     private final RegistrationRateLimiter registrationRateLimiter;
+    private final com.nurture.shared.numbering.BusinessNumberGenerator businessNumbers;
 
     public IdentityApplicationService(AccountRepository accountRepository,
                                       ApiTokenRepository apiTokenRepository,
@@ -61,7 +62,8 @@ public class IdentityApplicationService implements ApiTokenVerifier, AccountStat
                                       SecurityProperties securityProperties,
                                       OutboxWriter outboxWriter,
                                       LoginThrottleService loginThrottleService,
-                                      RegistrationRateLimiter registrationRateLimiter) {
+                                      RegistrationRateLimiter registrationRateLimiter,
+                                      com.nurture.shared.numbering.BusinessNumberGenerator businessNumbers) {
         this.accountRepository = accountRepository;
         this.apiTokenRepository = apiTokenRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -71,6 +73,7 @@ public class IdentityApplicationService implements ApiTokenVerifier, AccountStat
         this.outboxWriter = outboxWriter;
         this.loginThrottleService = loginThrottleService;
         this.registrationRateLimiter = registrationRateLimiter;
+        this.businessNumbers = businessNumbers;
     }
 
     // ------------------------------------------------------------------ 注册
@@ -323,7 +326,7 @@ public class IdentityApplicationService implements ApiTokenVerifier, AccountStat
             case ADMIN -> "NUR-ADM-";
             case AGENT -> "NUR-AGT-";
         };
-        return prefix + String.format("%06d", 1 + RANDOM.nextInt(999_999));
+        return businessNumbers.account(prefix);
     }
 
     private String RANDOMToken() {

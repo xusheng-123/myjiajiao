@@ -50,6 +50,7 @@ class BookingApplicationServiceTest {
     @Mock RefundApplicationService refundService;
     @Mock TwoPhaseService twoPhaseService;
     @Mock MessagingApplicationService messagingService;
+    @Mock com.nurture.booking.infra.TrialEntitlementRepository trialEntitlements;
 
     private BookingApplicationService service;
     private final UUID studentId = UUID.randomUUID();
@@ -61,7 +62,7 @@ class BookingApplicationServiceTest {
     @BeforeEach
     void setUp() {
         service = new BookingApplicationService(bookingRepository, schedulingService,
-                orderService, refundService, twoPhaseService, messagingService);
+                orderService, refundService, twoPhaseService, messagingService, trialEntitlements);
         confirmedBooking = new Booking(studentId, teacherId, oldSlotId, "物理",
                 Booking.BookingType.FORMAL, 30_000L);
         confirmedBooking.confirm();

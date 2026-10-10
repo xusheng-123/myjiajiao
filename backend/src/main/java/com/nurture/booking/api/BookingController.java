@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -41,7 +42,7 @@ public class BookingController {
     }
 
     public record CreateBookingRequest(@NotNull UUID teacherId, @NotNull UUID slotId,
-                                       @NotBlank String subject, String bookingType) {
+                                       @NotBlank @Size(max=32) String subject, String bookingType) {
     }
 
     public record CancelPreviewRequest(@NotBlank String reason) {
@@ -74,6 +75,10 @@ public class BookingController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "创建预约", description = "占用导师档期；试听课自动确认，正式课待导师审批")
     public BookingResponse create(@Valid @RequestBody CreateBookingRequest request) {
+        if (request.bookingType() != null && !"FORMAL".equalsIgnoreCase(request.bookingType())
+                && !"TRIAL".equalsIgnoreCase(request.bookingType())) {
+            throw new IllegalArgumentException("bookingType仅支持TRIAL或FORMAL");
+        }
         UUID studentId = CallerContext.require().accountId();
         Booking.BookingType type = "FORMAL".equalsIgnoreCase(request.bookingType())
                 ? Booking.BookingType.FORMAL : Booking.BookingType.TRIAL;
@@ -128,6 +133,11 @@ public class BookingController {
                                             @RequestParam(defaultValue = "10") int size) {
         UUID callerId = CallerContext.require().accountId();
         return bookingService.ofStudent(callerId, PageRequest.of(page, size)).map(BookingResponse::from);
+    }
+
+    @GetMapping("/trial-eligibility")
+    public BookingApplicationService.TrialEligibility trialEligibility(@RequestParam UUID teacherId) {
+        return bookingService.trialEligibility(teacherId);
     }
 
     @PostMapping("/bookings/{bookingId}:start")

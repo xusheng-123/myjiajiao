@@ -125,6 +125,8 @@ export class MatchComponent implements OnInit {
   // ---------- 预约分步向导
   readonly wizardTeacher = signal<TeacherCandidate | null>(null);
   readonly bookingType = signal<'TRIAL' | 'FORMAL'>('TRIAL');
+  readonly trialAvailable = signal<boolean | null>(null);
+  readonly trialReason = signal('');
   readonly wizardStep = signal(1); // 1 选时间 / 2 确认信息
   readonly wizardSlots = signal<OpenSlot[]>([]);
   readonly selectedSlot = signal<OpenSlot | null>(null);
@@ -415,6 +417,17 @@ export class MatchComponent implements OnInit {
     this.slotInvalid.set(null);
     this.wizardNotice.set('');
     this.wizardSuccess.set(false);
+    this.wizardSlots.set([]);
+    this.trialAvailable.set(null);
+    this.trialReason.set('正在核查试听名额…');
+    if (type === 'TRIAL') {
+      this.http.get<{ available: boolean; reason: string }>(`/api/v1/booking/trial-eligibility?teacherId=${teacher.teacherId}`).subscribe({
+        next: r => { if (this.wizardTeacher()?.teacherId === teacher.teacherId && this.bookingType() === 'TRIAL') {
+          this.trialAvailable.set(r.available); this.trialReason.set(r.reason);
+        } },
+        error: () => this.trialReason.set('暂时无法核查名额，请关闭后重试。'),
+      });
+    }
     this.http.get<OpenSlot[]>(API.scheduling.openSlots(teacher.teacherId)).subscribe({
       next: (data) => this.wizardSlots.set(data ?? []),
     });
@@ -431,6 +444,7 @@ export class MatchComponent implements OnInit {
 
   /** 步骤 1 → 2：保留已选上下文。 */
   toConfirmStep(): void {
+    if (this.bookingType() === 'TRIAL' && this.trialAvailable() !== true) return;
     if (!this.selectedSlot()) {
       this.wizardNotice.set('请先选择一个可约时间。');
       return;
@@ -447,7 +461,7 @@ export class MatchComponent implements OnInit {
   submitBooking(): void {
     const teacher = this.wizardTeacher();
     const slot = this.selectedSlot();
-    if (!teacher || !slot) {
+    if (!teacher || !slot || this.submitting() || (this.bookingType() === 'TRIAL' && this.trialAvailable() !== true)) {
       return;
     }
     this.submitting.set(true);

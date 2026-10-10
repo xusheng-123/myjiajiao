@@ -20,4 +20,6 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     java.util.List<Booking> findByTeacherId(UUID teacherId);
     java.util.List<Booking> findByTeacherIdAndStudentId(UUID teacherId, UUID studentId);
     boolean existsByTeacherIdAndStudentId(UUID teacherId, UUID studentId);
+    boolean existsByStudentIdAndTeacherIdAndTypeAndStatusNot(UUID studentId, UUID teacherId,
+            Booking.BookingType type, Booking.BookingStatus status);
 }

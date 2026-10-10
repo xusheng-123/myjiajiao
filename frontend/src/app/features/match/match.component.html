@@ -291,9 +291,16 @@
               <span aria-hidden="true">⚠</span> {{ slotInvalid() }}
             </p>
           }
+          @if (bookingType() === 'TRIAL') {
+            <p class="state-note" aria-live="polite">{{ trialReason() }}</p>
+            @if (trialAvailable() === false) {
+              <button type="button" class="btn-ghost" (click)="startWizard(t, 'FORMAL')">改约正式课</button>
+              <a routerLink="/student">前往课程表</a>
+            }
+          }
           <div class="wizard-actions">
             <button type="button" class="btn-ghost" (click)="closeWizard()">取消</button>
-            <button type="button" class="btn-primary" [disabled]="!selectedSlot()" (click)="toConfirmStep()">
+            <button type="button" class="btn-primary" [disabled]="!selectedSlot() || (bookingType() === 'TRIAL' && trialAvailable() !== true)" (click)="toConfirmStep()">
               下一步：确认信息 →
             </button>
           </div>
@@ -305,7 +312,7 @@
             <div><dt>时间</dt><dd>{{ selectedSlot()?.startAt | date: 'M月d日 HH:mm' }} – {{ selectedSlot()?.endAt | date: 'HH:mm' }}</dd></div>
             <div><dt>单价参考</dt><dd>¥{{ yuan(t.pricePerHourCents) }}/小时{{ bookingType() === 'TRIAL' ? '（试听不收费）' : '（下单金额以服务端为准）' }}</dd></div>
           </dl>
-          <p class="state-note">{{ bookingType() === 'TRIAL' ? '试听免费，提交后自动确认。' : '提交后等待教师确认，确认后再下单付款。本次提交不扣款。' }}</p>
+          <p class="state-note">{{ bookingType() === 'TRIAL' ? '同一学生对同一老师限一次免费试听，提交后自动确认。计划开课时间前取消或驳回可重新预约；已开始上课或计划开课时间已过则视为已使用。' : '提交后等待教师确认，确认后再下单付款。本次提交不扣款。' }}</p>
           <div class="wizard-actions">
             <button type="button" class="btn-ghost" (click)="backToSlots()">← 上一步</button>
             <button type="button" class="btn-primary" [disabled]="submitting()" (click)="submitBooking()">

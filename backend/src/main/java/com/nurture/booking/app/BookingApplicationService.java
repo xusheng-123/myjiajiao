@@ -2,6 +2,8 @@ package com.nurture.booking.app;
 
 import com.nurture.booking.domain.Booking;
 import com.nurture.booking.infra.BookingRepository;
+import com.nurture.booking.domain.TrialEntitlement;
+import com.nurture.booking.infra.TrialEntitlementRepository;
 import com.nurture.messaging.app.MessagingApplicationService;
 import com.nurture.order.app.OrderApplicationService;
 import com.nurture.order.domain.Order;
@@ -34,23 +36,42 @@ public class BookingApplicationService {
     private final RefundApplicationService refundService;
     private final TwoPhaseService twoPhaseService;
     private final MessagingApplicationService messagingService;
+    private final TrialEntitlementRepository trialEntitlements;
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
 
     public BookingApplicationService(BookingRepository bookingRepository,
                                      SchedulingApplicationService schedulingService,
                                      OrderApplicationService orderService,
                                      RefundApplicationService refundService,
                                      TwoPhaseService twoPhaseService,
-                                     MessagingApplicationService messagingService) {
+                                     MessagingApplicationService messagingService,
+                                     TrialEntitlementRepository trialEntitlements) {
         this.bookingRepository = bookingRepository;
         this.schedulingService = schedulingService;
         this.orderService = orderService;
         this.refundService = refundService;
         this.twoPhaseService = twoPhaseService;
         this.messagingService = messagingService;
+        this.trialEntitlements = trialEntitlements;
     }
 
     @Transactional
     public Booking create(UUID studentId, UUID teacherId, UUID slotId, String subject, Booking.BookingType type) {
+        if (studentId == null || teacherId == null || slotId == null || type == null
+                || subject == null || subject.isBlank() || subject.length() > 32) {
+            throw new IllegalArgumentException("预约信息不完整，学科名称须为1–32字");
+        }
+        TrialEntitlement entitlement = null;
+        if (type == Booking.BookingType.TRIAL) {
+            entitlement = lockTrialPair(studentId, teacherId);
+            // Legacy duplicate active bookings remain intact, but cannot grant another allowance.
+            if (entitlement.isConsumed() || entitlement.getCurrentBookingId() != null
+                    || bookingRepository.existsByStudentIdAndTeacherIdAndTypeAndStatusNot(
+                            studentId, teacherId, Booking.BookingType.TRIAL, Booking.BookingStatus.CANCELLED)) {
+                throw new IllegalStateException("每位学生对同一老师仅有一次免费试听；已有试听请改期，已使用请预约正式课");
+            }
+        }
         // 质量加固：已过去的档期不得通过伪造请求新建预约（改期路径不受影响，维持既有行为）；
         // 校验失败抛异常由事务回滚释放已持有的档期。
         var slot = schedulingService.holdSlot(slotId, teacherId);
@@ -62,6 +83,8 @@ public class BookingApplicationService {
         Booking saved = bookingRepository.save(booking);
         if (type == Booking.BookingType.TRIAL) {
             saved.confirm(); // 试听课直接确认，课时费为 0
+            bookingRepository.flush();
+            entitlement.claim(saved.getId());
         }
         return saved;
     }
@@ -82,6 +105,7 @@ public class BookingApplicationService {
     @Transactional
     public BookingDecisionView rejectAsTeacher(UUID bookingId) {
         Booking booking = requireOwnedBooking(bookingId, CallerContext.require().accountId());
+        releaseTrialOnCancellation(booking);
         booking.cancel("导师审批未通过，档期已释放");
         schedulingService.releaseSlot(booking.getSlotId());
         orderService.closeIfPresent(bookingId);
@@ -92,6 +116,9 @@ public class BookingApplicationService {
     @Transactional
     public Booking start(UUID bookingId) {
         Booking booking = requireOwnedBooking(bookingId, CallerContext.require().accountId());
+        if (booking.getType() == Booking.BookingType.TRIAL) {
+            lockTrialAndRefresh(booking).consume();
+        }
         booking.start();
         return booking;
     }
@@ -100,6 +127,7 @@ public class BookingApplicationService {
     @Transactional
     public Booking complete(UUID bookingId) {
         Booking booking = requireOwnedBooking(bookingId, CallerContext.require().accountId());
+        if (booking.getType() == Booking.BookingType.TRIAL) lockTrialAndRefresh(booking);
         booking.complete();
         return booking;
     }
@@ -124,6 +152,7 @@ public class BookingApplicationService {
         if (!participant && caller.role() != com.nurture.shared.security.CallerRole.ADMIN) {
             throw new AccessDeniedException("仅预约参与双方或运营可改期");
         }
+        if (booking.getType() == Booking.BookingType.TRIAL) lockTrialAndRefresh(booking);
         if (booking.getStatus() != Booking.BookingStatus.CONFIRMED) {
             throw new IllegalStateException("仅已确认的预约支持改期；未确认预约请走审批流，已开课预约不可改期");
         }
@@ -182,6 +211,7 @@ public class BookingApplicationService {
     public Booking executeCancel(UUID bookingId, String reason, String confirmationToken) {
         twoPhaseService.consume("booking:cancel", bookingId, confirmationToken);
         Booking booking = requireCancellableByCaller(bookingId);
+        releaseTrialOnCancellation(booking);
         booking.cancel(reason);
         schedulingService.releaseSlot(booking.getSlotId());
 
@@ -194,7 +224,46 @@ public class BookingApplicationService {
         return booking;
     }
 
+    private TrialEntitlement lockTrialPair(UUID studentId, UUID teacherId) {
+        trialEntitlements.ensurePair(studentId, teacherId);
+        return trialEntitlements.findByStudentIdAndTeacherId(studentId, teacherId).orElseThrow();
+    }
+
+    private void releaseTrialOnCancellation(Booking booking) {
+        if (booking.getType() != Booking.BookingType.TRIAL) return;
+        var entitlement = lockTrialAndRefresh(booking);
+        boolean started = booking.getStatus() == Booking.BookingStatus.IN_PROGRESS
+                || schedulingService.slotOf(booking.getSlotId())
+                    .map(slot -> !slot.startAt().isAfter(OffsetDateTime.now())).orElse(true);
+        if (started) entitlement.consume();
+        entitlement.release(booking.getId());
+    }
+
+    private TrialEntitlement lockTrialAndRefresh(Booking booking) {
+        var entitlement = lockTrialPair(booking.getStudentId(), booking.getTeacherId());
+        // A concurrent start/cancel/reschedule may have committed while waiting for this pair.
+        entityManager.refresh(booking);
+        return entitlement;
+    }
+
     // -------------------------------------------------------------- 查询
+
+    public record TrialEligibility(boolean available, String reason) {}
+
+    @Transactional(readOnly = true)
+    public TrialEligibility trialEligibility(UUID teacherId) {
+        var studentId = CallerContext.require().accountId();
+        var entitlement = trialEntitlements.eligibility(studentId, teacherId);
+        if (entitlement.map(TrialEntitlement::isConsumed).orElse(false)) {
+            return new TrialEligibility(false, "已使用该老师的免费试听，请预约正式课。");
+        }
+        if (entitlement.map(t -> t.getCurrentBookingId() != null).orElse(false)
+                || bookingRepository.existsByStudentIdAndTeacherIdAndTypeAndStatusNot(
+                    studentId, teacherId, Booking.BookingType.TRIAL, Booking.BookingStatus.CANCELLED)) {
+            return new TrialEligibility(false, "已有该老师的试听预约，请到课程表改期或取消。");
+        }
+        return new TrialEligibility(true, "可使用一次免费试听。");
+    }
 
     @Transactional(readOnly = true)
     public Page<Booking> requestsForTeacher(UUID teacherId, Pageable pageable) {
