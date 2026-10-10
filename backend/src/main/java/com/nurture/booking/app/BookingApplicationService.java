@@ -445,6 +445,39 @@ public class BookingApplicationService {
         return bookingRepository.existsByTeacherIdAndStudentId(teacherId, studentId);
     }
 
+    @Transactional(readOnly = true)
+    public long completedLessons(UUID studentId,String subject) {
+        return bookingRepository.completedLessons(studentId,subject);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasLearningRelation(UUID teacherId,UUID studentId) {
+        return bookingRepository.hasLearningRelation(teacherId,studentId);
+    }
+
+    public record TeachingLesson(UUID bookingId,String subject,String status,OffsetDateTime startAt) {}
+
+    @Transactional(readOnly = true)
+    public java.util.List<TeachingLesson> workLessons(UUID teacherId,UUID studentId) {
+        return bookingRepository.findByTeacherIdAndStudentId(teacherId,studentId).stream()
+                .filter(this::supportsLearningTask)
+                .map(b -> new TeachingLesson(b.getId(),b.getSubject(),b.getStatus().name(),
+                        schedulingService.slotOf(b.getSlotId()).map(s->s.startAt()).orElse(null))).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public UUID studentOfWorkLesson(UUID bookingId,UUID teacherId) {
+        var booking = requireOwnedBooking(bookingId,teacherId);
+        if(!supportsLearningTask(booking)) throw new IllegalStateException("仅已确认或已完成的课程可以发布计划任务");
+        return booking.getStudentId();
+    }
+
+    private boolean supportsLearningTask(Booking b) {
+        return b.getStatus()==Booking.BookingStatus.CONFIRMED || b.getStatus()==Booking.BookingStatus.IN_PROGRESS
+                || b.getStatus()==Booking.BookingStatus.COMPLETED
+                || (b.getStatus()==Booking.BookingStatus.CLOSED && b.getCancelReason()==null);
+    }
+
     /** 学习成长：教师授课过的学生（去重，含任意状态）。 */
     @Transactional(readOnly = true)
     public java.util.List<UUID> studentsOfTeacher(UUID teacherId) {

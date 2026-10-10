@@ -1,0 +1,51 @@
+<main class="plans-shell">
+  <header><div><h1 class="nur-serif">学习计划</h1><p>把长期目标拆成阶段目标，与实际学习任务一起推进。</p></div><a [routerLink]="home()">返回工作台</a></header>
+  @if (auth.role() === 'TEACHER') {
+    <label>选择学生<select [value]="studentId()" (change)="selectStudent($any($event.target).value)" [disabled]="busy()"><option value="" disabled>请选择学生</option>@for (s of students(); track s.studentId) { <option [value]="s.studentId">{{ s.displayName }}</option> }</select></label>
+    @if (!students().length) { <p>有授课关系后，可以协助学生维护计划。</p> }
+  }
+  @if (auth.role() === 'PARENT') { <p class="read-note">你正在查看有效绑定孩子的计划。计划由学生与授课教师维护。</p> }
+  @if (notice()) { <p role="status" class="read-note">{{ notice() }}</p> }
+  <button type="button" (click)="load()" [disabled]="loading() || busy() || (auth.role() === 'TEACHER' && !studentId())">刷新计划</button>
+  @if (canEdit() && (auth.role() !== 'TEACHER' || studentId())) {
+    <section class="nur-card plan-editor" aria-labelledby="plan-editor-title"><h2 id="plan-editor-title">{{ editing() ? '调整计划' : '建立学习计划' }}</h2>
+      <form (ngSubmit)="savePlan()">
+        <label>科目<input id="plan-subject" name="subject" required maxlength="32" [ngModel]="draftSubject()" (ngModelChange)="draftSubject.set($event)"></label>
+        <label>计划标题<input id="plan-title" name="title" required maxlength="120" [ngModel]="draftTitle()" (ngModelChange)="draftTitle.set($event)"></label>
+        <label>长期目标<textarea id="plan-goal" name="goal" required maxlength="2000" [ngModel]="draftGoal()" (ngModelChange)="draftGoal.set($event)"></textarea></label>
+        <div class="actions"><button type="submit" class="primary" [disabled]="busy() || !draftSubject().trim() || !draftTitle().trim() || !draftGoal().trim()">{{ editing() ? '保存调整' : '建立计划' }}</button>@if (editing()) { <button type="button" (click)="resetDraft()">取消编辑</button> }</div>
+      </form>
+    </section>
+  }
+  @if (loading()) { <p role="status">正在加载计划…</p> }
+  @if (!loading() && plans().length === 0) { <p>还没有学习计划。</p> }
+  @for (p of plans(); track p.planId) {
+    <article class="nur-card plan-card">
+      <h2>{{ p.title }}</h2><p>{{ p.subject }} · {{ p.status === 'ACTIVE' ? '进行中' : '已归档' }}</p><p class="goal-text">{{ p.longTermGoal }}</p>
+      <div class="progress" aria-label="真实学习进度"><span>阶段目标 {{ p.milestonesCompleted }}/{{ p.milestones.length }}</span><span>关联任务 {{ p.tasksCompleted }}/{{ p.tasks.length }}</span><span>该科目已完成课程 {{ p.lessonsCompleted }}</span></div>
+      <p class="hint">阶段目标由本人或授课教师确认达成；任务经教师反馈后计为完成。这里不推断知识掌握度。</p>
+      <div class="actions">@if (canEdit()) { <button type="button" (click)="edit(p)" [disabled]="busy()">调整计划</button><button type="button" (click)="archive(p)" [disabled]="busy()">{{ p.status === 'ACTIVE' ? '归档' : '恢复计划' }}</button>@if (p.status === 'ACTIVE') { <button type="button" (click)="manage(p)" [disabled]="busy()">阶段目标与任务</button> } }<button type="button" (click)="showHistory(p)">修改记录</button></div>
+      <h3>阶段目标</h3>@if (!p.milestones.length) { <p class="hint">尚未设置阶段目标。</p> }
+      @for (m of p.milestones; track m.milestoneId) { <section class="milestone"><strong>{{ m.title }}</strong><p class="goal-text">{{ m.goal }}</p><p>{{ m.targetDate ? '目标日期：' + m.targetDate : '未设目标日期' }} · {{ m.completed ? '已达成' : '待推进' }}</p>@if (canEdit() && p.status === 'ACTIVE') { <div class="actions"><button type="button" (click)="toggleMilestone(p, m)" [disabled]="busy()">{{ m.completed ? '重新推进' : '确认达成' }}</button><button type="button" (click)="editMilestone(p, m)" [disabled]="busy()">调整阶段目标</button></div> }</section> }
+      <h3>关联课后任务</h3>@if (!p.tasks.length) { <p class="hint">尚未关联任务。</p> }
+      @for (t of p.tasks; track t.taskId) {
+        <section class="linked-task"><div class="task-row"><strong>{{ t.title }} · {{ taskStatus(t.status) }}</strong>@if (canEdit() && p.status === 'ACTIVE') { <button type="button" (click)="unlink(p, t.taskId)" [disabled]="busy()">取消关联</button> }</div>
+          @if (t.submission) { <p class="goal-text">学生提交：{{ t.submission }}</p> }@if (t.feedback) { <p class="goal-text">教师反馈：{{ t.feedback }}</p> }
+          @if ((t.status === 'PENDING' && t.canSubmit) || (t.status === 'SUBMITTED' && t.canFeedback)) {
+            <button type="button" (click)="openTask(t)" [disabled]="busy()">{{ t.status === 'PENDING' ? '提交作业' : '给出反馈' }}</button>
+            @if (taskEditor() === t.taskId) { <form (ngSubmit)="saveTask(p, t)"><label>{{ t.status === 'PENDING' ? '作业内容' : '教师反馈' }}<textarea id="task-work" name="taskWork" required [maxlength]="t.status === 'PENDING' ? 10000 : 4000" [ngModel]="taskDraft()" (ngModelChange)="taskDraft.set($event)"></textarea></label><div class="actions"><button type="submit" class="primary" [disabled]="busy() || !taskDraft().trim()">{{ t.status === 'PENDING' ? '确认提交' : '保存反馈并完成任务' }}</button><button type="button" (click)="taskEditor.set('')">取消</button></div></form> }
+          }
+        </section>
+      }
+      @if (expanded() === p.planId && canEdit() && p.status === 'ACTIVE') { <div class="manage-panel"><h3>{{ milestoneEditing() ? '调整阶段目标' : '添加阶段目标' }}</h3>
+        <form (ngSubmit)="saveMilestone(p)"><label>标题<input id="milestone-title" name="milestoneTitle" required maxlength="120" [ngModel]="milestoneTitle()" (ngModelChange)="milestoneTitle.set($event)"></label><label>具体目标<textarea id="milestone-goal" name="milestoneGoal" required maxlength="2000" [ngModel]="milestoneGoal()" (ngModelChange)="milestoneGoal.set($event)"></textarea></label><label>目标日期（可选）<input name="milestoneDate" type="date" [ngModel]="milestoneDate()" (ngModelChange)="milestoneDate.set($event)"></label><div class="actions"><button type="submit" class="primary" [disabled]="busy() || !milestoneTitle().trim() || !milestoneGoal().trim()">{{ milestoneEditing() ? '保存阶段目标' : '添加阶段目标' }}</button>@if (milestoneEditing()) { <button type="button" (click)="resetMilestone()">取消编辑</button> }</div></form>
+        <label>关联已有任务<select [ngModel]="selectedTask()" (ngModelChange)="selectedTask.set($event)"><option value="">选择该学生的课后任务</option>@for (t of options(); track t.taskId) { <option [value]="t.taskId" [disabled]="linked(p, t.taskId)">{{ t.title }}{{ linked(p, t.taskId) ? '（已关联）' : '' }}</option> }</select></label><button type="button" [disabled]="busy() || !selectedTask() || linked(p, selectedTask())" (click)="link(p)">关联任务</button>
+        @if (auth.role() === 'TEACHER') { <h3>发布并关联课后任务</h3>@if (lessons().length) {
+          <form (ngSubmit)="createTask(p)"><label>关联课程<select name="taskLesson" required [ngModel]="selectedLesson()" (ngModelChange)="selectedLesson.set($event)">@for (l of lessons(); track l.bookingId) { <option [value]="l.bookingId">{{ l.subject }} · {{ l.status === 'COMPLETED' || l.status === 'CLOSED' ? '已完成' : l.status === 'IN_PROGRESS' ? '上课中' : '已确认' }} · {{ l.startAt ? (l.startAt | date:'M月d日 HH:mm') : '时间未登记' }}</option> }</select></label><label>任务标题<input id="new-task-title" name="newTaskTitle" required maxlength="120" [ngModel]="taskTitle()" (ngModelChange)="taskTitle.set($event)"></label><label>具体要求<textarea id="new-task-description" name="newTaskDescription" required maxlength="2000" [ngModel]="taskDescription()" (ngModelChange)="taskDescription.set($event)"></textarea></label><label>截止时间（可选，按本地时间）<input name="taskDeadline" type="datetime-local" [ngModel]="taskDeadline()" (ngModelChange)="taskDeadline.set($event)"></label><button type="submit" class="primary" [disabled]="busy() || !selectedLesson() || !taskTitle().trim() || !taskDescription().trim()">发布并关联任务</button></form>
+        } @else { <p>有已确认课程后，可以发布新的计划任务。</p> } }
+      </div> }
+      @if (historyFor() === p.planId) { <section class="history"><h3>修改记录</h3>@if (historyLoading()) { <p>正在加载记录…</p> }@for (h of history(); track h.changeId) { <div><strong>{{ actionLabel(h.action) }} · {{ h.actorName }}</strong><time>{{ h.at | date:'yyyy-MM-dd HH:mm' }}</time><p class="goal-text">{{ h.details }}</p></div> }<div class="actions"><button type="button" (click)="showHistory(p, historyPage() - 1)" [disabled]="historyLoading() || historyPage() === 0">上一页记录</button><span>第 {{ historyPage() + 1 }} 页</span><button type="button" (click)="showHistory(p, historyPage() + 1)" [disabled]="historyLoading() || historyPage() + 1 >= historyTotal()">下一页记录</button><button type="button" (click)="historyFor.set('')">收起记录</button></div></section> }
+    </article>
+  }
+  @if (totalPages() > 1) { <nav class="actions" aria-label="计划分页"><button type="button" (click)="turnPage(-1)" [disabled]="loading() || page() === 0">上一页</button><span>第 {{ page() + 1 }}/{{ totalPages() }} 页</span><button type="button" (click)="turnPage(1)" [disabled]="loading() || page() + 1 >= totalPages()">下一页</button></nav> }
+</main>

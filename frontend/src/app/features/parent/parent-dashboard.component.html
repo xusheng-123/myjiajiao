@@ -24,6 +24,7 @@
               {{ child.status === 'ACTIVE' ? '✔ 已生效' : child.status === 'PENDING' ? '◷ 待确认' : '✕ 已解除' }}
             </span>
             @if (child.status === 'ACTIVE') {
+              <a routerLink="/learning/plans" [queryParams]="{childProfileId: child.studentId}">学习计划</a>
               <button type="button" class="btn-ghost-sm" (click)="toggleReport(child)"
                 [attr.aria-expanded]="reportFor() === child.studentId">学习周报</button>
             }

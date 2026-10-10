@@ -30,6 +30,8 @@ public class LearningController {
     }
 
     // ---------------- 学生：成长中心 / 任务 / 档案 / 答疑 ----------------
+    public record TaskSubmission(@jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=10000) String content) {}
+    public record TaskFeedback(@jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=4000) String feedback) {}
 
     @GetMapping("/growth")
     @PreAuthorize("hasRole('STUDENT') or hasRole('ADMIN')")
@@ -50,9 +52,9 @@ public class LearningController {
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "提交课后任务（幂等：重复提交被拒绝）")
     public Map<String, Object> submitTask(@PathVariable UUID taskId,
-                                          @RequestBody Map<String, String> body) {
+                                          @jakarta.validation.Valid @RequestBody TaskSubmission body) {
         return learning.submitTask(CallerContext.require().accountId(), taskId,
-                body.getOrDefault("content", ""));
+                body.content());
     }
 
     @GetMapping("/archive")
@@ -103,9 +105,9 @@ public class LearningController {
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "任务反馈（提交态 → 完成）")
     public Map<String, Object> feedbackTask(@PathVariable UUID taskId,
-                                            @RequestBody Map<String, String> body) {
+                                            @jakarta.validation.Valid @RequestBody TaskFeedback body) {
         return learning.feedbackTask(CallerContext.require().accountId(), taskId,
-                body.getOrDefault("feedback", ""));
+                body.feedback());
     }
 
     @PostMapping("/teacher/lesson-records")

@@ -29,6 +29,7 @@ interface RecentItem { type: string; text: string; at: string; }
     </div>
   </header>
 
+  <nav aria-label="学习管理"><a routerLink="/learning/plans">学习计划与阶段目标</a></nav>
   @if (loading()) { <p class="quiet-note" role="status">正在加载学习成长数据…</p> }
 
   @if (!loading() && nextLesson(); as lesson) {
