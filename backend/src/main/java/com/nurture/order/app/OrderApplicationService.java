@@ -84,11 +84,7 @@ public class OrderApplicationService {
         orderRepository.findByBookingId(booking.bookingId()).ifPresent(o -> {
             throw new IllegalStateException("该预约已存在订单，严禁重复下单");
         });
-        long priceCents = teacherService.offeringsPriceOf(booking.teacherId()).stream()
-                .filter(o -> o.subject().equals(booking.subject()))
-                .findFirst()
-                .map(TeacherApplicationService.OfferingPriceView::pricePerHourCents)
-                .orElse(DEFAULT_LESSON_PRICE_CENTS);
+        long priceCents = resolvePriceCents(booking.teacherId(), booking.subject());
         Order saved = create(booking.bookingId(), caller.accountId(), booking.studentId(),
                 booking.teacherId(), Order.OrderType.FORMAL_LESSONS, priceCents, booking.subject(), null);
         return OrderView.from(saved);
@@ -163,11 +159,7 @@ public class OrderApplicationService {
                 .filter(b -> "CONFIRMED".equals(b.status()))
                 .filter(b -> orderRepository.findByBookingId(b.bookingId()).isEmpty())
                 .map(b -> {
-                    long priceCents = teacherService.offeringsPriceOf(b.teacherId()).stream()
-                            .filter(o -> o.subject().equals(b.subject()))
-                            .findFirst()
-                            .map(TeacherApplicationService.OfferingPriceView::pricePerHourCents)
-                            .orElse(DEFAULT_LESSON_PRICE_CENTS);
+                    long priceCents = resolvePriceCents(b.teacherId(), b.subject());
                     return new OrderableLessonView(b.bookingId(), b.subject(),
                             b.startAt() == null ? null : b.startAt().toString(), priceCents);
                 }).toList();
@@ -203,6 +195,25 @@ public class OrderApplicationService {
     @Transactional(readOnly = true)
     public long countOrders() {
         return orderRepository.count();
+    }
+
+    /**
+     * 定价解析（三分支，质量加固 2026-10-10）：
+     * ① 在售条目 → 当前有效价格；
+     * ② 明确存在但已下架（active=false）→ 拒绝新订单（「停止销售」不得回落默认价绕过）；
+     * ③ 从未设置过该科目定价 → 保留既有 ¥300 兜底（合法兜底场景，勿随下架修复一并破坏）。
+     */
+    private long resolvePriceCents(UUID teacherId, String subject) {
+        var matched = teacherService.offeringsPriceOf(teacherId).stream()
+                .filter(o -> o.subject().equals(subject))
+                .findFirst();
+        if (matched.isPresent()) {
+            return matched.get().pricePerHourCents();
+        }
+        if (teacherService.hasOfferingIncludingInactive(teacherId, subject)) {
+            throw new IllegalStateException("该课程已停止销售，不能创建新订单");
+        }
+        return DEFAULT_LESSON_PRICE_CENTS;
     }
 
     private Order create(UUID bookingId, UUID payerParentId, UUID studentId, UUID teacherId,

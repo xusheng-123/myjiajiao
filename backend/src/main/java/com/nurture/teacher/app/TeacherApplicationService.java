@@ -81,6 +81,17 @@ public class TeacherApplicationService {
                 .toList();
     }
 
+    /**
+     * 该导师是否存在此科目的条目（含已下架）——供 order 侧区分
+     * 「从未定价（走默认价兜底）」与「明确存在但已停止销售（拒绝新订单）」。
+     */
+    @Transactional(readOnly = true)
+    public boolean hasOfferingIncludingInactive(UUID teacherAccountId, String subject) {
+        var profile = teacherProfileRepository.findByAccountId(teacherAccountId).orElse(null);
+        if (profile == null) return false;
+        return !offeringRepository.findByTeacherIdAndSubject(profile.getId(), subject).isEmpty();
+    }
+
     public long countProfiles() {
         return teacherProfileRepository.count();
     }

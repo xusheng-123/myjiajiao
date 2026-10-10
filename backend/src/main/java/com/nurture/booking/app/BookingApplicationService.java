@@ -51,8 +51,12 @@ public class BookingApplicationService {
 
     @Transactional
     public Booking create(UUID studentId, UUID teacherId, UUID slotId, String subject, Booking.BookingType type) {
-        // 并发冲突排他：同一时段仅一个活跃预约（数据库部分唯一索引兜底）
+        // 质量加固：已过去的档期不得通过伪造请求新建预约（改期路径不受影响，维持既有行为）；
+        // 校验失败抛异常由事务回滚释放已持有的档期。
         var slot = schedulingService.holdSlot(slotId, teacherId);
+        if (slot.getStartAt().isBefore(OffsetDateTime.now())) {
+            throw new IllegalArgumentException("不能预约已过去的时段");
+        }
         // 价格在订单中心创建时按导师定价快照；预约侧记 0，试听课免费
         Booking booking = new Booking(studentId, teacherId, slotId, subject, type, 0);
         Booking saved = bookingRepository.save(booking);

@@ -12,6 +12,9 @@ public interface SubjectOfferingRepository extends JpaRepository<SubjectOffering
 
     List<SubjectOffering> findByTeacherIdAndActiveTrue(UUID teacherId);
 
+    /** 含已下架条目（供 order 侧区分「从未定价」与「明确存在但已停止销售」）。 */
+    List<SubjectOffering> findByTeacherIdAndSubject(UUID teacherId, String subject);
+
     /** D9：同导师+科目+学段的在售条目唯一（服务层幂等 + 部分唯一索引双重保障）。 */
     java.util.Optional<SubjectOffering> findByTeacherIdAndSubjectAndGradeBandAndActiveTrue(
             UUID teacherId, String subject, String gradeBand);

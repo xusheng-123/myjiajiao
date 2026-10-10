@@ -50,3 +50,4 @@ frontend/coverage/
 backend/data/files/
 __pycache__/
 .walk/
+.edge-tmp/

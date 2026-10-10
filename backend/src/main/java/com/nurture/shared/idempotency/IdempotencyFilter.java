@@ -83,7 +83,17 @@ public class IdempotencyFilter extends OncePerRequestFilter {
         String fingerprint;
         CachedBodyRequest wrappedRequest = null;
         if (multipart) {
-            fingerprint = multipartFingerprint(request);
+            try {
+                fingerprint = multipartFingerprint(request);
+            } catch (IllegalStateException e) {
+                // 质量加固：超限请求在此拦截返回 413，避免异常沿过滤链落到 /error 被安全链包装成 403
+                if (hasSizeLimitCause(e)) {
+                    respondProblem(response, 413,
+                            "文件超过大小限制：单个文件最大 20MB，单次请求（含全部材料）最大 45MB，请压缩后重试");
+                    return;
+                }
+                throw e;
+            }
         } else {
             byte[] bodyBytes = StreamUtils.copyToByteArray(request.getInputStream());
             fingerprint = sha256(new String(bodyBytes, StandardCharsets.UTF_8));
@@ -187,6 +197,23 @@ public class IdempotencyFilter extends OncePerRequestFilter {
             throw new IllegalStateException("multipart 分片解析失败", e);
         }
         return HexFormat.of().formatHex(digest.digest());
+    }
+
+    /**
+     * 超过 multipart 大小限制时容器抛 ServletException——cause 可能为 Spring 的
+     * MaxUploadSizeExceededException，也可能为 Tomcat 原生 FileSizeLimitExceededException
+     * （getParts() 直通容器解析，不经 Spring 包装；按类名识别，避免依赖容器内部 API）。
+     */
+    private boolean hasSizeLimitCause(Throwable e) {
+        for (Throwable cur = e; cur != null; cur = cur.getCause()) {
+            if (cur instanceof org.springframework.web.multipart.MaxUploadSizeExceededException) {
+                return true;
+            }
+            if (cur.getClass().getName().endsWith("FileSizeLimitExceededException")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isValidUuid(String value) {

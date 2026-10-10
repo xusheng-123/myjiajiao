@@ -51,7 +51,10 @@ public class SchedulingApplicationService {
 
     @Transactional(readOnly = true)
     public List<AvailabilitySlot> openSlotsOf(UUID teacherId) {
-        return slotRepository.findByTeacherIdAndStatusOrderByStartAtAsc(teacherId, AvailabilitySlot.SlotStatus.OPEN);
+        // 质量加固：仅返回尚未开始的 OPEN 档期——已过去的 OPEN 残留不再作为有效可约时间
+        // （教师日历 calendarOf 不受影响，历史档期仍可见可管理，不物理删除）。
+        return slotRepository.findByTeacherIdAndStatusAndStartAtAfterOrderByStartAtAsc(
+                teacherId, AvailabilitySlot.SlotStatus.OPEN, OffsetDateTime.now());
     }
 
     @Transactional(readOnly = true)

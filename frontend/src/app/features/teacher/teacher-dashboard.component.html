@@ -142,6 +142,7 @@
           <input
             id="verify-id-input"
             type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
             [disabled]="verificationBusy()"
             (change)="onVerificationFilePick('idDocument', $event)"
           />
@@ -157,6 +158,7 @@
           <input
             id="verify-degree-input"
             type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
             [disabled]="verificationBusy()"
             (change)="onVerificationFilePick('degreeCert', $event)"
           />
@@ -167,7 +169,7 @@
             </span>
           }
         </div>
-        <p class="reschedule-hint">单个文件不超过 20MB；平台当前不限文件格式，PDF/JPG/PNG 等常见格式均可。最终以服务端校验为准。</p>
+        <p class="reschedule-hint">支持 PDF/JPG/PNG 格式，单个文件不超过 20MB（服务端将校验文件真实格式，与扩展名不符会被拒绝）。</p>
         <button
           type="submit"
           class="nur-btn nur-btn--primary nur-btn--sm"

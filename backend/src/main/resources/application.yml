@@ -35,6 +35,8 @@ spring:
   servlet:
     multipart:
       max-file-size: 20MB
+      # 两份材料各允许到单文件上限 20MB，加上 multipart 编码开销的余量（此前缺省 10MB 会使 10~20MB 的合法单文件无法提交）
+      max-request-size: 45MB
 
 springdoc:
   api-docs:

@@ -5,6 +5,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * 全局异常 → RFC 7807 Problem Detail。
@@ -37,6 +38,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header("Retry-After", String.valueOf(Math.max(1, e.getRetryAfterSeconds())))
                 .body(problem);
+    }
+
+    /** 上传超过 multipart 大小限制：413 + 明确上限说明（质量加固 2026-10-10，避免落到 500）。 */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ProblemDetail> handleMaxUploadSize(MaxUploadSizeExceededException e) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.PAYLOAD_TOO_LARGE,
+                "文件超过大小限制：单个文件最大 20MB，单次请求（含全部材料）最大 45MB，请压缩后重试");
+        problem.setTitle("Payload Too Large");
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(problem);
     }
 
     /** 外部回调凭据校验失败：401 拒绝处理，不泄露校验失败的具体原因。 */

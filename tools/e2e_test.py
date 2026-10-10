@@ -161,6 +161,19 @@ def main():
     ])
     st, _, vc = http("POST", "/verification/cases", (body, ctype), token=t_teacher, idem=str(uuid.uuid4()), raw=True)
     check("导师提交资质材料", st == 200 or st == 201, f"{st} {vc}")
+    # 质量加固（2026-10-10）：文件白名单三重校验回归——扩展名 / MIME / 魔数
+    body, ctype = multipart([("idDocument", "id.txt", b"plain text not allowed"), ("degreeCert", "degree.pdf", b"%PDF-1.4 ok")])
+    st, _, rej = http("POST", "/verification/cases", (body, ctype), token=t_teacher, idem=str(uuid.uuid4()), raw=True)
+    check("非白名单扩展名(.txt)被拒(400)", st == 400, f"{st} {str(rej)[:120]}")
+    body, ctype = multipart([("idDocument", "fake.pdf", b"this is definitely not a pdf"), ("degreeCert", "degree.pdf", b"%PDF-1.4 ok")])
+    st, _, rej2 = http("POST", "/verification/cases", (body, ctype), token=t_teacher, idem=str(uuid.uuid4()), raw=True)
+    check("伪扩展名+伪MIME但内容非PDF被拒(400)", st == 400, f"{st} {str(rej2)[:120]}")
+    body, ctype = multipart([("idDocument", "big.pdf", b"%PDF-1.4 " + b"B" * (21 * 1024 * 1024)), ("degreeCert", "degree.pdf", b"%PDF-1.4 ok")])
+    try:
+        st, _, oversize = http("POST", "/verification/cases", (body, ctype), token=t_teacher, idem=str(uuid.uuid4()), raw=True)
+        check("超单文件上限(21MB)被拒(413/400)", st in (413, 400), f"{st} {str(oversize)[:120]}")
+    except Exception as e:
+        check("超单文件上限(21MB)被拒(413/400)", False, f"exception {e}")
     st, _, vs = http("GET", "/verification/me/status", token=t_teacher)
     check("提交后状态=SUBMITTED", st == 200 and vs.get("status") == "SUBMITTED", f"{st} {vs}")
     st, _, cases = http("GET", "/admin/verification-cases?page=0&size=10", token=t_admin)
@@ -519,7 +532,7 @@ def main():
     check("G6 再次调价成功", st == 200, f"{st}")
     st, _, odet_g6 = http("GET", "/order/orders/%s" % ord_g6["orderId"], token=t_g6s)
     check("G6 已生成订单金额快照不变(18000)", st == 200 and odet_g6.get("amountCents") == 18000, f"{st} {odet_g6}")
-    # 下架（停止销售）：列表消失 + 检索不可见 + 新订单回落默认价
+    # 下架（停止销售）：列表消失 + 检索不可见 + 新订单拒绝（质量加固 2026-10-10：不再回落默认价）
     st, _, _ = http("DELETE", "/teacher/me/subjects/%s" % g6add["offeringId"], token=t_g5, idem=str(uuid.uuid4()))
     check("G6 下架成功", st in (200, 204), f"{st}")
     st, _, g6list = http("GET", "/teacher/me/subjects", token=t_g5)
@@ -531,7 +544,14 @@ def main():
         {"teacherId": g6_tid, "slotId": slot_g6b["slotId"], "subject": "化学", "bookingType": "TRIAL"},
         token=t_g6s, idem=str(uuid.uuid4()))
     st, _, ord_g6b = http("POST", "/order/orders", {"bookingId": bk_g6b["bookingId"]}, token=t_g6s, idem=str(uuid.uuid4()))
-    check("G6 下架后新订单回落服务端默认价(30000)", st == 201 and ord_g6b.get("amountCents") == 30000, f"{st} {ord_g6b}")
+    check("G6 下架后新订单被拒(409，停止销售不得回落默认价)", st == 409, f"{st} {str(ord_g6b)[:160]}")
+    # 合法兜底回归：教师从未设置过该科目定价时仍走默认价（quality 加固不得破坏既有兜底）
+    slot_g6c, _at_g6c = publish_slot_retry(t_g5, None, 60, 61)
+    st, _, bk_g6c = http("POST", "/booking/bookings",
+        {"teacherId": g6_tid, "slotId": slot_g6c["slotId"], "subject": "物理", "bookingType": "TRIAL"},
+        token=t_g6s, idem=str(uuid.uuid4()))
+    st, _, ord_g6c = http("POST", "/order/orders", {"bookingId": bk_g6c["bookingId"]}, token=t_g6s, idem=str(uuid.uuid4()))
+    check("G6 从未定价科目仍走默认价兜底(30000)", st == 201 and ord_g6c.get("amountCents") == 30000, f"{st} {str(ord_g6c)[:160]}")
 
     print("== 8.5 改期（D11：参与双方可改期，冲突原子回滚） ==")
     reschedule_ok = False

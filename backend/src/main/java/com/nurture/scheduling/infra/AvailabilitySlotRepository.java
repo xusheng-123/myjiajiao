@@ -11,7 +11,9 @@ import java.util.UUID;
 
 public interface AvailabilitySlotRepository extends JpaRepository<AvailabilitySlot, UUID> {
 
-    List<AvailabilitySlot> findByTeacherIdAndStatusOrderByStartAtAsc(UUID teacherId, AvailabilitySlot.SlotStatus status);
+    /** 可约档期 = OPEN 且尚未开始（质量加固：过期 OPEN 档期不作为有效可约时间）。 */
+    List<AvailabilitySlot> findByTeacherIdAndStatusAndStartAtAfterOrderByStartAtAsc(
+            UUID teacherId, AvailabilitySlot.SlotStatus status, OffsetDateTime now);
 
     /** 重叠检测：start < existingEnd AND end > existingStart。 */
     @Query("""

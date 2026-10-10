@@ -85,7 +85,7 @@
 | 功能 | 状态 | 验证依据 |
 |---|---|---|
 | 授权漏洞修复 | ✅ 19 项 | probe_authz.py 多轮 0 漏洞 |
-| 六层测试体系 | ✅ | 单元 35 / 集成 30 / E2E 201 / 探针 / ArchUnit 空基线 / 配置门禁 24 项 |
+| 六层测试体系 | ✅ | 单元 35 / 集成 32 / E2E 205 / 探针 / ArchUnit 空基线 / 配置门禁 24 项 |
 | 备份恢复 | ✅ 实弹演练 | RTO 实测 55 秒（deploy/backup.sh + restore.sh） |
 | 健康检查 | ✅ | actuator + probes + compose healthcheck + cloudflared 依赖 |
 | 答辩 PPT / 计划书 / 小白指南 | ✅ | E:\线上家教平台\ 下三份 docx + pptx |
@@ -97,15 +97,15 @@
 🔵 教育合规（ICP / 协议 / 未成年人条款）——正式运营最大前置
 🔵 生产备份调度、AI 上层能力（均规划中）
 
-## 4. 当前工作现场（2026-10-10 第四轮快照）
+## 4. 当前工作现场（2026-10-10 第五轮快照：质量加固）
 
-- **最近完成**：G10 教师收藏 + 可约时间筛选（**阶段一收官**，commit `3b24d28`）——匹配页三入口「③ 我的收藏」+ 教师卡收藏 toggle（以服务端 favorited 为准/防连点/无 localStorage）+ 收藏面板（真实列表 + 无参检索富集，缺席教师如实标注）+ 时间筛选 chips（不限/今日/3天/7天，纯前端过滤 `nextOpenSlotAt`，过去与 null 排除，computed 不重复请求）；endpoints.ts 三键从 learning 段归位 matching 段（历史误放零引用）；E2E 190→201（§19 收藏 API 闭环 11 断言）；后端零改动；整体回归 verify 35/30 + E2E 201/201 + 探针 0 + 生产构建 ✓；浏览器走查全通过（含清残留后 3 天窗口非空正例 1/4）。
-- **走查中的数据操作**：用正规 `DELETE /scheduling/availability-slots/{id}` 清理了教师 13900000001 的 19 条历史残留过去 OPEN 档期（它们污染 `nextOpenSlotAt` 为过去时间；测试数据操作，非代码/迁移变更）。
-- **已知未收口**：教师对比界面（F，保留路线图）；Staging 等外部资源；学生自建订单只能经运营线下确认收款（学生钱包无充值通道，设计如此）；match.component.css 超 CSS budget 268B（警告不阻塞，与 landing 同类）。
-- **运行状态**：本轮结束时后端（8080，沙箱模式）/前端（4200 ng serve）/PostgreSQL 均在运行中。
-- **产物新鲜度**：jar 为 2026-10-10 重建（晚于全部源码修改，G10 未动后端）✓；前端 dist 为 2026-10-10 ng build 产物 ✓。
-- **版本管理**：本地 git 仓库（无远程，严禁 reset --hard/clean -fd/强推/擅加远程）。最新 commit：`3b24d28`（G10）← `fcfc06b`（G5/G6 文档）。
-- **无失败测试遗留**：最近一次 verify 全绿（单元 35 + IT 30）、E2E 201/201、探针 0。
+- **最近完成**：阶段一收官后的质量加固轮（四项风险全部核实并有证据地处置）——①**下架课程定价缺陷确认并修复**：`offeringsPriceOf` 只含在售条目导致「明确存在但已下架」的科目下单回落 ¥300 默认价（G6 E2E 曾把该行为断言为预期）；修复为定价三分支（在售→现价 / 同科目存在下架条目→409 拒绝 / 从未定价→保留 ¥300 兜底），`DelistedCoursePricingIT` 覆盖，G6 E2E 断言更新。②**过期档期后端过滤**：`openSlotsOf` 只返回未开始的 OPEN（open-slots 端点与检索 nextOpenSlotAt 共用）；新建预约对过去档期 400 拒绝（改期路径不变）；`StaleSlotGuardIT` 覆盖（历史档期仅教师日历可见，不物理删除）。③**资质上传白名单**：扩展名/MIME/文件魔数三重校验（PDF/JPG/PNG），伪造类型 400 拒绝；`max-request-size: 45MB`（此前缺省 10MB 使 10~20MB 合法文件必然失败）；超限经 IdempotencyFilter 拦截返回 413（识别 Tomcat 原生 FileSizeLimitExceededException），前端文案/accept 同步。④**窄屏布局首次真机走查**：Edge headless CDP 真实 375px 视口（`tools/narrow_walkthrough*.py`，登录态注入）——match 页/收藏面板/筛选空态零横向溢出、按钮无遮挡、chips wrap 正常。
+- **测试基线**：单元 35 · IT 32（+2 新 IT）· E2E 205（+4 断言：G6 下架拒绝/兜底保留/白名单×2，改 1 断言：回落价→409）· 探针 0 · ng build ✓（match css 268B 警告既有）。
+- **已知未收口**：试听预约可创建付费订单（G6 E2E 实测 300 元，与「试听免费」语义存在张力——**待产品决策**，本轮未动交易链路）；教师对比界面（F）；Staging 外部资源；match css 268B 预算警告。
+- **运行状态**：本轮结束时后端（8080，沙箱模式，09:5x 新 jar）/前端（4200 ng serve）/PostgreSQL 均在运行中。
+- **产物新鲜度**：jar 与前端 dist 均为 2026-10-10 本轮重建（晚于全部源码修改）✓。
+- **版本管理**：本地 git 仓库（无远程，严禁 reset --hard/clean -fd/强推/擅加远程）。本轮基线：`bf8dee8` → 质量加固 commit（见 git log）。
+- **无失败测试遗留**：最近一次 verify 全绿（单元 35 + IT 32）、E2E 205/205、探针 0。
 
 ## 5. 当前运行与验证方式（全部已验证）
 
@@ -124,7 +124,7 @@ cd ../frontend && npm start -- --host 0.0.0.0
 #           教师 13900000001/Teacher#2026 · 运营 13800000000/Admin#2026（仅本机）
 # 全量回归（先杀 java：taskkill //F //IM java.exe）
 mvn -B -s C:/Users/lxs/apps/maven-settings.xml -Pintegration verify   # 单元+ArchUnit+IT
-python3 tools/e2e_test.py        # 201 项 E2E（需服务已启动）
+python3 tools/e2e_test.py        # 205 项 E2E（需服务已启动）
 python3 tools/probe_authz.py     # 越权探针
 python3 deploy/verify_config.py  # 24+ 项配置门禁
 npx ng build --configuration production   # 前端生产构建（frontend/ 下）
@@ -145,8 +145,10 @@ npx ng build --configuration production   # 前端生产构建（frontend/ 下�
 | ~~P1-2~~ | ~~G3 学生确认绑定入口~~ ✅ 2026-10-09 完成（commit 7979522） | — | — | — |
 | ~~P1-3~~ | ~~ROADMAP G5/G6：教师资质上传 + 定价管理界面~~ ✅ 2026-10-09 完成（commit ae089af/02caacf/65c997e/0861d92） | — | — | — |
 | ~~P1-4~~ | ~~ROADMAP G10：收藏 + 可约时间筛选~~ ✅ 2026-10-10 完成（commit 3b24d28，**阶段一全部收官**） | — | — | — |
+| ~~P1-5~~ | ~~阶段一收官质量加固（四项风险核查与修复）~~ ✅ 2026-10-10 完成——①下架课程默认价缺陷修复（定价三分支，下单 409）②过期档期后端过滤（open-slots 排除过去 + 新建预约 400）③资质上传三重白名单 + max-request-size 45MB + 超限 413 ④窄屏 375px Edge headless CDP 真视口走查零溢出；新增 DelistedCoursePricingIT/StaleSlotGuardIT，E2E 201→205；待决策：试听预约可建付费订单（见交付报告） | — | — | — |
 | P2 | 首页五步模块、附件上传 | 体验补全 | 见 ROADMAP | 各项验收标准 |
 | P2 | 教师对比界面（最多 3 名并排，ROADMAP §「对比界面」） | 阶段二首项候选，全部数据字段已具备 | ROADMAP 对比方案（v1） | 走查 + E2E |
+| P2 | 试听免费/付费语义决策后落码 | 试听预约当前可创建付费订单（实测 300 元），与「试听免费」语义张力待产品拍板；决策后最小改动触及交易链路，须单独立项 | 交付报告 §9、G6 E2E | 决策记录 + 对应实现 + 回归 |
 | ⛔ | Staging 部署 | 等外部资源（VM/域名/CF） | `deploy/RUNBOOK.md` | 14 项验收全过 |
 
 ## 8. 风险与限制

@@ -104,14 +104,58 @@ public class VerificationApplicationService {
                 .orElse(false);
     }
 
+    /** 资质材料允许的格式：扩展名 → MIME → 文件魔数三重校验（客户端字段可伪造，以内容为准）。 */
+    private static final java.util.Map<String, String> ALLOWED_MATERIAL_TYPES = java.util.Map.of(
+            "pdf", "application/pdf",
+            "jpg", "image/jpeg",
+            "jpeg", "image/jpeg",
+            "png", "image/png");
+
     private String store(String category, MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("资质材料缺失：请上传完整文件");
         }
+        validateMaterial(file);
         try {
             FileStorageService.StoredFile stored = fileStorageService.store(category,
                     file.getOriginalFilename(), file.getContentType(), file.getBytes());
             return stored.storageKey();
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("资质材料读取失败", e);
+        }
+    }
+
+    /**
+     * 材料格式校验（质量加固 2026-10-10）：扩展名与 MIME 任一不在白名单即拒绝；
+     * 再按魔数识别真实内容（PDF=%PDF / JPEG=FF D8 FF / PNG=89 50 4E 47），
+     * 伪造扩展名或 MIME 但内容不符的文件一律拒绝。不声明病毒扫描能力。
+     */
+    private void validateMaterial(MultipartFile file) {
+        String name = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
+        int dot = name.lastIndexOf('.');
+        String ext = dot < 0 ? "" : name.substring(dot + 1);
+        String expectedMime = ALLOWED_MATERIAL_TYPES.get(ext);
+        if (expectedMime == null) {
+            throw new IllegalArgumentException("不支持的文件格式：仅支持 PDF/JPG/PNG");
+        }
+        String mime = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
+        if (!expectedMime.equals(mime)) {
+            throw new IllegalArgumentException("文件类型与内容不符：仅支持 PDF/JPG/PNG");
+        }
+        try {
+            byte[] content = file.getBytes();
+            boolean magicOk = switch (ext) {
+                case "pdf" -> content.length >= 4 && content[0] == '%' && content[1] == 'P'
+                        && content[2] == 'D' && content[3] == 'F';
+                case "jpg", "jpeg" -> content.length >= 3
+                        && (content[0] & 0xFF) == 0xFF && (content[1] & 0xFF) == 0xD8 && (content[2] & 0xFF) == 0xFF;
+                case "png" -> content.length >= 4 && (content[0] & 0xFF) == 0x89 && content[1] == 'P'
+                        && content[2] == 'N' && content[3] == 'G';
+                default -> false;
+            };
+            if (!magicOk) {
+                throw new IllegalArgumentException("文件内容与声明格式不符：请上传真实的 PDF/JPG/PNG 文件");
+            }
         } catch (java.io.IOException e) {
             throw new IllegalStateException("资质材料读取失败", e);
         }
