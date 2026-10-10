@@ -265,28 +265,52 @@
 | 汇总正确性 | 需在 summary 排除 VOIDED | ✅ 汇总=全部条目净额代数和，逻辑最简 |
 | 迁移 | 加状态枚举值（需同步 CHECK 约束，V8 先例） | 加 `entry_kind` 列 + `reverses_entry_id` + 部分唯一索引 |
 
-### 9.4 实施方案（方向二，待批准后执行）
+### 9.4 实施方案 v2（方向二，2026-10-10 晚按真实实体修正；**仍待批准，未实施**）
 
-1. **迁移 V11**：`settlement_entries` 增 `entry_kind`（EARNING/REVERSAL，默认 EARNING，CHECK 约束同步 ALTER）+ `reverses_entry_id`（nullable）；`CREATE UNIQUE INDEX ux_settlement_reversal ON settlement_entries(reverses_entry_id) WHERE entry_kind='REVERSAL'` ——一原条目至多一条有效红冲（幂等兜底）。
-2. **领域层**：`SettlementEntry` 增红冲工厂（负金额构造）与 `reverse` 语义；`summaryOf` 汇总改为全条目净额代数和（PENDING earning + PENDING reversal）。
-3. **服务层**：`SettlementApplicationService.reverseForRefund(order)`——按 `bookingId` 定位唯一 earning 条目；已存在红冲→幂等返回；生成负向条目（金额=原条目取负）。
-4. **触发点两处**（与退款入账同事务）：`executeForBookingCancellation` 与 `executeArbitration(approve)`。
-5. **文案修正**：仲裁 Preview「教师课酬结算条目作废」→「教师课酬将生成红冲条目（待结算净额相应扣减）」。
-6. **提现前置**：`markPaidOut` 上线时必须纳入红冲净额；本整改建议作为提现功能上线的**前置任务**。
-7. **存量数据订正（待确认）**：测试/演示库可能存在「已退款课时但条目仍 PENDING」的历史数据，需一次性订正脚本或运营工具（含幂等防重跑）。
-8. **测试计划**：新增 IT——①取消已付订单后教师结算 summary 不含该课时；②同一订单重复触发红冲幂等（部分唯一索引兜底）；③仲裁退款红冲；④红冲与提现并发（复用 `OfflinePaymentConcurrencyIT` 的并发模式）。
-9. **验收标准**：verify/E2E 全绿；教师结算视角「任何一笔退款后，pending 净额精确减少该课时酬劳」；审计日志含红冲动作。
+> v2 修订说明：对照当前真实代码与 V1 表定义逐项核验后修正三处（详见 §9.46 技术核查）——①原方案**遗漏 `ux_settlement_booking` 唯一约束改造**（同课时红冲行必然违约）；②`platform_fee_cents CHECK (>=0)` 决定红冲行字段取值方案；③汇总聚合经核验**天然兼容代数和**，改造点在明细展示而非聚合。
 
-### 9.45 历史账目只读清查结果（2026-10-10 下午，零数据修改）
+1. **迁移 V11（新增文件，不改历史迁移）**：
+   - `ALTER TABLE settlement_entries ADD COLUMN entry_kind varchar(16) NOT NULL DEFAULT 'EARNING'` + `ADD CONSTRAINT ck_settlement_entry_kind CHECK (entry_kind IN ('EARNING','REVERSAL'))`；
+   - `ALTER TABLE settlement_entries ADD COLUMN reverses_entry_id uuid REFERENCES settlement_entries(id)`；
+   - **DROP CONSTRAINT `ux_settlement_booking`**（v2 修正①：否则同课时 REVERSAL 行插入即违约），改 `CREATE UNIQUE INDEX ux_settlement_booking_earning ON settlement_entries(booking_id) WHERE entry_kind='EARNING'`——EARNING 保持一课一条（防重复结算语义不减弱，OfflinePaymentConcurrencyIT 的并发防重依赖此语义）；
+   - `CREATE UNIQUE INDEX ux_settlement_reversal ON settlement_entries(reverses_entry_id) WHERE entry_kind='REVERSAL'`——一原条目至多一条有效红冲（幂等兜底）；
+   - 保留 `ck_settlement_platform_fee_check CHECK (platform_fee_cents >= 0)` 不动（v2 修正②：红冲行 `platform_fee_cents=0`，见下）。
+2. **领域层**：`SettlementEntry` 增红冲工厂 `newReversal(earning)`——`gross=-原gross、platformFee=0、net=-原net`（不取负 platformFee 因受 CHECK >=0 约束；账务语义=该课时课酬全额冲回、平台抽成同步返还，对账等式：`原net + 红.net = 0`、教师待结算代数扣减=原净额）；`summaryOf` 汇总聚合**无需改动**（v2 修正③：红冲行 status=PENDING 时现有 `sum(net_cents) WHERE status='PENDING'` 即代数和，自动扣减），javadoc 与 `EntryView` 增 `entryKind` 字段。
+3. **服务层**：`SettlementApplicationService.reverseForRefund(order)`——按 `bookingId` 定位唯一 EARNING 条目（**仅 PENDING 可自动红冲**；SETTLED/PAID_OUT 条目不自动处理，返回人工处置清单标记——当前状态不可达，规则留待提现上线前确认）；已存在红冲→幂等返回；生成负向条目（金额=原条目取负）。
+4. **触发点两处**（与退款入账同一 `@Transactional`，退款失败/回滚则红冲一并回滚）：`executeForBookingCancellation` 与 `executeArbitration(approve)` 的 `markExecuted()` 前。预览（previewArbitration）与驳回路径**不触发**。
+5. **文案更新**（上一轮已如实化的 settlementNote 届时同步）：「教师课酬将生成红冲条目（待结算净额相应扣减 ¥X）」。
+6. **明细展示**：教师端流水对 REVERSAL 行渲染为「退款冲回 −¥X」而非「课酬 ¥-X」（避免负向红冲显示成负收益/新增收益）；汇总数字不变接口。
+7. **提现前置**：`markPaidOut` 上线时必须按 entryKind 代数和计算净额；本整改建议作为提现功能上线的**前置任务**（待负责人确认 §9.5-4）。
+8. **存量数据订正（待 §9.5-3 批准后执行）**：最新基线见 §9.45（**38 条 / ¥6,545**，2026-10-10 晚 E2E 复跑后重查——数字随 E2E 累计增长，订正前必须重新查询）。幂等脚本按 `reverses_entry_id` 反查防重跑；执行前 pg_dump 全量备份 + 逐条核对清单；先在 nurture_test 验证。
+9. **测试计划**（对应任务书 14 类）：新增 IT——①取消已付订单后红冲恰一条且教师 pending 精确减少该课时净额；②同一订单重复触发幂等（部分唯一索引兜底）；③仲裁退款红冲同事务；④预览/驳回不产生红冲；⑤无课酬记录的合法取消（TRIAL）不凭空红冲；⑥红冲与并发退款（复用 OfflinePaymentConcurrencyIT 模式）；⑦EARNING 唯一约束回归（防重复结算语义不变）；⑧汇总与明细的数学一致性断言。全套 verify + E2E 回归。
+10. **验收标准**：verify/E2E 全绿；「任何一笔退款后，教师 pending 净额精确减少该课时酬劳」；原始 EARNING 行零改动可追溯；审计日志含红冲动作。
+
+### 9.45 历史账目只读清查结果（2026-10-10 晚 E2E 复跑后重查，零数据修改）
+
+> ⚠️ 数字随 E2E 累计增长（每轮「取消已付课时」E2E 新增挂账）：下表为**本轮重新查询**的实数，订正前必须再次重查。
 
 | 类别 | 主库（nurture） | IT 库（nurture_test） |
 |---|---|---|
-| A. 退款 EXECUTED 仍挂正向 PENDING 条目 | **36 条，虚挂净额 ¥6,205**（35×¥170 + 1×¥255，全部来自「取消已付课时→自动退款」E2E 累计） | 0 |
+| A. 退款 EXECUTED 仍挂正向 PENDING 条目 | **38 条，虚挂净额 ¥6,545**（37×¥170 + 1×¥255，涉 1 名教师 13900000001；较下午清查 +2 条/+$340 为本轮 E2E 新增） | 0 |
 | B. 条目 SETTLED/PAID_OUT 后订单退款 | 0（markSettled 零调用，状态不可达） | 0 |
 | C. 已存在冲回记录 | 0（`entry_kind`/`reverses_entry_id` 列不存在，结构上不可能） | 同 |
 | D. 退款/订单/结算状态不一致 | 0（EXECUTED 退款对应订单 100% CLOSED，级联完整） | 同 |
+| 退款案总览 | EXECUTED 38 + EVALUATED 1（03d093fc，上轮文案验证遗留，未执行资金零变动） | — |
 
-**存量订正待批要点**（对应 §9.5 第 3 项）：待核查数量=36 条；判定规则=`refund_cases.EXECUTED ⋈ settlement_entries` 正向条目；预期影响=红冲生成后教师待结算自动冲减 ¥6,205；备份=订正前 `settlement_entries` 全表快照 + pg_dump；回滚=按 `reverses_entry_id` 精确反查删除生成条目。
+**存量订正待批要点**（对应 §9.5 第 3 项）：待核查数量=38 条（订正前重查）；判定规则=`refund_cases.EXECUTED ⋈ orders ⋈ settlement_entries` 正向 PENDING；预期影响=红冲生成后教师待结算自动冲减 ¥6,545；备份=订正前 `settlement_entries` 全表快照 + pg_dump；回滚=按 `reverses_entry_id` 精确反查删除生成条目。
+
+### 9.46 红冲技术核查（2026-10-10 晚，基于真实代码与 V1 表定义，零代码改动）
+
+| # | 核查项 | 结论 | 对方案的影响 |
+|---|---|---|---|
+| 1 | 退款成功后是否保留正向条目 | **是**：两执行路径（`executeForBookingCancellation`/`executeArbitration` approve）均零接触 `settlement_entries` | 红冲必要性确认 |
+| 2 | 当前退款类型 | 仅**全额**退款（金额=订单实付 `amountCents`，`affectedLessons` 恒 1）；数据模型允许 `evaluate` 重评估金额但无部分退款业务入口 | 先实施全额红冲；部分退款不自行添加 |
+| 3 | 结算/提现执行入口 | **不存在**：`markSettled`/`markPaidOut` 生产零调用，SETTLED/PAID_OUT 不可达 | 红冲规则只需覆盖 PENDING；已结/已提现场景留待提现上线前确认（§9.5-4） |
+| 4 | 汇总正确性 | 已修复（全量 SUM）；**红冲行 status=PENDING 时现有聚合天然代数和兼容** | 聚合无需改；改造点=明细 `EntryView`/前端负数条目展示 |
+| 5 | 事务边界 | 退款执行 `@Transactional` 单事务（approve+钱包入账+订单关闭+markExecuted+审计）；支付成功联动同构（markPaid+扣款+建条目） | 红冲挂入同事务即可保证一致性 |
+| 6 | 幂等与唯一约束 | `ux_refund_cases_order(order_id)` 唯一（V7）防一案重退；两阶段确认令牌 `consume` 防重放；`ux_settlement_booking(booking_id)` 唯一防重复结算（**OfflinePaymentConcurrencyIT 并发日志活体实证**：6 并发仅 1 插入成功，败者撞约束回滚） | v2 修正①：改造 booking 唯一约束时必须以部分唯一索引等价保留 EARNING 唯一性 |
+| 7 | V1 表约束对红冲的影响 | `platform_fee_cents CHECK (>=0)`（红冲行 fee 取 0）；`net_cents` 无 CHECK（负值可插）；`ux_settlement_booking` 唯一（**同课时红冲行必违约**） | v2 修正①②：V11 DROP 约束改部分唯一索引 + 红冲行字段方案 |
+| 8 | 待红冲存量 | 38 条 / ¥6,545（见 §9.45） | 订正待 §9.5-3 批准 |
 
 **~~另实证独立缺陷~~ ✅ 已修复（2026-10-10，不依赖红冲批准）**：`summaryOf` 用 `PageRequest.of(0,50)` 汇总——主库教师 6fbeb796 现有 84 条 PENDING，DB 全量净额 ¥18,105 vs API 返回 ¥11,220（**少报 ¥6,885/38%**，entries 恰 50 条）。**修复=新增 `sumNetCentsByTeacherIdAndStatus` DB 端 SUM 全量聚合（明细保持 50 条分页，DTO/前端零改动）；SettlementSummaryIT 场景 A–F 覆盖；真实 API 实证 1,810,500 == psql SUM**。注：对未来负向红冲条目的代数和兼容未预实现——红冲获批实施时按 §9.4 第 2 步调整聚合语义（javadoc 已注明）。
 
@@ -296,3 +320,5 @@
 2. 部分退款场景教师侧是否按比例红冲（推荐）还是暂不支持部分退款？
 3. 存量「已退款但未红冲」数据：订正脚本 / 运营工具 / 不订正？
 4. 提现功能上线时间表——本整改是否列为其前置阻塞项？
+
+> **2026-10-10 晚复核（全量回归+只读核查轮）**：四项**仍未获批**——本轮按任务书门禁要求维持资金代码与数据零改动，仅完成 §9.4 v2 实施计划修正（§9.46 技术核查八项）与 §9.45 数据基线刷新（38 条/¥6,545）。任务书第六节给出的实施规则（保留原始条目/独立负向红冲/同事务/幂等唯一约束等）已吸收进 §9.4 v2，但其性质是**设计约束**而非批准；实施仍以本节四项获明确批准为前提。

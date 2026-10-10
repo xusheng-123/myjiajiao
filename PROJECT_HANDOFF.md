@@ -97,14 +97,14 @@
 🔵 教育合规（ICP / 协议 / 未成年人条款）——正式运营最大前置
 🔵 生产备份调度、AI 上层能力（均规划中）
 
-## 4. 当前工作现场（2026-10-10 第八轮快照：结算汇总修复 + 退款文案如实修正）
+## 4. 当前工作现场（2026-10-10 晚快照：全量回归轮 + 红冲实施准备，未批准零资金改动）
 
-- **最近完成**：①**教师结算汇总少算缺陷修复**（上一轮实证的 84 条少报 ¥6,885）：根因=`summaryOf` 用明细分页查询（前 50 条）同时算汇总；修复=DB 端 SUM 聚合 `sumNetCentsByTeacherIdAndStatus`（走 ix_settlement_teacher 索引，PENDING/PAID_OUT 各一次），明细保持 50 条分页，DTO 不变前端零改动；SETTLED 不可达不计入展示（javadoc 注明红冲时须调整）。**真实 API 实证：教师 13900000001 汇总 1,810,500 == psql 直查 84 条 SUM（旧 jar 1,122,000）**；浏览器走查结算卡「待结算 ¥ 18105.00」明细 50 行（tools/settlement_walkthrough.py 可复跑）。②**退款预览文案如实修正**：删「原结算条目作废」（未经代码证实），新增 `settlementNote`「教师课酬结算条目暂不随退款自动调整；退款成功不代表教师课酬已完成红冲」；cascadeImpact 仅运营端渲染无泄露面扩大；**文案之外的退款执行行为零改动**。③红冲四项仍未获批 → 零资金写入改动（无 entry_kind/reverses_entry_id、无迁移变更、36 条历史记录保持原样）。
-- **测试基线**：单元 37（+ArchUnit 2）· **IT 43/43 全绿**（41 基线 + SettlementSummaryIT 场景 A–F + RefundPreviewConsistencyIT）· E2E 216/216（🟡 本轮未重跑，改动为只读聚合与文案字符串）· 探针 0/18 · ng build ✓。
-- **已知未收口**：红冲四项待负责人批准（PENDING §9.5，**文案现如实暴露该缺口，提现上线前必须整改**）；存量 36 条 A 类虚挂记录待红冲轮统一订正（另有本轮验证遗留 1 条 EVALUATED 退款案 03d093fc，未执行、资金零变动）；试听限次待拍板；教师对比（第二阶段首项）；Staging 外部资源。
-- **运行状态**：后端（8080，**第八轮新 jar**）/前端（4200）/PostgreSQL 运行中。
-- **版本管理**：本地 git（无远程，严禁 reset --hard/clean -fd/强推/擅加远程）。基线：`6715383` → 本轮 commit（见 CHANGELOG）。
-- **产物新鲜度**：已重新 package 并重启（旧 jar 有锁先 taskkill）；运行中 jar 含本轮两修复 ✓。
+- **最近完成**：①**全量 E2E 本轮真实复跑**：首跑 210 过/1 败——改期节 10 次抽样均与历史残留档期碰撞（**环境性失败**非业务回归，改期节 5 断言未执行）；精确治理李老师 30 天内无订单/无结算/无评价下游残留（111 槽+65 预约，资金记录零触碰）→ 重跑 **214/0 全绿**（216→214 差 2 项=G3/G7 固定账号绑定已存在走 409 容忍分支、条件保护断言不执行——数据状态相关，静态 check 总数 222）。②**结算/退款/支付专项 IT 17/17**（并发日志活体实证 ux_settlement_booking 防重：6 并发仅 1 结算插入）。③**红冲 8 问代码核实**：两退款路径零接触结算/仅全额退款/提现入口不存在/退款单事务/双幂等约束。④**门禁判定：PENDING §9.5 四项仍未获批 → 资金代码与数据零改动**；产出 **§9.4 实施计划 v2**（三项技术修正：V11 须 DROP `ux_settlement_booking` 改 `ux_settlement_booking_earning` 部分唯一索引[原方案漏项]、红冲行 `platform_fee_cents=0` 规避 CHECK、汇总 SUM 天然代数和兼容）+ §9.46 技术核查八项。⑤**数据基线刷新：A 类 38 条/¥6,545**（下午 36/6,205 + 本轮 E2E 新增 2/340，37×170+1×255 涉 1 教师），B/C/D=0，EVALUATED 1 条（03d093fc）遗留——**数字随 E2E 增长，订正前必须重查**。
+- **测试基线**：单元 37（+ArchUnit 2）· IT 43/43（本轮专项 17/17 复跑全绿）· **E2E 214/214（2026-10-10 晚真实复跑）** · 探针 0/18 · ng build ✓（上轮）。
+- **已知未收口**：**红冲四项待负责人批准（PENDING §9.5）——批准后按 §9.4 v2 十步实施（含 V11 迁移/触发点两处/明细展示/8 组新 IT）+ §9.5-3 批准后订正 38 条存量（重查→备份→测试库验证→授权执行）**；试听限次待拍板；教师对比（第二阶段首项）；Staging 外部资源。
+- **运行状态**：后端（8080，1da50ad jar）/前端（4200）/PostgreSQL 运行中。
+- **版本管理**：本地 git（无远程，严禁 reset --hard/clean -fd/强推/擅加远程）。基线：`9dd215c` → 本轮 commit（见 CHANGELOG）。
+- **产物新鲜度**：本轮零生产代码改动（仅文档+测试治理），运行中 jar 仍为 1da50ad 构建 ✓。
 
 ## 5. 当前运行与验证方式（全部已验证）
 
@@ -123,10 +123,11 @@ cd ../frontend && npm start -- --host 0.0.0.0
 #           教师 13900000001/Teacher#2026 · 运营 13800000000/Admin#2026（仅本机）
 # 全量回归（先杀 java：taskkill //F //IM java.exe）
 mvn -B -s C:/Users/lxs/apps/maven-settings.xml -Pintegration verify   # 单元+ArchUnit+IT
-python tools/e2e_test.py        # 216 项 E2E（需服务已启动）
+python tools/e2e_test.py        # 214 项 E2E（需服务已启动；固定绑定账号走 409 容忍分支时计数 212~216 属数据状态差异）
 python tools/probe_authz.py     # 越权探针
 python deploy/verify_config.py  # 24+ 项配置门禁
 # IT 注册限流隔离已修复（Support 每测试类虚拟 XFF）：完整 verify 可直接重复执行，无需再分两步
+# E2E 改期节撞历史档期（409 碰撞）时：清李老师 30 天内无 order/settlement/review 下游的 HELD/OPEN 残留后重跑
 npx ng build --configuration production   # 前端生产构建（frontend/ 下）
 ```
 
@@ -148,7 +149,7 @@ npx ng build --configuration production   # 前端生产构建（frontend/ 下�
 | ~~P1-5~~ | ~~阶段一收官质量加固（四项风险核查与修复）~~ ✅ 2026-10-10 完成——①下架课程默认价缺陷修复（定价三分支，下单 409）②过期档期后端过滤（open-slots 排除过去 + 新建预约 400）③资质上传三重白名单 + max-request-size 45MB + 超限 413 ④窄屏 375px Edge headless CDP 真视口走查零溢出；新增 DelistedCoursePricingIT/StaleSlotGuardIT，E2E 201→205；待决策：试听预约可建付费订单（见交付报告） | — | — | — |
 | ~~P2~~ | ~~试听免费/改期时间规则落码~~ ✅ 2026-10-10 完成（「交易规则落地」轮）：试听免费闸门 409+orderable 过滤+type 视图+前端 pill+夹具迁移（TrialFreeRuleIT 2 例）；改期目标须未来+并发改期真实 IT 实证无孤儿（RescheduleConcurrencyIT 3 轮）；课程定价正数校验；退款红冲方案已备待批（PENDING §9） | — | — | — |
 | ~~P2~~ | ~~结算汇总截断缺陷 + 退款预览文案不实~~ ✅ 2026-10-10 完成（本轮）：汇总改 DB 端 SUM 全量聚合（明细保持 50 条分页，DTO/前端零改动；84 条实证 1,810,500==psql SUM）；文案删「作废」+ 新增 settlementNote 如实告知暂不自动调整；SettlementSummaryIT（场景 A–F）+ RefundPreviewConsistencyIT + 文案单测；单元 37/IT 43 全绿；真实 API+浏览器走查实证；**零资金写入改动** | — | — | — |
-| P2 | 退款结算红冲整改（方案已备：PENDING §9） | 退款不回冲教师结算条目，提现上线前必须整改；文案现已如实暴露该缺口；待负责人批准红冲方向/部分退款规则/存量订正（36 条 + 本轮验证遗留 1 条 EVALUATED 案） | PENDING §9 九步方案；**注意 summaryOf javadoc 已注明红冲须调整聚合语义** | 批准后实施 + 红冲 IT + 对账断言 |
+| P2 | 退款结算红冲整改（**实施计划 v2 已备：PENDING §9.4 + §9.46 技术核查**） | 退款不回冲教师结算条目，提现上线前必须整改；文案已如实暴露缺口；四项仍待负责人批准（§9.5）；存量 38 条/¥6,545 待 §9.5-3 批后订正（订正前重查） | PENDING §9.4 v2 十步 + §9.46；**注意 V11 须改造 ux_settlement_booking 为部分唯一索引** | 批准后实施 + 8 组红冲 IT + verify/E2E 全绿 + 对账断言 |
 | P2 | 每生每师免费试听限次（规则待拍板） | 当前免费+自动确认可反复占用档期；产品拍板限次数值后实施 | docs/DECISIONS.md 未决项 | 决策记录 + 闸门 IT |
 | P2 | 教师对比界面（最多 3 名并排） | 第二阶段首项候选；三缺口（search 缺 displayName/styleTags、教龄无公开端点）见 PENDING §7 | PENDING §7 评估 | 走查 + E2E |
 | P2 | 首页五步模块、附件上传 | 体验补全 | 见 ROADMAP | 各项验收标准 |
