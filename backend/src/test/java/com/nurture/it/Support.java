@@ -41,6 +41,18 @@ public final class Support {
 
     public static Account register(MockMvc mvc, ObjectMapper om, String rolePath, String role,
                                    String phone, String password) throws Exception {
+        return register(mvc, om, rolePath, role, phone, password, callerClassIp());
+    }
+
+    /**
+     * 注册限流键 = X-Forwarded-For 首跳（AuthController.clientIp：生产经 Cloudflare Tunnel
+     * 透传真实客户端 IP，无头回落 remoteAddr）。MockMvc 不经网络，全部请求 remoteAddr 相同，
+     * 不带 XFF 时整套件 ≈52 次注册共享同一「50 次/自然小时/IP」桶，尾部 IT 必然 429。
+     * 以调用测试类为单位分配稳定虚拟来源：类间桶独立、单类注册量（≤6）远低于生产阈值，
+     * 生产限流规则零改动；XFF→限流键的接线行为由 RegistrationRateLimitIT 专项验证。
+     */
+    public static Account register(MockMvc mvc, ObjectMapper om, String rolePath, String role,
+                                   String phone, String password, String forwardedFor) throws Exception {
         var body = new java.util.HashMap<String, Object>();
         body.put("displayName", "IT-" + role);
         body.put("phone", phone);
@@ -50,10 +62,14 @@ public final class Support {
             body.put("highestDegree", "硕士");
             body.put("yearsOfTeaching", 2);
         }
-        var resp = mvc.perform(post("/api/v1/identity/auth/register:" + role_path(role))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(om.writeValueAsBytes(body))
-                        .header("Idempotency-Key", UUID.randomUUID().toString()))
+        var builder = post("/api/v1/identity/auth/register:" + role_path(role))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(om.writeValueAsBytes(body))
+                .header("Idempotency-Key", UUID.randomUUID().toString());
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            builder.header("X-Forwarded-For", forwardedFor);
+        }
+        var resp = mvc.perform(builder)
                 .andExpect(r -> { if (r.getResponse().getStatus() != 200) {
                     throw new AssertionError("注册失败: " + r.getResponse().getStatus() + " " + r.getResponse().getContentAsString());
                 } })
@@ -62,6 +78,17 @@ public final class Support {
         // accountNo 是业务编号（非 UUID）；账户 ID 从 JWT subject 解码
         return new Account(phone, node.get("accessToken").asText(),
                 UUID.fromString(jwtSub(node.get("accessToken").asText())));
+    }
+
+    /** 调用测试类的稳定虚拟来源 IP（10.h.h.1 私有段）：同一类内共享来源、类间互不影响。 */
+    static String callerClassIp() {
+        String caller = StackWalker.getInstance().walk(s -> s
+                .map(StackWalker.StackFrame::getClassName)
+                .filter(name -> !name.equals(Support.class.getName()))
+                .findFirst()
+                .orElse("unknown"));
+        int h = Math.abs(caller.hashCode());
+        return "10." + (h % 200 + 2) + "." + (h / 200 % 200 + 2) + ".1";
     }
 
     /** AuthResponse 不含 accountId——从 JWT subject 解码。 */

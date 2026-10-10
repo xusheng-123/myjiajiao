@@ -97,15 +97,14 @@
 🔵 教育合规（ICP / 协议 / 未成年人条款）——正式运营最大前置
 🔵 生产备份调度、AI 上层能力（均规划中）
 
-## 4. 当前工作现场（2026-10-10 第六轮快照：交易规则落地）
+## 4. 当前工作现场（2026-10-10 第七轮快照：IT 隔离修复 + 资金只读核查）
 
-- **最近完成**：第二阶段前置开发「试听规则、改期安全与交易完整性加固」（四任务全部完成）——①**试听免费**（2026-10-10 决策，`docs/DECISIONS.md`）：`OrderApplicationService.createForCaller` 对 TRIAL 预约下单 409 拒绝（「试听课免费，不产生付费订单」）、`orderableLessonsForCaller` 服务端排除 TRIAL、四个视图（Booking/Upcoming/UpcomingLesson/Orderable）补 `type` 字段、学生端试听行显「免费试听」pill 且无下单按钮；**不创建零金额订单**、历史 TRIAL 付费订单不迁移、**「每生每师限一次试听」明确未实施**（待产品拍板）；4 个以 TRIAL 作下单夹具的 IT + E2E §8.4/§8.6 迁移为 FORMAL+教师审批。②**改期目标必须尚未开始**（与新建预约同语义；源预约时间不限制，保留补救场景）：`reschedule` 在 holdSlot 后校验目标 `startAt`（过去 → 400，事务回滚释放新档期、原档期保留）；**并发改期经真实并发 IT 实证无需修复**——`RescheduleConcurrencyIT` 3 轮（CyclicBarrier+真 PostgreSQL 事务竞争）证明既有档期 `@Version` 乐观锁 + 「先锁新后放旧」共享旧档期释放构成串行化点，恰一胜一败、无孤儿 HELD（否决给 Booking 加 @Version）。③**课程定价正数校验**：`SubjectOffering` 构造器拒绝 ≤0（与 reprice 同约束），`SubjectIdempotencyIT` +1 用例。④**退款结算红冲只做了方案**（`docs/PRODUCT_DECISIONS_PENDING.md` §9：entry_kind EARNING/REVERSAL + reverses_entry_id + 部分唯一索引，V11 迁移细节已备）——**资金代码零改动，待负责人批准后实施**。
-- **测试基线**：单元 36 · IT 40（结构性说明：完整套件单跑=38/40，尾部 TrialFreeRuleIT 2 例必撞注册限流 429——`RegistrationRateLimiter` 为 **50 次/自然小时/IP**，全套件注册总量 ≈52 已超配额；窗口空闲时段单跑 TrialFreeRuleIT=2/2 绿，业务断言零失败；完整回归按「先跑全套再单跑补测」两步执行）· **E2E 216/216**（205+11：试听免费 409×2/自动确认/不在可下单视图/type 字段/导师批准×5 等；§8.4/§8.6/**§15.4 线下收款**夹具迁 FORMAL+审批）· 探针 0（18 项全拒）· 配置门禁全过 · ng build ✓（既有 2 处 CSS budget 警告）· 375px 学生仪表盘走查 ✓（`tools/trial_pill_walkthrough.py`：12 个「免费试听」pill、0 个试听行含下单按钮、零溢出）。
-- **已知未收口**：退款不回冲结算条目（方案已备待批，PENDING §9）；每生每师试听限次（待拍板）；教师对比界面（第二阶段首项候选）；Staging 外部资源；IT 注册限流使完整套件需两步回归（见上）。
-- **运行状态**：本轮结束时后端（8080，沙箱模式，本轮新 jar）/前端（4200 ng serve）/PostgreSQL 均在运行中。
-- **产物新鲜度**：jar 为本轮重建（`-Dspring-boot.repackage.skip=true` 跑 IT 时运行中 jar 未重打包，源码晚于 jar 的改动为零——最后一次重打包发生在全部源码修改之后）✓。
-- **版本管理**：本地 git 仓库（无远程，严禁 reset --hard/clean -fd/强推/擅加远程）。本轮基线：`0823e87` → `9671d6a`（交易规则落地，24 文件）。
-- **失败测试如实记录**：完整 verify 三次均 38/40——TrialFreeRuleIT 2 例在注册步骤被限流 429（基础设施资源约束，非业务断言失败，报错原文「该网络环境注册过于频繁」）；该 2 例在 12:45 窗口空闲单跑 2/2 通过（BUILD SUCCESS）。无任何断言被删除或放宽。
+- **最近完成**：①**集成测试注册限流隔离修复**（仅 test 目录 2 文件，生产零改动）：根因=`AuthController.clientIp` 取 X-Forwarded-For 首跳（生产经 Cloudflare 透传），MockMvc 无头回落恒定 remoteAddr → 全套件 ≈52 次注册共享「50 次/自然小时/IP」桶，尾部 IT 必 429；修复=`Support.register` 按调用测试类分配稳定虚拟 XFF（类间桶独立）+ 新增 `RegistrationRateLimitIT` 集成专项（同一 XFF 打满 50 次→第 51 次 429 文案/换源独立/无头回落可用，自证 XFF 接线）；**完整套件连续两次 41/41 全绿（同小时连跑）**。②**退款红冲决策核查**：四项待确认均未获批 → 资金代码零改动（符合约束）；全链路行为已代码级取证（退款两路径均不触碰结算、订单必关、双重退款被唯一约束排除、提现入口不存在、markSettled/markPaidOut 仍零调用）。③**历史账目只读清查**：主库 A 类 **36 条已退款仍挂正向 PENDING 条目（虚挂净额 ¥6,205）**，B/C/D 类 0，IT 库全 0；订正方案已备待批。④**新发现缺陷（当前存在）**：`summaryOf` 前 50 条截断——李老师 84 条条目 API 少报待结算 **¥6,885**（DB ¥18,105 vs API ¥11,220，实证）；退款仲裁预览文案「结算条目作废」与实际行为不符（确认仍存在）。
+- **测试基线**：单元 36（+ArchUnit 2）· **IT 41/41 连续两次全套全绿**（40 原有 + RegistrationRateLimitIT）· E2E 216/216 · 探针 0/18 · 配置门禁全过 · ng build ✓。
+- **已知未收口**：红冲四项待负责人批准（PENDING §9.5：方向/部分退款规则/存量订正 36 条/提现前置）；结算汇总截断缺陷（独立小轮可修，不依赖红冲）；预览文案不实（一行级）；试听限次待拍板；教师对比（第二阶段首项）；Staging 外部资源。
+- **运行状态**：后端（8080 沙箱）/前端（4200）/PostgreSQL 运行中。
+- **版本管理**：本地 git（无远程，严禁 reset --hard/clean -fd/强推/擅加远程）。基线：`f77bd48` → 本轮 commit（见 CHANGELOG）。
+- **产物新鲜度**：本轮仅改 test 目录，无需重打包；运行中 jar（交易规则落地轮构建）仍为最新主代码 ✓。
 
 ## 5. 当前运行与验证方式（全部已验证）
 
@@ -124,9 +123,10 @@ cd ../frontend && npm start -- --host 0.0.0.0
 #           教师 13900000001/Teacher#2026 · 运营 13800000000/Admin#2026（仅本机）
 # 全量回归（先杀 java：taskkill //F //IM java.exe）
 mvn -B -s C:/Users/lxs/apps/maven-settings.xml -Pintegration verify   # 单元+ArchUnit+IT
-python tools/e2e_test.py        # 216 项 E2E（需服务已启动；勿与 IT 同小时跑——注册限流 50/自然小时/IP）
+python tools/e2e_test.py        # 216 项 E2E（需服务已启动）
 python tools/probe_authz.py     # 越权探针
 python deploy/verify_config.py  # 24+ 项配置门禁
+# IT 注册限流隔离已修复（Support 每测试类虚拟 XFF）：完整 verify 可直接重复执行，无需再分两步
 npx ng build --configuration production   # 前端生产构建（frontend/ 下）
 ```
 
