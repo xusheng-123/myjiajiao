@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/auth/auth.service';
+import { LearningAttachmentsComponent } from '../../shared/components/learning-attachments.component';
 
 interface Milestone { milestoneId: string; title: string; goal: string; targetDate: string | null; completed: boolean; }
 interface Task { taskId: string; title: string; status: string; submission: string | null; feedback: string | null; canSubmit: boolean; canFeedback: boolean; }
@@ -12,7 +13,7 @@ interface Plan { planId: string; studentId: string; subject: string; title: stri
 interface Change { changeId: string; action: string; actorName: string; details: string; at: string; }
 interface Page<T> { content: T[]; totalPages: number; totalElements: number; }
 
-@Component({ selector: 'nur-learning-plans', standalone: true, imports: [DatePipe, FormsModule, RouterLink],
+@Component({ selector: 'nur-learning-plans', standalone: true, imports: [DatePipe, FormsModule, RouterLink, LearningAttachmentsComponent],
   templateUrl: './learning-plans.component.html', styleUrl: './learning-plans.component.css' })
 export class LearningPlansComponent implements OnInit {
   private readonly http = inject(HttpClient);

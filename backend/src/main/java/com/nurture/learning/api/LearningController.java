@@ -32,6 +32,7 @@ public class LearningController {
     // ---------------- 学生：成长中心 / 任务 / 档案 / 答疑 ----------------
     public record TaskSubmission(@jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=10000) String content) {}
     public record TaskFeedback(@jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=4000) String feedback) {}
+    public record QuestionAnswer(@jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=4000) String answer) {}
 
     @GetMapping("/growth")
     @PreAuthorize("hasRole('STUDENT') or hasRole('ADMIN')")
@@ -155,9 +156,9 @@ public class LearningController {
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "回答课后答疑")
     public Map<String, Object> answer(@PathVariable UUID questionId,
-                                      @RequestBody Map<String, String> body) {
+                                      @jakarta.validation.Valid @RequestBody QuestionAnswer body) {
         return learning.answerQuestion(CallerContext.require().accountId(), questionId,
-                body.getOrDefault("answer", ""));
+                body.answer());
     }
 
     // ---------------- 答疑共享 ----------------

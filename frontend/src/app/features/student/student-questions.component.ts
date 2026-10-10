@@ -5,6 +5,7 @@ import { API } from '../../core/api/endpoints';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NoticeCenterComponent } from '../../shared/components/notice-center.component';
+import { LearningAttachmentsComponent } from '../../shared/components/learning-attachments.component';
 
 interface QuestionView {
   questionId: string; subject: string; title: string; content: string;
@@ -14,7 +15,7 @@ interface QuestionView {
 @Component({
   selector: 'nur-student-questions',
   standalone: true,
-  imports: [FormsModule, RouterLink, NoticeCenterComponent],
+  imports: [FormsModule, RouterLink, NoticeCenterComponent, LearningAttachmentsComponent],
   template: `
 <div class="dashboard-shell">
   <header class="dash-header">
@@ -27,9 +28,9 @@ interface QuestionView {
 
   <section class="nur-card" aria-labelledby="ask-title">
     <h2 id="ask-title" class="nur-serif">提出问题</h2>
-    <label for="q-teacher">教师编号（NUR-TEA-xxxxxx）</label>
-    <input id="q-teacher" [(ngModel)]="teacherId" placeholder="从教师工作台获取"
-      style="width:100%;padding:8px 12px;margin:4px 0 12px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);color:var(--text-main)" />
+    <label for="q-teacher">授课教师</label>
+    <select id="q-teacher" [ngModel]="teacherId()" (ngModelChange)="teacherId.set($event)" style="width:100%;min-height:44px;margin:4px 0 12px"><option value="">请选择教师</option>@for(t of teachers();track t.teacherId){<option [value]="t.teacherId">{{t.displayName}}</option>}</select>
+    @if(!teachers().length){<p>有已确认或已完成课程后，可以向授课教师提问。</p>}
     <label for="q-subject">科目</label>
     <input id="q-subject" [(ngModel)]="subject" placeholder="如：数学"
       style="width:100%;padding:8px 12px;margin:4px 0 12px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);color:var(--text-main)" />
@@ -52,6 +53,7 @@ interface QuestionView {
         <div style="margin:12px 0;padding:12px;border-left:3px solid var(--color-secondary);border-radius:0 8px 8px 0;background:var(--color-secondary-bg)">
           <p style="font-weight:600;margin:0 0 4px">{{ q.title }} <span class="status-pill">{{ q.status === 'OPEN' ? '待回答' : q.status === 'ANSWERED' ? '已回答' : '已关闭' }}</span></p>
           <p class="quiet-note">{{ q.content }}</p>
+          <nur-learning-attachments [questionId]="q.questionId" [status]="q.status" />
           @if (q.answer) { <p style="margin:8px 0 0;padding:8px;background:var(--color-secondary-bg);border-radius:6px">{{ q.answer }}</p> }
         </div>
       }
@@ -71,8 +73,9 @@ export class StudentQuestionsComponent implements OnInit {
   readonly content = signal('');
   readonly msg = signal('');
   readonly questions = signal<QuestionView[]>([]);
+  readonly teachers = signal<{teacherId:string;displayName:string}[]>([]);
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void { this.load();this.http.get<{teacherId:string;displayName:string}[]>('/api/v1/learning/files/teachers').subscribe({next:r=>this.teachers.set(r),error:()=>this.msg.set('教师列表暂时不可用。')}); }
 
   load(): void {
     this.http.get<QuestionView[]>(API.learning.questions).subscribe({

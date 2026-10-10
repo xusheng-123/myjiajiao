@@ -1,6 +1,6 @@
 # ARCHITECTURE — 真实架构速查（只描述当前存在，不做设计）
 
-> 引用方：`PROJECT_HANDOFF.md`。目录基准：`线上家教平台（功能）/`。核实更新：2026-10-11 阶段3学习计划。
+> 引用方：`PROJECT_HANDOFF.md`。目录基准：`线上家教平台（功能）/`。核实更新：2026-10-11 阶段4错题与教学附件。
 
 ## 目录结构
 
@@ -14,21 +14,21 @@ backend/
                      #        config scheduling(课程提醒@Scheduled) messaging? (在 messaging 模块)
     identity/ student/ parent/ teacher/ verification/ matching/ scheduling/
     booking/ classroom/ order/ payment/ refund/ settlement/ messaging/ review/ admin/
-    learning/        # V9 新增：成长中心/课后任务/课堂记录/档案/答疑（原4实体/4仓库；V15新增计划/目标/关联/历史4实体4仓库及独立app/api）
+    learning/        # V9 新增：成长中心/课后任务/课堂记录/档案/答疑（原4实体/4仓库；V15新增计划/目标/关联/历史4实体4仓库及独立app/api；V16错题/附件/容量3实体3仓库及相应服务）
   src/main/resources/
     application.yml  # 唯一配置文件；生产经 env 注入（NURTURE_*）
-    db/migration/    # Flyway V1–V15（V13试听限次、V14编号序列、V15学习计划）
+    db/migration/    # Flyway V1–V16（V13试听限次、V14编号序列、V15学习计划、V16错题/文件/容量）
   src/test/java/com/nurture/
     arch/ArchitectureTest.java          # ArchUnit 1.5.1，FreezingArchRule 空基线
-    it/                                 # 92 IT 用例（真 PostgreSQL nurture_test 库，当前verify证据）
-    ...                                 # 单元测试 38 项
+    it/                                 # 104 IT 用例（真 PostgreSQL nurture_test 库，当前verify证据）
+    ...                                 # 单元测试 41 项
 frontend/
   src/app/
     core/api/endpoints.ts               # 全站 API 常量（API_BASE + learning/matching 新段）
     core/auth/ core/api/auth.interceptor.ts
     features/  landing/ auth/ teachers/ match/
                student/（dashboard/growth/archive/questions）
-               parent/ teacher/ admin/ messages/ refunds/ learning/（plans）
+               parent/ teacher/ admin/ messages/ refunds/ learning/（plans/mistakes/materials）
     shared/components/teacher-compare.component.ts      # 真实资料最多3人对比
     shared/components/teacher-profile-editor.component.ts
     shared/components/garden-scene/     # 雨后竹林场景层（呼吸感动效宿主）
@@ -39,6 +39,7 @@ deploy/
   backup.sh restore.sh verify_config.py package-staging.sh RUNBOOK.md
   dist/                                  # Staging 部署包输出
 tools/
+  learning_materials_walkthrough.py learning_materials_migration_rehearsal.py
   e2e_test.py（本轮220通过） probe_authz.py（本轮19拒绝/0漏洞）
   gap_fill_walkthrough.py                # 实际API+桌面/375px浏览器
   settlement_correction_rehearsal.py legacy_migration_rehearsal.py legacy_refund_rehearsal.py
@@ -48,7 +49,7 @@ frontend/dist/nurture-frontend/browser/  # 生产构建产物（Pages 输出目�
 
 ## 请求路径（真实）
 
-本机：浏览器4200 → `/api`代理8080 → Spring Boot过滤器链（幂等 → 安全 → 审计）→ Controller（@PreAuthorize角色或SCOPE_）→ ApplicationService（业务 + 对象级授权）→ Repository → PostgreSQL（唯一事实源，源码Flyway V1–V15，ddl-auto=validate）。当前8080连接phase3_final隔离验收库V15，历史主库保持V10。
+本机：浏览器4200 → `/api`代理8080 → Spring Boot过滤器链（幂等 → 安全 → 审计）→ Controller（@PreAuthorize角色或SCOPE_）→ ApplicationService（业务 + 对象级授权）→ Repository → PostgreSQL（唯一事实源，源码Flyway V1–V16，ddl-auto=validate）。当前8080连接phase4隔离验收库V16，历史主库保持V10。
 
 部署目标仍为Cloudflare Pages前端/Tunnel API，但完整Staging尚未建立。已发布的owner-private Sites只托管静态Angular，没有Java/PostgreSQL/API，顶部明确提示接口未连接。
 

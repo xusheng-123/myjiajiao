@@ -1,0 +1,23 @@
+<main class="plans-shell"><header><div><h1 class="nur-serif">错题本</h1><p>记录错误原因，安排复习，再确认是否掌握。</p></div><a [routerLink]="home()">返回工作台</a></header>
+  @if(auth.role()==='TEACHER'){<label>选择学生<select [value]="student()" (change)="select($any($event.target).value)" [disabled]="busy()"><option value="" disabled>请选择学生</option>@for(s of students();track s.studentId){<option [value]="s.studentId">{{s.displayName}}</option>}</select></label>}
+  @if(notice()){<p role="status" class="read-note">{{notice()}}</p>}
+  @if(auth.role()==='PARENT'){<p>你可以查看有效绑定孩子的错题与复习情况。</p>}
+  @if(editable() && (auth.role()!=='TEACHER'||student())){<section class="nur-card plan-editor"><h2>{{editing()?'修改错题':'记录错题'}}</h2><form (ngSubmit)="save()">
+    <label>科目<input id="mistake-subject" name="subject" maxlength="32" required [ngModel]="subject()" (ngModelChange)="subject.set($event)"></label>
+    <label>标题<input id="mistake-title" name="title" maxlength="100" required [ngModel]="title()" (ngModelChange)="title.set($event)"></label>
+    <label>题目与解答记录<textarea id="mistake-question" name="question" maxlength="4000" required [ngModel]="question()" (ngModelChange)="question.set($event)"></textarea></label>
+    <label>错误原因<textarea id="mistake-reason" name="reason" maxlength="2000" required [ngModel]="reason()" (ngModelChange)="reason.set($event)"></textarea></label>
+    <label>知识点标签<input id="mistake-tags" name="tags" maxlength="300" [ngModel]="tags()" (ngModelChange)="tags.set($event)" placeholder="如：一次函数、单位换算"></label>
+    <label>复习日期（可选）<input name="review" type="date" [ngModel]="review()" (ngModelChange)="review.set($event)"></label>
+    @if(editing()){<label>复习状态<select name="status" [ngModel]="status()" (ngModelChange)="status.set($event)"><option value="UNMASTERED">待巩固</option><option value="REVIEWING">复习中</option><option value="MASTERED">已掌握（本人确认）</option></select></label>}
+    <div class="actions"><button type="submit" class="primary" [disabled]="busy()||!subject().trim()||!title().trim()||!question().trim()||!reason().trim()">{{editing()?'保存错题':'记录错题'}}</button>@if(editing()){<button type="button" (click)="reset()">取消编辑</button>}</div>
+  </form></section>}
+  <section class="nur-card"><h2>分类复习</h2><form (ngSubmit)="filter()"><label>科目筛选<input name="filterSubject" maxlength="32" [ngModel]="filterSubject()" (ngModelChange)="filterSubject.set($event)"></label><label>知识点筛选<input name="filterTag" maxlength="100" [ngModel]="filterTag()" (ngModelChange)="filterTag.set($event)"></label><label>复习状态<select name="filterStatus" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)"><option value="">全部</option><option value="UNMASTERED">待巩固</option><option value="REVIEWING">复习中</option><option value="MASTERED">已掌握</option></select></label><label>复习日期不晚于<input name="due" type="date" [ngModel]="due()" (ngModelChange)="due.set($event)"></label><button type="submit" [disabled]="loading()||busy()">筛选错题</button></form></section>
+  @if(loading()){<p role="status">正在加载…</p>}@else if(!notes().length){<p>当前没有符合条件的错题。</p>}
+  @for(n of notes();track n.noteId){<article class="nur-card"><h2>{{n.title}}</h2><p>{{n.subject}} · {{label(n.status)}} · {{n.reviewDate?'复习日期：'+n.reviewDate:'未设复习日期'}}</p><p class="goal-text">{{n.questionText}}</p><p class="goal-text">错误原因：{{n.errorReason}}</p><p>知识点：{{n.knowledgeTags||'未设置'}}</p>
+    @if(n.taskId){<p>复习任务：{{label(n.taskStatus||'PENDING')}}；任务完成后仍需本人确认掌握。</p><a [routerLink]="['/learning/materials']" [queryParams]="{studentId:n.studentId}">查看教学资料与作业</a>}
+    <div class="actions">@if(n.canEdit){<button type="button" (click)="edit(n)" [disabled]="busy()">修改错题</button><button type="button" (click)="remove(n)" [disabled]="busy()">移除错题</button>}@if(auth.role()==='TEACHER'&&!n.taskId){<button type="button" (click)="convert(n)" [disabled]="busy()">布置复习任务</button>}</div>
+    @if(converting()?.noteId===n.noteId){<form (ngSubmit)="publish()"><label>关联课程<select name="lesson" [ngModel]="lesson()" (ngModelChange)="lesson.set($event)">@for(l of lessons();track l.bookingId){<option [value]="l.bookingId">{{l.subject}} · {{l.startAt|date:'M月d日 HH:mm'}}</option>}</select></label>@if(!lessons().length){<p>需要有已确认或已完成课程，才能发布任务。</p>}<div class="actions"><button type="submit" class="primary" [disabled]="busy()||!lesson()">发布复习任务</button><button type="button" (click)="converting.set(null)">取消</button></div></form>}
+  </article>}
+  @if(pages()>1){<nav class="actions" aria-label="错题分页"><button type="button" (click)="turn(-1)" [disabled]="loading()||page()===0">上一页</button><span>{{page()+1}}/{{pages()}}</span><button type="button" (click)="turn(1)" [disabled]="loading()||page()+1>=pages()">下一页</button></nav>}
+</main>

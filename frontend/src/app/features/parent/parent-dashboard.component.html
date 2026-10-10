@@ -25,6 +25,8 @@
             </span>
             @if (child.status === 'ACTIVE') {
               <a routerLink="/learning/plans" [queryParams]="{childProfileId: child.studentId}">学习计划</a>
+              <a routerLink="/learning/mistakes" [queryParams]="{childProfileId: child.studentId}">错题与复习</a>
+              <a routerLink="/learning/materials" [queryParams]="{childProfileId: child.studentId}">教学资料与作业</a>
               <button type="button" class="btn-ghost-sm" (click)="toggleReport(child)"
                 [attr.aria-expanded]="reportFor() === child.studentId">学习周报</button>
             }

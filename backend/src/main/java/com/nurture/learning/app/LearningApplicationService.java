@@ -83,7 +83,7 @@ public class LearningApplicationService {
 
     @Transactional
     public Map<String, Object> submitTask(UUID studentId, UUID taskId, String content) {
-        LearningTask task = taskRepository.findById(taskId)
+        LearningTask task = taskRepository.locked(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("任务不存在"));
         if (!task.getStudentId().equals(studentId)) {
             throw new AccessDeniedException("仅任务归属学生可提交");
@@ -96,7 +96,7 @@ public class LearningApplicationService {
 
     @Transactional
     public Map<String, Object> feedbackTask(UUID teacherId, UUID taskId, String feedback) {
-        LearningTask task = taskRepository.findById(taskId)
+        LearningTask task = taskRepository.locked(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("任务不存在"));
         if (!task.getTeacherId().equals(teacherId)) {
             throw new AccessDeniedException("仅任务归属教师可反馈");
@@ -410,7 +410,7 @@ public class LearningApplicationService {
 
     @Transactional
     public Map<String, Object> answerQuestion(UUID teacherId, UUID questionId, String answer) {
-        Question q = questionRepository.findById(questionId)
+        Question q = questionRepository.locked(questionId)
                 .orElseThrow(() -> new IllegalArgumentException("问题不存在"));
         if (!q.getTeacherId().equals(teacherId)) {
             throw new AccessDeniedException("仅提问归属教师可回答");
@@ -423,7 +423,7 @@ public class LearningApplicationService {
 
     @Transactional
     public Map<String, Object> closeQuestion(UUID userId, UUID questionId) {
-        Question q = questionRepository.findById(questionId)
+        Question q = questionRepository.locked(questionId)
                 .orElseThrow(() -> new IllegalArgumentException("问题不存在"));
         if (!q.getStudentId().equals(userId) && !q.getTeacherId().equals(userId)) {
             throw new AccessDeniedException("仅参与双方可关闭该问题");

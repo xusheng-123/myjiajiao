@@ -6,8 +6,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
+import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
+    @org.springframework.data.jpa.repository.Query(value="SELECT DISTINCT teacher_id FROM bookings WHERE student_id=:student AND (status IN ('CONFIRMED','IN_PROGRESS','COMPLETED') OR (status='CLOSED' AND cancel_reason IS NULL))",nativeQuery=true)
+    List<UUID> learningTeachers(UUID student);
 
     Page<Booking> findByStudentIdOrderByCreatedAtDesc(UUID studentId, Pageable pageable);
 

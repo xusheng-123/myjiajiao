@@ -7,7 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface QuestionRepository extends JpaRepository<Question, UUID> {
+public interface QuestionRepository extends JpaRepository<Question, UUID>,org.springframework.data.jpa.repository.JpaSpecificationExecutor<Question> {
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select q from Question q where q.id=:id")
+    Optional<Question> locked(UUID id);
 
     List<Question> findByStudentIdOrderByCreatedAtDesc(UUID studentId);
 

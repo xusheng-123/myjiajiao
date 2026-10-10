@@ -30,6 +30,7 @@
       <h3>关联课后任务</h3>@if (!p.tasks.length) { <p class="hint">尚未关联任务。</p> }
       @for (t of p.tasks; track t.taskId) {
         <section class="linked-task"><div class="task-row"><strong>{{ t.title }} · {{ taskStatus(t.status) }}</strong>@if (canEdit() && p.status === 'ACTIVE') { <button type="button" (click)="unlink(p, t.taskId)" [disabled]="busy()">取消关联</button> }</div>
+          <nur-learning-attachments [taskId]="t.taskId" [status]="t.status" />
           @if (t.submission) { <p class="goal-text">学生提交：{{ t.submission }}</p> }@if (t.feedback) { <p class="goal-text">教师反馈：{{ t.feedback }}</p> }
           @if ((t.status === 'PENDING' && t.canSubmit) || (t.status === 'SUBMITTED' && t.canFeedback)) {
             <button type="button" (click)="openTask(t)" [disabled]="busy()">{{ t.status === 'PENDING' ? '提交作业' : '给出反馈' }}</button>

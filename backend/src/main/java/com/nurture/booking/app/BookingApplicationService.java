@@ -472,6 +472,9 @@ public class BookingApplicationService {
         return booking.getStudentId();
     }
 
+    @Transactional(readOnly=true)
+    public List<UUID> learningTeachers(UUID studentId) { return bookingRepository.learningTeachers(studentId); }
+
     private boolean supportsLearningTask(Booking b) {
         return b.getStatus()==Booking.BookingStatus.CONFIRMED || b.getStatus()==Booking.BookingStatus.IN_PROGRESS
                 || b.getStatus()==Booking.BookingStatus.COMPLETED

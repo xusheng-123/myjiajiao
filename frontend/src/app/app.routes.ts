@@ -3,6 +3,8 @@ import { Role } from './core/auth/auth.models';
 import { roleGuard, sessionGuard, refundGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
+  { path: 'learning/mistakes', canActivate: [sessionGuard], loadComponent: () => import('./features/learning/mistake-notes.component').then(m => m.MistakeNotesComponent) },
+  { path: 'learning/materials', canActivate: [sessionGuard], loadComponent: () => import('./features/learning/learning-materials.component').then(m => m.LearningMaterialsComponent) },
   { path: 'learning/plans', canActivate: [sessionGuard], loadComponent: () => import('./features/learning/learning-plans.component').then(m => m.LearningPlansComponent) },
   { path: 'messages', canActivate: [sessionGuard], loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
   { path: 'refunds', canActivate: [refundGuard], loadComponent: () => import('./features/refunds/refunds.component').then(m => m.RefundsComponent) },
