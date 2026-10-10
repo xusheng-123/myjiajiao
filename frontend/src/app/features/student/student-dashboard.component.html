@@ -103,6 +103,9 @@
                   @if (lesson.status === 'CONFIRMED') {
                     @if (orderOf(lesson.bookingId); as ord) {
                       <span class="status-pill">{{ ord.status === 'PAID' ? '✓ 已支付' : '◷ 待支付' }}</span>
+                    } @else if (lesson.type === 'TRIAL') {
+                      <!-- 试听免费（2026-10-10 决策）：试听预约不提供付费下单入口，服务端同样拒绝 -->
+                      <span class="status-pill">免费试听</span>
                     } @else {
                       <button
                         type="button"

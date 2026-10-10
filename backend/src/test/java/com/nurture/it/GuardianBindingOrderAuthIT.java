@@ -40,7 +40,7 @@ class GuardianBindingOrderAuthIT {
         var parent = Support.register(mvc, om, "parent", "PARENT", phone(), "ItParent#01");
         var outsider = Support.register(mvc, om, "student", "STUDENT", phone(), "ItStudent#2");
 
-        // 教师发布档期 → 学生预约试听（自动确认）
+        // 教师发布档期 → 学生预约正式课 → 导师审批（付费订单合法入口；试听免费规则 2026-10-10）
         var slot = Support.postJson(mvc, om, "/api/v1/scheduling/availability-slots",
                 teacher.accessToken(),
                 new java.util.HashMap<>() {{
@@ -54,9 +54,13 @@ class GuardianBindingOrderAuthIT {
                     put("teacherId", teacher.accountId());
                     put("slotId", slot.get("slotId").asText());
                     put("subject", "数学");
-                    put("bookingType", "TRIAL");
+                    put("bookingType", "FORMAL");
                 }});
-        assertThat(booking.get("status").asText()).isEqualTo("CONFIRMED");
+        assertThat(booking.get("status").asText()).isEqualTo("REQUESTED");
+        var approved = Support.postJson(mvc, om,
+                "/api/v1/booking/booking-requests/%s:decide?decision=approve".formatted(booking.get("bookingId").asText()),
+                teacher.accessToken(), new java.util.HashMap<>());
+        assertThat(approved.get("status").asText()).isEqualTo("CONFIRMED");
         String bookingId = booking.get("bookingId").asText();
 
         // 无关学生：403

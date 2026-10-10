@@ -71,6 +71,11 @@ public class OrderApplicationService {
         if (!"CONFIRMED".equals(booking.status())) {
             throw new IllegalStateException("仅已确认（导师已批准）的预约可以下单");
         }
+        // 试听免费（2026-10-10 决策）：试听预约不产生付费订单、不创建零金额订单替代；
+        // 正式课流程（资格校验/定价快照/幂等）不受影响。
+        if (!"FORMAL".equals(booking.type())) {
+            throw new IllegalStateException("试听课免费，不产生付费订单；如需继续学习请预约正式课");
+        }
         if (caller.role() != CallerRole.STUDENT && caller.role() != CallerRole.PARENT) {
             throw new AccessDeniedException("仅学生/家长可发起下单");
         }
@@ -136,8 +141,8 @@ public class OrderApplicationService {
         return ordersOfPayer(payerParentId, pageable).map(OrderView::from);
     }
 
-    /** 家长「可下单课程」视图：已确认预约 − 已有订单，金额为服务端定价快照。 */
-    public record OrderableLessonView(UUID bookingId, String subject, String startAt, long priceCents) {
+    /** 家长「可下单课程」视图：已确认正式课预约 − 已有订单，金额为服务端定价快照（试听免费不出现在此视图）。 */
+    public record OrderableLessonView(UUID bookingId, String subject, String startAt, long priceCents, String type) {
     }
 
     /**
@@ -157,11 +162,13 @@ public class OrderApplicationService {
         }
         return candidates.stream()
                 .filter(b -> "CONFIRMED".equals(b.status()))
+                // 试听免费（2026-10-10 决策）：可下单课程从服务端排除试听预约，不依赖前端隐藏
+                .filter(b -> "FORMAL".equals(b.type()))
                 .filter(b -> orderRepository.findByBookingId(b.bookingId()).isEmpty())
                 .map(b -> {
                     long priceCents = resolvePriceCents(b.teacherId(), b.subject());
                     return new OrderableLessonView(b.bookingId(), b.subject(),
-                            b.startAt() == null ? null : b.startAt().toString(), priceCents);
+                            b.startAt() == null ? null : b.startAt().toString(), priceCents, b.type());
                 }).toList();
     }
 

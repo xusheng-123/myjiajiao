@@ -71,10 +71,10 @@ export class StudentDashboardComponent implements OnInit {
   readonly progressText = computed(() => `${this.completedCount()}/${this.totalCount()} 已完成`);
 
   /** 我的课程表（PRD 1.2 课程与课后反馈：课程表视图）。 */
-  readonly schedule = signal<{ bookingId: string; subject: string; status: string; startAt: string | null; teacherId: string | null }[]>([]);
+  readonly schedule = signal<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>([]);
 
-  private readonly upcomingLessons = signal<{ bookingId: string; subject: string; status: string; startAt: string | null; teacherId: string | null }[]>([]);
-  private readonly historyLessons = signal<{ bookingId: string; subject: string; status: string; startAt: string | null; teacherId: string | null }[]>([]);
+  private readonly upcomingLessons = signal<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>([]);
+  private readonly historyLessons = signal<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>([]);
 
   // ---------- 改期（D11 前端入口） ----------
   readonly rescheduleBookingId = signal<string | null>(null);
@@ -114,11 +114,11 @@ export class StudentDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.http
-      .get<{ bookingId: string; subject: string; status: string; startAt: string | null; teacherId: string | null }[]>(API.student.upcomingLessons)
+      .get<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>(API.student.upcomingLessons)
       .subscribe({ next: (data) => { this.upcomingLessons.set(data ?? []); this.refreshSchedule(); } });
     // 历史课程（已完成/已结课）：课程表「评价」入口的数据源
     this.http
-      .get<{ bookingId: string; subject: string; status: string; startAt: string | null; teacherId: string | null }[]>(API.student.lessonHistory)
+      .get<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>(API.student.lessonHistory)
       .subscribe({ next: (data) => { this.historyLessons.set(data ?? []); this.refreshSchedule(); } });
     // 我已发出的评价：刷新后仍能正确显示「✓ 已评价」，避免对同一课程重复提交
     this.http

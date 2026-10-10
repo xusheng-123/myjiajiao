@@ -45,9 +45,9 @@
 | 功能 | 状态 | 验证依据 |
 |---|---|---|
 | 认证（注册/登录/Cookie/令牌轮换/锁定零窗口） | ✅ | IT + E2E；HttpOnly 实测 |
-| 预约/改期/两阶段取消 | ✅ | BookingRescheduleIT + E2E |
+| 预约/改期/两阶段取消 | ✅ | BookingRescheduleIT（4，含过去目标 400/过去源补救）+ **RescheduleConcurrencyIT**（3 轮真实并发无孤儿 HELD）+ E2E |
 | 监护绑定授权下单（含学生确认绑定入口 G3） | ✅ | GuardianBindingOrderAuthIT（含 G3 越权/幂等用例）+ E2E §8.3 + 浏览器全链路走查 |
-| 订单/支付（沙箱 + 模式 B 线下收款；双端下单支付界面 G7） | ✅ | OfflinePaymentStateMachineIT 8 例 + ConcurrencyIT + **OrderPaymentFlowIT**（可下单视图/越权/一课一单/payer 隔离/无余额回滚/支付联动/防重复）+ E2E §8.4 + 浏览器全链路走查 + 生产模式冒烟（sandbox=false） |
+| 订单/支付（沙箱 + 模式 B 线下收款；双端下单支付界面 G7；**试听免费闸门 2026-10-10**） | ✅ | OfflinePaymentStateMachineIT 8 例 + ConcurrencyIT + **OrderPaymentFlowIT**（可下单视图/越权/一课一单/payer 隔离/无余额回滚/支付联动/防重复）+ **TrialFreeRuleIT 2 例**（试听下单 409/orderable 排除 TRIAL/两阶段取消无订单）+ E2E §8.4/§8.6 + 浏览器走查 + 生产模式冒烟（sandbox=false） |
 | 退款/结算/评价/站内信/课程提醒 | ✅ | E2E 覆盖 |
 | 课堂（外部会议链接 + 结课考勤） | ✅ | E2E 课堂链路 |
 
@@ -97,15 +97,15 @@
 🔵 教育合规（ICP / 协议 / 未成年人条款）——正式运营最大前置
 🔵 生产备份调度、AI 上层能力（均规划中）
 
-## 4. 当前工作现场（2026-10-10 第五轮快照：质量加固）
+## 4. 当前工作现场（2026-10-10 第六轮快照：交易规则落地）
 
-- **最近完成**：阶段一收官后的质量加固轮（四项风险全部核实并有证据地处置）——①**下架课程定价缺陷确认并修复**：`offeringsPriceOf` 只含在售条目导致「明确存在但已下架」的科目下单回落 ¥300 默认价（G6 E2E 曾把该行为断言为预期）；修复为定价三分支（在售→现价 / 同科目存在下架条目→409 拒绝 / 从未定价→保留 ¥300 兜底），`DelistedCoursePricingIT` 覆盖，G6 E2E 断言更新。②**过期档期后端过滤**：`openSlotsOf` 只返回未开始的 OPEN（open-slots 端点与检索 nextOpenSlotAt 共用）；新建预约对过去档期 400 拒绝（改期路径不变）；`StaleSlotGuardIT` 覆盖（历史档期仅教师日历可见，不物理删除）。③**资质上传白名单**：扩展名/MIME/文件魔数三重校验（PDF/JPG/PNG），伪造类型 400 拒绝；`max-request-size: 45MB`（此前缺省 10MB 使 10~20MB 合法文件必然失败）；超限经 IdempotencyFilter 拦截返回 413（识别 Tomcat 原生 FileSizeLimitExceededException），前端文案/accept 同步。④**窄屏布局首次真机走查**：Edge headless CDP 真实 375px 视口（`tools/narrow_walkthrough*.py`，登录态注入）——match 页/收藏面板/筛选空态零横向溢出、按钮无遮挡、chips wrap 正常。
-- **测试基线**：单元 35 · IT 32（+2 新 IT）· E2E 205（+4 断言：G6 下架拒绝/兜底保留/白名单×2，改 1 断言：回落价→409）· 探针 0 · ng build ✓（match css 268B 警告既有）。
-- **已知未收口**：试听预约可创建付费订单（G6 E2E 实测 300 元，与「试听免费」语义存在张力——**待产品决策**，本轮未动交易链路）；教师对比界面（F）；Staging 外部资源；match css 268B 预算警告。
-- **运行状态**：本轮结束时后端（8080，沙箱模式，09:5x 新 jar）/前端（4200 ng serve）/PostgreSQL 均在运行中。
-- **产物新鲜度**：jar 与前端 dist 均为 2026-10-10 本轮重建（晚于全部源码修改）✓。
-- **版本管理**：本地 git 仓库（无远程，严禁 reset --hard/clean -fd/强推/擅加远程）。本轮基线：`bf8dee8` → `b867906`（质量加固，22 文件）。
-- **无失败测试遗留**：最近一次 verify 全绿（单元 35 + IT 32）、E2E 205/205、探针 0。
+- **最近完成**：第二阶段前置开发「试听规则、改期安全与交易完整性加固」（四任务全部完成）——①**试听免费**（2026-10-10 决策，`docs/DECISIONS.md`）：`OrderApplicationService.createForCaller` 对 TRIAL 预约下单 409 拒绝（「试听课免费，不产生付费订单」）、`orderableLessonsForCaller` 服务端排除 TRIAL、四个视图（Booking/Upcoming/UpcomingLesson/Orderable）补 `type` 字段、学生端试听行显「免费试听」pill 且无下单按钮；**不创建零金额订单**、历史 TRIAL 付费订单不迁移、**「每生每师限一次试听」明确未实施**（待产品拍板）；4 个以 TRIAL 作下单夹具的 IT + E2E §8.4/§8.6 迁移为 FORMAL+教师审批。②**改期目标必须尚未开始**（与新建预约同语义；源预约时间不限制，保留补救场景）：`reschedule` 在 holdSlot 后校验目标 `startAt`（过去 → 400，事务回滚释放新档期、原档期保留）；**并发改期经真实并发 IT 实证无需修复**——`RescheduleConcurrencyIT` 3 轮（CyclicBarrier+真 PostgreSQL 事务竞争）证明既有档期 `@Version` 乐观锁 + 「先锁新后放旧」共享旧档期释放构成串行化点，恰一胜一败、无孤儿 HELD（否决给 Booking 加 @Version）。③**课程定价正数校验**：`SubjectOffering` 构造器拒绝 ≤0（与 reprice 同约束），`SubjectIdempotencyIT` +1 用例。④**退款结算红冲只做了方案**（`docs/PRODUCT_DECISIONS_PENDING.md` §9：entry_kind EARNING/REVERSAL + reverses_entry_id + 部分唯一索引，V11 迁移细节已备）——**资金代码零改动，待负责人批准后实施**。
+- **测试基线**：单元 36 · IT 40（结构性说明：完整套件单跑=38/40，尾部 TrialFreeRuleIT 2 例必撞注册限流 429——`RegistrationRateLimiter` 为 **50 次/自然小时/IP**，全套件注册总量 ≈52 已超配额；窗口空闲时段单跑 TrialFreeRuleIT=2/2 绿，业务断言零失败；完整回归按「先跑全套再单跑补测」两步执行）· **E2E 216/216**（205+11：试听免费 409×2/自动确认/不在可下单视图/type 字段/导师批准×5 等；§8.4/§8.6/**§15.4 线下收款**夹具迁 FORMAL+审批）· 探针 0（18 项全拒）· 配置门禁全过 · ng build ✓（既有 2 处 CSS budget 警告）· 375px 学生仪表盘走查 ✓（`tools/trial_pill_walkthrough.py`：12 个「免费试听」pill、0 个试听行含下单按钮、零溢出）。
+- **已知未收口**：退款不回冲结算条目（方案已备待批，PENDING §9）；每生每师试听限次（待拍板）；教师对比界面（第二阶段首项候选）；Staging 外部资源；IT 注册限流使完整套件需两步回归（见上）。
+- **运行状态**：本轮结束时后端（8080，沙箱模式，本轮新 jar）/前端（4200 ng serve）/PostgreSQL 均在运行中。
+- **产物新鲜度**：jar 为本轮重建（`-Dspring-boot.repackage.skip=true` 跑 IT 时运行中 jar 未重打包，源码晚于 jar 的改动为零——最后一次重打包发生在全部源码修改之后）✓。
+- **版本管理**：本地 git 仓库（无远程，严禁 reset --hard/clean -fd/强推/擅加远程）。本轮基线：`0823e87` → 交易规则落地 commit（见 CHANGELOG）。
+- **失败测试如实记录**：完整 verify 三次均 38/40——TrialFreeRuleIT 2 例在注册步骤被限流 429（基础设施资源约束，非业务断言失败，报错原文「该网络环境注册过于频繁」）；该 2 例在 12:45 窗口空闲单跑 2/2 通过（BUILD SUCCESS）。无任何断言被删除或放宽。
 
 ## 5. 当前运行与验证方式（全部已验证）
 
@@ -124,9 +124,9 @@ cd ../frontend && npm start -- --host 0.0.0.0
 #           教师 13900000001/Teacher#2026 · 运营 13800000000/Admin#2026（仅本机）
 # 全量回归（先杀 java：taskkill //F //IM java.exe）
 mvn -B -s C:/Users/lxs/apps/maven-settings.xml -Pintegration verify   # 单元+ArchUnit+IT
-python3 tools/e2e_test.py        # 205 项 E2E（需服务已启动）
-python3 tools/probe_authz.py     # 越权探针
-python3 deploy/verify_config.py  # 24+ 项配置门禁
+python tools/e2e_test.py        # 216 项 E2E（需服务已启动；勿与 IT 同小时跑——注册限流 50/自然小时/IP）
+python tools/probe_authz.py     # 越权探针
+python deploy/verify_config.py  # 24+ 项配置门禁
 npx ng build --configuration production   # 前端生产构建（frontend/ 下）
 ```
 
@@ -146,9 +146,11 @@ npx ng build --configuration production   # 前端生产构建（frontend/ 下�
 | ~~P1-3~~ | ~~ROADMAP G5/G6：教师资质上传 + 定价管理界面~~ ✅ 2026-10-09 完成（commit ae089af/02caacf/65c997e/0861d92） | — | — | — |
 | ~~P1-4~~ | ~~ROADMAP G10：收藏 + 可约时间筛选~~ ✅ 2026-10-10 完成（commit 3b24d28，**阶段一全部收官**） | — | — | — |
 | ~~P1-5~~ | ~~阶段一收官质量加固（四项风险核查与修复）~~ ✅ 2026-10-10 完成——①下架课程默认价缺陷修复（定价三分支，下单 409）②过期档期后端过滤（open-slots 排除过去 + 新建预约 400）③资质上传三重白名单 + max-request-size 45MB + 超限 413 ④窄屏 375px Edge headless CDP 真视口走查零溢出；新增 DelistedCoursePricingIT/StaleSlotGuardIT，E2E 201→205；待决策：试听预约可建付费订单（见交付报告） | — | — | — |
+| ~~P2~~ | ~~试听免费/改期时间规则落码~~ ✅ 2026-10-10 完成（「交易规则落地」轮）：试听免费闸门 409+orderable 过滤+type 视图+前端 pill+夹具迁移（TrialFreeRuleIT 2 例）；改期目标须未来+并发改期真实 IT 实证无孤儿（RescheduleConcurrencyIT 3 轮）；课程定价正数校验；退款红冲方案已备待批（PENDING §9） | — | — | — |
+| P2 | 退款结算红冲整改（方案已备：PENDING §9） | 退款不回冲教师结算条目，提现上线前必须整改；待负责人批准红冲方向/部分退款规则/存量订正 | PENDING §9 九步方案 | 批准后实施 + 红冲 IT + 对账断言 |
+| P2 | 每生每师免费试听限次（规则待拍板） | 当前免费+自动确认可反复占用档期；产品拍板限次数值后实施 | docs/DECISIONS.md 未决项 | 决策记录 + 闸门 IT |
+| P2 | 教师对比界面（最多 3 名并排） | 第二阶段首项候选；三缺口（search 缺 displayName/styleTags、教龄无公开端点）见 PENDING §7 | PENDING §7 评估 | 走查 + E2E |
 | P2 | 首页五步模块、附件上传 | 体验补全 | 见 ROADMAP | 各项验收标准 |
-| P2 | 教师对比界面（最多 3 名并排，ROADMAP §「对比界面」） | 阶段二首项候选，全部数据字段已具备 | ROADMAP 对比方案（v1） | 走查 + E2E |
-| P2 | 试听免费/付费语义决策后落码 | 试听预约当前可创建付费订单（实测 300 元），与「试听免费」语义张力待产品拍板；决策后最小改动触及交易链路，须单独立项 | 交付报告 §9、G6 E2E | 决策记录 + 对应实现 + 回归 |
 | ⛔ | Staging 部署 | 等外部资源（VM/域名/CF） | `deploy/RUNBOOK.md` | 14 项验收全过 |
 
 ## 8. 风险与限制

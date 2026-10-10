@@ -429,12 +429,15 @@ def main():
     else:
         check("G7 学生档案获取", False, f"{st} {g7prof}")
 
-    # 可下单课程：教师发档期 → G7 学生预约（试听自动确认）→ 家长视图可见且含服务端定价
+    # 可下单课程：教师发档期 → G7 学生预约正式课 → 导师审批（试听免费 2026-10-10：付费订单仅走 FORMAL）
     slot_g7, _at_g7 = publish_slot_retry(t_teacher, None, 50, 51)
     st, _, bk_g7 = http("POST", "/booking/bookings",
-        {"teacherId": found["teacherId"], "slotId": slot_g7["slotId"], "subject": "数学", "bookingType": "TRIAL"},
+        {"teacherId": found["teacherId"], "slotId": slot_g7["slotId"], "subject": "数学", "bookingType": "FORMAL"},
         token=t_g7s, idem=str(uuid.uuid4()))
-    check("G7 学生预约试听自动确认", st == 201 and bk_g7.get("status") == "CONFIRMED", f"{st} {bk_g7}")
+    check("G7 学生预约正式课(待导师审批)", st == 201 and bk_g7.get("status") == "REQUESTED", f"{st} {bk_g7}")
+    st, _, g7dec = http("POST", "/teacher/me/booking-requests/%s:decide?decision=approve" % bk_g7["bookingId"],
+        {}, token=t_teacher, idem=str(uuid.uuid4()))
+    check("G7 导师批准正式课预约", st == 200 and g7dec.get("status") == "CONFIRMED", f"{st} {g7dec}")
     st, _, orderable1 = http("GET", "/order/bookings:orderable?studentId=%s" % g7_profile_id, token=t_g7p)
     check("G7 家长可下单视图含已确认课程", st == 200 and isinstance(orderable1, list)
         and any(b.get("bookingId") == bk_g7["bookingId"] for b in orderable1), f"{st} {str(orderable1)[:200]}")
@@ -464,12 +467,31 @@ def main():
     st, _, safter = http("GET", "/order/orders/%s" % sord["orderId"], token=t_g7s)
     check("G7 支付失败后订单仍待支付(回滚)", st == 200 and safter.get("status") == "PENDING_PAYMENT", f"{st} {safter}")
 
+    # 试听免费规则（2026-10-10）：TRIAL 预约不得创建付费订单，也不出现在可下单视图
+    slot_g7t, _at_g7t = publish_slot_retry(t_teacher, None, 62, 63)
+    st, _, bk_g7t = http("POST", "/booking/bookings",
+        {"teacherId": found["teacherId"], "slotId": slot_g7t["slotId"], "subject": "化学", "bookingType": "TRIAL"},
+        token=t_g7s, idem=str(uuid.uuid4()))
+    check("G7 试听预约自动确认(免费语义保留)", st == 201 and bk_g7t.get("status") == "CONFIRMED", f"{st} {bk_g7t}")
+    st, _, trial_order = http("POST", "/order/orders", {"bookingId": bk_g7t["bookingId"]}, token=t_g7s, idem=str(uuid.uuid4()))
+    check("试听下单被拒(409，试听免费不产生付费订单)", st == 409, f"{st} {str(trial_order)[:160]}")
+    st, _, trial_order_p = http("POST", "/order/orders", {"bookingId": bk_g7t["bookingId"]}, token=t_g7p, idem=str(uuid.uuid4()))
+    check("家长对试听下单同样被拒(409)", st == 409, f"{st} {str(trial_order_p)[:160]}")
+    st, _, orderable_t = http("GET", "/order/bookings:orderable?studentId=%s" % g7_profile_id, token=t_g7p)
+    check("试听不出现在可下单课程视图", st == 200 and not any(b.get("bookingId") == bk_g7t["bookingId"] for b in orderable_t or []), f"{st} {str(orderable_t)[:200]}")
+    st, _, sles = http("GET", "/student/me/upcoming-lessons", token=t_g7s)
+    trow = next((l for l in sles or [] if l.get("bookingId") == bk_g7t["bookingId"]), None)
+    check("学生课程表含 type 字段且试听为 TRIAL", trow is not None and trow.get("type") == "TRIAL", f"{trow}")
+
     # 家长为孩子下单并沙箱支付：PAID + 钱包扣减 + 已付订单不可重复发起支付
     slot_g7b, _at_g7b = publish_slot_retry(t_teacher, None, 52, 53)
     st, _, bk_g7b = http("POST", "/booking/bookings",
-        {"teacherId": found["teacherId"], "slotId": slot_g7b["slotId"], "subject": "物理", "bookingType": "TRIAL"},
+        {"teacherId": found["teacherId"], "slotId": slot_g7b["slotId"], "subject": "物理", "bookingType": "FORMAL"},
         token=t_g7s, idem=str(uuid.uuid4()))
-    check("G7 第二节课预约确认", st == 201 and bk_g7b.get("status") == "CONFIRMED", f"{st} {bk_g7b}")
+    check("G7 第二节课预约(待导师审批)", st == 201 and bk_g7b.get("status") == "REQUESTED", f"{st} {bk_g7b}")
+    st, _, g7dec2 = http("POST", "/teacher/me/booking-requests/%s:decide?decision=approve" % bk_g7b["bookingId"],
+        {}, token=t_teacher, idem=str(uuid.uuid4()))
+    check("G7 导师批准第二节课预约", st == 200 and g7dec2.get("status") == "CONFIRMED", f"{st} {g7dec2}")
     # 充值前先读余额：固定手机号账号跨轮次复用，钱包可能带有历史轮次余额，断言不能假设从 0 起步
     st, _, g7wallet0 = http("GET", "/parent/me/wallet", token=t_g7p)
     check("G7 充值前钱包余额可读", st == 200 and isinstance(g7wallet0.get("balanceCents"), int), f"{st} {g7wallet0}")
@@ -522,9 +544,12 @@ def main():
     check("G6 走查学生注册", st == 200 and t_g6s, f"{st}")
     slot_g6, _at_g6 = publish_slot_retry(t_g5, None, 56, 57)
     st, _, bk_g6 = http("POST", "/booking/bookings",
-        {"teacherId": g6_tid, "slotId": slot_g6["slotId"], "subject": "化学", "bookingType": "TRIAL"},
+        {"teacherId": g6_tid, "slotId": slot_g6["slotId"], "subject": "化学", "bookingType": "FORMAL"},
         token=t_g6s, idem=str(uuid.uuid4()))
-    check("G6 预约化学试听自动确认", st == 201 and bk_g6.get("status") == "CONFIRMED", f"{st} {bk_g6}")
+    check("G6 预约化学正式课(待审批)", st == 201 and bk_g6.get("status") == "REQUESTED", f"{st} {bk_g6}")
+    st, _, g6dec = http("POST", "/teacher/me/booking-requests/%s:decide?decision=approve" % bk_g6["bookingId"],
+        {}, token=t_g5, idem=str(uuid.uuid4()))
+    check("G6 导师批准化学正式课", st == 200 and g6dec.get("status") == "CONFIRMED", f"{st} {g6dec}")
     st, _, ord_g6 = http("POST", "/order/orders", {"bookingId": bk_g6["bookingId"]}, token=t_g6s, idem=str(uuid.uuid4()))
     check("G6 新订单按调价后金额(18000)", st == 201 and ord_g6.get("amountCents") == 18000, f"{st} {ord_g6}")
     st, _, _ = http("PUT", "/teacher/me/subjects/%s/pricing" % g6add["offeringId"],
@@ -541,15 +566,19 @@ def main():
     check("G6 下架后检索不可见", st == 200 and not any(t.get("teacherId") == g6_tid for t in g6sr or []), f"{st} {str(g6sr)[:160]}")
     slot_g6b, _at_g6b = publish_slot_retry(t_g5, None, 58, 59)
     st, _, bk_g6b = http("POST", "/booking/bookings",
-        {"teacherId": g6_tid, "slotId": slot_g6b["slotId"], "subject": "化学", "bookingType": "TRIAL"},
+        {"teacherId": g6_tid, "slotId": slot_g6b["slotId"], "subject": "化学", "bookingType": "FORMAL"},
         token=t_g6s, idem=str(uuid.uuid4()))
+    st, _, _ = http("POST", "/teacher/me/booking-requests/%s:decide?decision=approve" % bk_g6b["bookingId"],
+        {}, token=t_g5, idem=str(uuid.uuid4()))
     st, _, ord_g6b = http("POST", "/order/orders", {"bookingId": bk_g6b["bookingId"]}, token=t_g6s, idem=str(uuid.uuid4()))
     check("G6 下架后新订单被拒(409，停止销售不得回落默认价)", st == 409, f"{st} {str(ord_g6b)[:160]}")
     # 合法兜底回归：教师从未设置过该科目定价时仍走默认价（quality 加固不得破坏既有兜底）
     slot_g6c, _at_g6c = publish_slot_retry(t_g5, None, 60, 61)
     st, _, bk_g6c = http("POST", "/booking/bookings",
-        {"teacherId": g6_tid, "slotId": slot_g6c["slotId"], "subject": "物理", "bookingType": "TRIAL"},
+        {"teacherId": g6_tid, "slotId": slot_g6c["slotId"], "subject": "物理", "bookingType": "FORMAL"},
         token=t_g6s, idem=str(uuid.uuid4()))
+    st, _, _ = http("POST", "/teacher/me/booking-requests/%s:decide?decision=approve" % bk_g6c["bookingId"],
+        {}, token=t_g5, idem=str(uuid.uuid4()))
     st, _, ord_g6c = http("POST", "/order/orders", {"bookingId": bk_g6c["bookingId"]}, token=t_g6s, idem=str(uuid.uuid4()))
     check("G6 从未定价科目仍走默认价兜底(30000)", st == 201 and ord_g6c.get("amountCents") == 30000, f"{st} {str(ord_g6c)[:160]}")
 
@@ -761,8 +790,11 @@ def main():
     check("发布线下收款用档期", slot3.get("slotId") is not None, f"{slot3}")
     st, _, bk4 = http("POST", "/booking/bookings",
         {"teacherId": teacher_id, "slotId": slot3["slotId"],
-         "subject": "化学", "bookingType": "TRIAL"}, token=t_student, idem=str(uuid.uuid4()))
-    check("创建线下收款用预约", st in (200, 201) and bk4.get("status") == "CONFIRMED", f"{st} {bk4}")
+         "subject": "化学", "bookingType": "FORMAL"}, token=t_student, idem=str(uuid.uuid4()))
+    check("创建线下收款用正式课预约(待审批)", st in (200, 201) and bk4.get("status") == "REQUESTED", f"{st} {bk4}")
+    st, _, bk4dec = http("POST", "/teacher/me/booking-requests/%s:decide?decision=approve" % bk4["bookingId"],
+        {}, token=t_teacher, idem=str(uuid.uuid4()))
+    check("导师批准线下收款用预约", st == 200 and bk4dec.get("status") == "CONFIRMED", f"{st} {bk4dec}")
     st, _, ord4 = http("POST", "/order/orders", {"bookingId": bk4["bookingId"]}, token=t_parent, idem=str(uuid.uuid4()))
     check("创建待支付订单", st in (200, 201) and ord4.get("status") == "PENDING_PAYMENT", f"{st} {ord4}")
     st, _, pend_deny = http("GET", "/admin/orders/pending-payment?page=0&size=20", token=t_teacher)

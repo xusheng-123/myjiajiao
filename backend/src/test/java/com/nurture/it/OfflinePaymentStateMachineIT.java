@@ -96,7 +96,7 @@ class OfflinePaymentStateMachineIT {
         return om.readTree(result.getResponse().getContentAsString()).get("accessToken").asText();
     }
 
-    /** 独立链路：新档期 → 试听预约（自动确认）→ 家长下单 → PENDING_PAYMENT 订单。 */
+    /** 独立链路：新档期 → 正式课预约 + 导师审批 → 家长下单 → PENDING_PAYMENT 订单（试听免费规则 2026-10-10）。 */
     private JsonNode createPendingOrder(String subject) throws Exception {
         java.security.SecureRandom rnd = new java.security.SecureRandom();
         var start = OffsetDateTime.now().plusDays(20 + rnd.nextInt(60))
@@ -106,8 +106,11 @@ class OfflinePaymentStateMachineIT {
         var booking = Support.postJson(mvc, om, "/api/v1/booking/bookings", tStudent,
                 new java.util.HashMap<>() {{
                     put("teacherId", teacherId); put("slotId", slot.get("slotId").asText());
-                    put("subject", subject); put("bookingType", "TRIAL");
+                    put("subject", subject); put("bookingType", "FORMAL");
                 }});
+        Support.postJson(mvc, om,
+                "/api/v1/booking/booking-requests/%s:decide?decision=approve".formatted(booking.get("bookingId").asText()),
+                tTeacher, new java.util.HashMap<>());
         return Support.postJson(mvc, om, "/api/v1/order/orders", tParent,
                 new java.util.HashMap<>() {{ put("bookingId", booking.get("bookingId").asText()); }});
     }

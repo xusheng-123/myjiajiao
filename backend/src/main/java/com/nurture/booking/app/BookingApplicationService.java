@@ -131,7 +131,13 @@ public class BookingApplicationService {
             throw new IllegalStateException("新档期与当前档期相同，请选择其他时间");
         }
         // 先锁新档期（占用/冲突校验），成功后再释放旧档期：任一步失败整体回滚
-        schedulingService.holdSlot(newSlotId, booking.getTeacherId());
+        var newSlot = schedulingService.holdSlot(newSlotId, booking.getTeacherId());
+        // 时间规则与新建预约一致（2026-10-10 决策）：目标档期必须尚未开始；
+        // 仅约束目标，不约束源——已开始/已过去的 CONFIRMED 课程仍可改到未来（补救场景）。
+        // 校验失败抛异常由事务回滚释放新档期，原档期保留。
+        if (newSlot.getStartAt().isBefore(OffsetDateTime.now())) {
+            throw new IllegalArgumentException("不能改期到已过去的时段");
+        }
         schedulingService.releaseSlot(booking.getSlotId());
         booking.rescheduleTo(newSlotId);
         UUID counterpart = caller.accountId().equals(booking.getStudentId())
@@ -246,7 +252,7 @@ public class BookingApplicationService {
 
     /** 订单视图（order 模块下单前校验消费；Controller 经 booking.app 获取后传入 order.app）。 */
     public record BookingOrderView(UUID bookingId, UUID studentId, UUID teacherId,
-                                   String subject, String status) {
+                                   String subject, String status, String type) {
     }
 
     @Transactional(readOnly = true)
@@ -254,11 +260,11 @@ public class BookingApplicationService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("预约不存在"));
         return new BookingOrderView(booking.getId(), booking.getStudentId(), booking.getTeacherId(),
-                booking.getSubject(), booking.getStatus().name());
+                booking.getSubject(), booking.getStatus().name(), booking.getType().name());
     }
 
-    /** 学生 upcoming 课程视图（student 控制台课程表与专注模式消费）。 */
-    public record UpcomingBookingView(UUID bookingId, String subject, String status,
+    /** 学生 upcoming 课程视图（student 控制台课程表与专注模式消费；type 供前端区分试听/正式展示）。 */
+    public record UpcomingBookingView(UUID bookingId, String subject, String status, String type,
                                       OffsetDateTime startAt, OffsetDateTime endAt, UUID teacherId) {
     }
 
@@ -271,7 +277,7 @@ public class BookingApplicationService {
                         || b.getStatus() == Booking.BookingStatus.IN_PROGRESS)
                 .map(b -> {
                     var slot = schedulingService.slotOf(b.getSlotId()).orElse(null);
-                    return new UpcomingBookingView(b.getId(), b.getSubject(), b.getStatus().name(),
+                    return new UpcomingBookingView(b.getId(), b.getSubject(), b.getStatus().name(), b.getType().name(),
                             slot == null ? null : slot.startAt(), slot == null ? null : slot.endAt(),
                             b.getTeacherId());
                 }).toList();
@@ -286,7 +292,7 @@ public class BookingApplicationService {
                         || b.getStatus() == Booking.BookingStatus.CLOSED)
                 .map(b -> {
                     var slot = schedulingService.slotOf(b.getSlotId()).orElse(null);
-                    return new UpcomingBookingView(b.getId(), b.getSubject(), b.getStatus().name(),
+                    return new UpcomingBookingView(b.getId(), b.getSubject(), b.getStatus().name(), b.getType().name(),
                             slot == null ? null : slot.startAt(), slot == null ? null : slot.endAt(),
                             b.getTeacherId());
                 }).toList();
@@ -300,7 +306,7 @@ public class BookingApplicationService {
                 .filter(b -> b.getStatus() == Booking.BookingStatus.CONFIRMED)
                 .map(b -> {
                     var slot = schedulingService.slotOf(b.getSlotId()).orElse(null);
-                    return new UpcomingBookingView(b.getId(), b.getSubject(), b.getStatus().name(),
+                    return new UpcomingBookingView(b.getId(), b.getSubject(), b.getStatus().name(), b.getType().name(),
                             slot == null ? null : slot.startAt(), slot == null ? null : slot.endAt(),
                             b.getTeacherId());
                 }).toList();

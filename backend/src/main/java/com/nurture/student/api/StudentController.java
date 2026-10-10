@@ -74,7 +74,7 @@ public class StudentController {
     public record FocusOverview(NextLesson nextLesson, List<TaskView> preparationTasks, String encouragement) {
     }
 
-    public record UpcomingLessonView(UUID bookingId, String subject, String status,
+    public record UpcomingLessonView(UUID bookingId, String subject, String status, String type,
                                      String startAt, UUID teacherId) {
     }
 
@@ -133,7 +133,7 @@ public class StudentController {
     public List<UpcomingLessonView> upcomingLessons() {
         UUID studentId = CallerContext.require().accountId();
         return bookingService.upcomingForStudent(studentId).stream()
-                .map(b -> new UpcomingLessonView(b.bookingId(), b.subject(), b.status(),
+                .map(b -> new UpcomingLessonView(b.bookingId(), b.subject(), b.status(), b.type(),
                         b.startAt() == null ? null : b.startAt().toString(), b.teacherId()))
                 .toList();
     }
@@ -143,7 +143,7 @@ public class StudentController {
     public List<UpcomingLessonView> lessonHistory() {
         UUID studentId = CallerContext.require().accountId();
         return bookingService.historyForStudent(studentId).stream()
-                .map(b -> new UpcomingLessonView(b.bookingId(), b.subject(), b.status(),
+                .map(b -> new UpcomingLessonView(b.bookingId(), b.subject(), b.status(), b.type(),
                         b.startAt() == null ? null : b.startAt().toString(), b.teacherId()))
                 .toList();
     }

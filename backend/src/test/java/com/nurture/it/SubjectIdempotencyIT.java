@@ -59,4 +59,40 @@ class SubjectIdempotencyIT {
 
         assertThat(secondId).isEqualTo(firstId);
     }
+
+    @Test
+    void 新增课程价格必须为正数_与调价路径同一约束() throws Exception {
+        var teacher = Support.register(mvc, om, "teacher", "TEACHER", phone(), "ItTeacher#1");
+
+        // 0 元与负数定价均被拒（此前仅调价路径有校验，新增路径缺失）
+        for (long badPrice : new long[]{0L, -100L}) {
+            var bad = mvc.perform(post("/api/v1/teacher/me/subjects")
+                            .header("Authorization", "Bearer " + teacher.accessToken())
+                            .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(om.writeValueAsBytes(new java.util.HashMap<>() {{
+                                put("subject", "化学");
+                                put("gradeBand", "高中");
+                                put("pricePerHourCents", badPrice);
+                            }})))
+                    .andReturn();
+            assertThat(bad.getResponse().getStatus())
+                    .as("价格 %d 应被拒绝", badPrice).isGreaterThanOrEqualTo(400);
+        }
+
+        // 合法定价仍可正常创建
+        var ok = mvc.perform(post("/api/v1/teacher/me/subjects")
+                        .header("Authorization", "Bearer " + teacher.accessToken())
+                        .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(om.writeValueAsBytes(new java.util.HashMap<>() {{
+                            put("subject", "化学");
+                            put("gradeBand", "高中");
+                            put("pricePerHourCents", 20000);
+                        }})))
+                .andReturn();
+        assertThat(ok.getResponse().getStatus()).isIn(200, 201);
+        assertThat(om.readTree(ok.getResponse().getContentAsString()).get("pricePerHourCents").asLong())
+                .isEqualTo(20000L);
+    }
 }

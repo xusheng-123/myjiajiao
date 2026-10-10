@@ -36,8 +36,9 @@ class OrderPaymentFlowIT {
         return "13" + String.format("%09d", random.nextInt(1_000_000_000));
     }
 
-    private String bookTrial(com.nurture.it.Support.Account teacher, com.nurture.it.Support.Account student,
-                             String startAt) throws Exception {
+    /** 已确认正式课（FORMAL + 导师审批）：付费订单唯一合法入口（试听免费规则 2026-10-10）。 */
+    private String bookConfirmedFormal(com.nurture.it.Support.Account teacher, com.nurture.it.Support.Account student,
+                                       String startAt) throws Exception {
         var slot = Support.postJson(mvc, om, "/api/v1/scheduling/availability-slots", teacher.accessToken(),
                 new java.util.HashMap<>() {{
                     put("startAt", startAt);
@@ -48,9 +49,13 @@ class OrderPaymentFlowIT {
                     put("teacherId", teacher.accountId());
                     put("slotId", slot.get("slotId").asText());
                     put("subject", "物理");
-                    put("bookingType", "TRIAL");
+                    put("bookingType", "FORMAL");
                 }});
-        assertThat(booking.get("status").asText()).isEqualTo("CONFIRMED");
+        assertThat(booking.get("status").asText()).isEqualTo("REQUESTED");
+        var decided = Support.postJson(mvc, om,
+                "/api/v1/booking/booking-requests/%s:decide?decision=approve".formatted(booking.get("bookingId").asText()),
+                teacher.accessToken(), new java.util.HashMap<>());
+        assertThat(decided.get("status").asText()).isEqualTo("CONFIRMED");
         return booking.get("bookingId").asText();
     }
 
@@ -76,8 +81,8 @@ class OrderPaymentFlowIT {
         String studentProfileId = kids.get(0).get("studentId").asText();
 
         // 两节已确认课程 → 可下单视图含两节，金额为服务端定价（>0）
-        String booking1 = bookTrial(teacher, student, "2027-07-01T10:00:00+08:00");
-        String booking2 = bookTrial(teacher, student, "2027-07-02T10:00:00+08:00");
+        String booking1 = bookConfirmedFormal(teacher, student, "2027-07-01T10:00:00+08:00");
+        String booking2 = bookConfirmedFormal(teacher, student, "2027-07-02T10:00:00+08:00");
         var orderable = Support.getJson(mvc, om,
                 "/api/v1/order/bookings:orderable?studentId=" + studentProfileId, parent.accessToken());
         assertThat(orderable.isArray()).isTrue();

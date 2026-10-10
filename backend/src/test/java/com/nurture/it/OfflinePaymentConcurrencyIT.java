@@ -86,8 +86,12 @@ class OfflinePaymentConcurrencyIT {
         var booking = Support.postJson(mvc, om, "/api/v1/booking/bookings", tStudent,
                 new java.util.HashMap<>() {{
                     put("teacherId", teacherId); put("slotId", slot.get("slotId").asText());
-                    put("subject", "并发确认"); put("bookingType", "TRIAL");
+                    put("subject", "并发确认"); put("bookingType", "FORMAL");
                 }});
+        // 试听免费规则（2026-10-10）：付费订单须走正式课审批流
+        Support.postJson(mvc, om,
+                "/api/v1/booking/booking-requests/%s:decide?decision=approve".formatted(booking.get("bookingId").asText()),
+                tTeacher, new java.util.HashMap<>());
         targetBookingId = UUID.fromString(booking.get("bookingId").asText());
         var order = Support.postJson(mvc, om, "/api/v1/order/orders", tParent,
                 new java.util.HashMap<>() {{ put("bookingId", targetBookingId); }});

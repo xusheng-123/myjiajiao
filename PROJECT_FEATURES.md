@@ -154,19 +154,19 @@
 ### 4.5 预约与改期（booking）
 
 **功能定位**：履约安排核心。
-**具体能力**：创建预约（试听自动确认/正式课 REQUESTED）、教师审批（确认/驳回）、学生课程表、两阶段取消（Preview 出影响+10 分钟确认凭证 → Execute）、原子改期、开课/结课（归属教师限定）。
-**业务规则**：同 slot 唯一活跃预约（部分唯一索引）；改期仅 CONFIRMED 且新旧不同；取消级联（释放档期/关订单/退钱包）；凭证过期需重取。
-**实现依据**：`booking/app/BookingApplicationService.java`；`BookingRescheduleIT`（2）、`GuardianBindingOrderAuthIT`；E2E 预约/改期全链路。
+**具体能力**：创建预约（试听自动确认/正式课 REQUESTED）、教师审批（确认/驳回）、学生课程表（含 `type` 字段区分试听/正式）、两阶段取消（Preview 出影响+10 分钟确认凭证 → Execute）、原子改期、开课/结课（归属教师限定）。
+**业务规则**：同 slot 唯一活跃预约（部分唯一索引）；改期仅 CONFIRMED 且新旧不同；**改期目标档期必须尚未开始**（2026-10-10 决策：与新建预约同一时间语义，过去目标 400 拒绝且事务回滚释放新档期、原档期保留；源预约时间不限制——已开始/已过去的 CONFIRMED 课程仍可改到未来补救）；并发改期经真实并发 IT 实证无孤儿 HELD（档期 @Version 乐观锁 + 先锁新后放旧构成串行化点）；取消级联（释放档期/关订单/退钱包）；凭证过期需重取。
+**实现依据**：`booking/app/BookingApplicationService.java`；`BookingRescheduleIT`（4）、`RescheduleConcurrencyIT`（3 轮真实并发）；E2E 预约/改期全链路。
 **当前状态**：**A**。
 
 ### 4.6 订单与支付（order + payment）
 
 **功能定位**：资金入口与状态机。
 **具体能力**：家长/学生下单（金额取教师定价快照；一课一单 `ux_orders_booking`）；发起支付（幂等，重复 INITIATED 409）；MOCK 通道沙箱回调（HMAC 验签+防重放+金额一致）；**运营线下收款确认**（模式 B）；订单详情（付款方/参与双方/运营可见）。
-**业务规则**：订单状态机 PENDING_PAYMENT→PAID→CLOSED / PENDING_PAYMENT→CANCELLED→CLOSED；支付成功联动=扣家庭钱包+生成结算+双方通知；确认线下收款幂等（重复返回同结果）；**定价解析三分支**（2026-10-10 质量加固）：在售条目按当前有效价格；**科目明确存在但已下架→拒绝新订单（409，不得回落默认价绕过「停止销售」）**；教师从未设置该科目定价→保留 ¥300 兜底（合法兜底场景）；订单金额一律服务端计算，请求体仅含 bookingId，前端无法决定价格；已生成订单的历史快照不受调价/下架影响。
-**实现依据**：`order/app/OrderApplicationService.java`、`payment/app/PaymentApplicationService.java`；`OfflinePaymentStateMachineIT`(8)+`OfflinePaymentConcurrencyIT`(6 并发恰 1)；E2E 第 8/16 节。
+**业务规则**：订单状态机 PENDING_PAYMENT→PAID→CLOSED / PENDING_PAYMENT→CANCELLED→CLOSED；支付成功联动=扣家庭钱包+生成结算+双方通知；确认线下收款幂等（重复返回同结果）；**试听免费不产生付费订单**（2026-10-10 决策）：TRIAL 预约下单 409 拒绝、可下单课程视图服务端排除 TRIAL、不创建零金额订单替代、学生端试听行无下单按钮（显「免费试听」）；**定价解析三分支**（2026-10-10 质量加固）：在售条目按当前有效价格；**科目明确存在但已下架→拒绝新订单（409，不得回落默认价绕过「停止销售」）**；教师从未设置该科目定价→保留 ¥300 兜底（合法兜底场景）；订单金额一律服务端计算，请求体仅含 bookingId，前端无法决定价格；已生成订单的历史快照不受调价/下架影响；课程定价必须为正数（新增与调价路径同一约束）。
+**实现依据**：`order/app/OrderApplicationService.java`、`payment/app/PaymentApplicationService.java`；`TrialFreeRuleIT`（2）、`OfflinePaymentStateMachineIT`(8)+`OfflinePaymentConcurrencyIT`(6 并发恰 1)；E2E 第 8/16 节。
 **当前状态**：沙箱与模式 B **A**；真实渠道 **E**（`PaymentGateway` 端口就绪，等商户资质）；**运营确认收款界面 = A**（2026-10-09 补「订单与收款」卡 + `GET /admin/orders/pending-payment`）；**学生/家长下单支付界面 = A**（2026-10-09 G7：学生课程表下单入口 + 家长「课程与订单」卡；新增 `GET /order/bookings:orderable` 与 `GET /payment/config`；沙箱支付按钮仅在 `sandboxEnabled=true` 环境出现且明确标注模拟渠道，生产引导模式 B；学生端不设支付入口——学生钱包无充值通道，自建订单经运营线下确认或保持待支付）。
-**已知限制**：客户端伪造金额被忽略（服务端定价为准）；生产环境沙箱强制关闭；学生自建订单的沙箱支付会因学生钱包无余额被拒并回滚（设计如此，家庭统一支付由家长完成）。
+**已知限制**：客户端伪造金额被忽略（服务端定价为准）；生产环境沙箱强制关闭；学生自建订单的沙箱支付会因学生钱包无余额被拒并回滚（设计如此，家庭统一支付由家长完成）；**退款不回冲教师结算条目（资金整改方案已备待批准，见 `docs/PRODUCT_DECISIONS_PENDING.md` §9）**。
 
 ### 4.7 课堂履约（classroom）
 

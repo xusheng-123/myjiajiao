@@ -67,6 +67,11 @@ class BookingApplicationServiceTest {
         confirmedBooking.confirm();
         lenient().when(bookingRepository.findById(confirmedBooking.getId()))
                 .thenReturn(Optional.of(confirmedBooking));
+        // 改期时间校验（2026-10-10 决策）读取目标档期开始时间：默认桩为未来档期
+        var futureSlot = new com.nurture.scheduling.domain.AvailabilitySlot(
+                teacherId, java.time.OffsetDateTime.now().plusHours(48),
+                java.time.OffsetDateTime.now().plusHours(49));
+        lenient().when(schedulingService.holdSlot(newSlotId, teacherId)).thenReturn(futureSlot);
     }
 
     @AfterEach
@@ -158,6 +163,23 @@ class BookingApplicationServiceTest {
         assertThatThrownBy(() -> service.reschedule(confirmedBooking.getId(), oldSlotId))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("相同");
+    }
+
+    @Test
+    @DisplayName("目标档期已过去 → 拒绝且不释放旧档期（时间规则与新建预约一致）")
+    void pastTargetSlotRescheduleRejected() {
+        loginAs(studentId, CallerRole.STUDENT);
+        var pastSlot = new com.nurture.scheduling.domain.AvailabilitySlot(
+                teacherId, java.time.OffsetDateTime.now().minusHours(2),
+                java.time.OffsetDateTime.now().minusHours(1));
+        when(schedulingService.holdSlot(newSlotId, teacherId)).thenReturn(pastSlot);
+
+        assertThatThrownBy(() -> service.reschedule(confirmedBooking.getId(), newSlotId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("已过去");
+        // 事务语义：失败请求不得释放旧档期
+        verify(schedulingService, never()).releaseSlot(any());
+        assertThat(confirmedBooking.getSlotId()).isEqualTo(oldSlotId);
     }
 
     @Test

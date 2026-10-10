@@ -38,6 +38,10 @@ public class SubjectOffering extends AggregateRoot {
     }
 
     public SubjectOffering(UUID teacherId, String subject, String gradeBand, long pricePerHourCents) {
+        if (pricePerHourCents <= 0) {
+            // 与调价路径（reprice）同一约束：新增课程入口同样不得接受 0 或负数定价
+            throw new IllegalArgumentException("课时定价必须为正数（单位：分）");
+        }
         this.teacherId = teacherId;
         this.subject = subject;
         this.gradeBand = gradeBand;
