@@ -166,7 +166,7 @@
 **业务规则**：订单状态机 PENDING_PAYMENT→PAID→CLOSED / PENDING_PAYMENT→CANCELLED→CLOSED；支付成功联动=扣家庭钱包+生成结算+双方通知；确认线下收款幂等（重复返回同结果）；**试听免费不产生付费订单**（2026-10-10 决策）：TRIAL 预约下单 409 拒绝、可下单课程视图服务端排除 TRIAL、不创建零金额订单替代、学生端试听行无下单按钮（显「免费试听」）；**定价解析三分支**（2026-10-10 质量加固）：在售条目按当前有效价格；**科目明确存在但已下架→拒绝新订单（409，不得回落默认价绕过「停止销售」）**；教师从未设置该科目定价→保留 ¥300 兜底（合法兜底场景）；订单金额一律服务端计算，请求体仅含 bookingId，前端无法决定价格；已生成订单的历史快照不受调价/下架影响；课程定价必须为正数（新增与调价路径同一约束）。
 **实现依据**：`order/app/OrderApplicationService.java`、`payment/app/PaymentApplicationService.java`；`TrialFreeRuleIT`（2）、`OfflinePaymentStateMachineIT`(8)+`OfflinePaymentConcurrencyIT`(6 并发恰 1)；E2E 第 8/16 节。
 **当前状态**：沙箱与模式 B **A**；真实渠道 **E**（`PaymentGateway` 端口就绪，等商户资质）；**运营确认收款界面 = A**（2026-10-09 补「订单与收款」卡 + `GET /admin/orders/pending-payment`）；**学生/家长下单支付界面 = A**（2026-10-09 G7：学生课程表下单入口 + 家长「课程与订单」卡；新增 `GET /order/bookings:orderable` 与 `GET /payment/config`；沙箱支付按钮仅在 `sandboxEnabled=true` 环境出现且明确标注模拟渠道，生产引导模式 B；学生端不设支付入口——学生钱包无充值通道，自建订单经运营线下确认或保持待支付）。
-**已知限制**：客户端伪造金额被忽略（服务端定价为准）；生产环境沙箱强制关闭；学生自建订单的沙箱支付会因学生钱包无余额被拒并回滚（设计如此，家庭统一支付由家长完成）；**退款不回冲教师结算条目（资金整改方案已备待批准，见 `docs/PRODUCT_DECISIONS_PENDING.md` §9；历史账目只读清查实锤 36 条虚挂 ¥6,205）**；**教师结算汇总仅统计最近 50 条条目，超出不计入待结算金额（2026-10-10 实证 84 条少报 ¥6,885，修复方案已列 DECISIONS 未决）**。
+**已知限制**：客户端伪造金额被忽略（服务端定价为准）；生产环境沙箱强制关闭；学生自建订单的沙箱支付会因学生钱包无余额被拒并回滚（设计如此，家庭统一支付由家长完成）；**退款不回冲教师结算条目（资金整改方案已备待批准，见 `docs/PRODUCT_DECISIONS_PENDING.md` §9；历史账目只读清查实锤 36 条虚挂 ¥6,205；预览文案已于 2026-10-10 如实修正，不再声称条目作废）**。~~教师结算汇总仅统计最近 50 条~~ **已修复（2026-10-10）**：汇总改为 DB 端全量 SUM 聚合，明细保持 50 条分页（见 §4.9）。
 
 ### 4.7 课堂履约（classroom）
 
@@ -181,13 +181,13 @@
 **具体能力**：家长/学生发起退款工单 → 运营「①评估影响」→「②执行退款」（带确认令牌，跳步拒绝）→ 原路退回家庭钱包。
 **实现依据**：`refund/`、admin `arbitration:preview/execute`；E2E 覆盖。
 **当前状态**：**A**。
-**已知限制**：预览文案「教师课酬结算条目作废」与实际行为不符（执行不触碰结算条目）——文案待红冲批准后随整改一并修正（PENDING §9.4 第 5 步）。
+**已知限制（2026-10-10 更新）**：~~预览文案「教师课酬结算条目作废」与实际行为不符~~ **文案已如实修正**：删「作废」表述，新增 `settlementNote`「教师课酬结算条目暂不随退款自动调整；退款成功不代表教师课酬已完成红冲」——如实告知当前行为，仅运营端可见；红冲获批后文案随整改一并更新（PENDING §9.4 第 5 步）。
 
 ### 4.9 结算（settlement）
 
 **具体能力**：支付成功自动生成课酬条目（gross − 平台抽成 15% 可配置）；教师端「课酬结算流水」（待结算/已提现汇总+明细）。
-**实现依据**：`settlement/app/SettlementApplicationService.java`；`ux_settlement_booking` 唯一约束防重复；E2E「结算流水恰好 1 条」。
-**当前状态**：**A**（提现打款为线下动作，系统只记账）；⚠️ 汇总仅统计最近 50 条（已知限制见 §4.6）；`markSettled`/`markPaidOut` 无调用方（SETTLED/PAID_OUT 状态当前不可达，提现执行入口不存在——如实记录）。
+**实现依据**：`settlement/app/SettlementApplicationService.java`；`ux_settlement_booking` 唯一约束防重复；E2E「结算流水恰好 1 条」；**汇总= DB 端全量 SUM 聚合（`sumNetCentsByTeacherIdAndStatus`，走 ix_settlement_teacher），明细保持 50 条分页（2026-10-10 修复截断少算：84 条实证 API 1,810,500 == DB SUM；SettlementSummaryIT 场景 A–F）**。
+**当前状态**：**A**（提现打款为线下动作，系统只记账；汇总不受明细分页影响）；`markSettled`/`markPaidOut` 无调用方（SETTLED/PAID_OUT 状态当前不可达，PAID_OUT 汇总恒为既有值——如实记录；红冲实施时聚合语义须按批准方案调整，已在 javadoc 注明）。
 
 ### 4.10 站内消息（messaging）
 

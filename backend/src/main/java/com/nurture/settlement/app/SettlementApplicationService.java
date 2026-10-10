@@ -37,19 +37,22 @@ public class SettlementApplicationService {
                 order.getId(), order.getAmountCents(), fee));
     }
 
+    /**
+     * 教师结算汇总 + 最近明细。
+     * 汇总与明细是两个独立查询：金额基于<b>全部</b>符合状态的条目做 DB 端聚合
+     * （此前曾误用明细分页的前 50 条求和，条目 >50 时待结算金额少算）；明细固定返回最近 50 条。
+     * 状态语义（如实）：PENDING 计入 pendingNetCents，PAID_OUT 计入 paidOutNetCents，
+     * SETTLED（已结算待提现）当前不计入任一展示字段——该状态当前不可达（无结算/提现执行入口），
+     * 未来实施红冲时须按经批准的账务语义一并调整本查询（收益与冲回的代数处理）。
+     */
     @Transactional(readOnly = true)
     public TeacherSettlement summaryOf(UUID teacherId) {
+        long pending = settlementRepository.sumNetCentsByTeacherIdAndStatus(teacherId,
+                SettlementEntry.SettlementStatus.PENDING);
+        long paidOut = settlementRepository.sumNetCentsByTeacherIdAndStatus(teacherId,
+                SettlementEntry.SettlementStatus.PAID_OUT);
         var entries = settlementRepository.findByTeacherIdOrderByCreatedAtDesc(teacherId,
                 org.springframework.data.domain.PageRequest.of(0, 50));
-        long pending = 0;
-        long paidOut = 0;
-        for (var e : entries) {
-            if (e.getStatus() == SettlementEntry.SettlementStatus.PENDING) {
-                pending += e.getNetCents();
-            } else if (e.getStatus() == SettlementEntry.SettlementStatus.PAID_OUT) {
-                paidOut += e.getNetCents();
-            }
-        }
         return new TeacherSettlement(pending, paidOut,
                 entries.stream().map(e -> new EntryView(e.getId(), e.getBookingId(), e.getGrossCents(),
                         e.getPlatformFeeCents(), e.getNetCents(), e.getStatus().name(), e.getSettledAt())).toList());

@@ -288,7 +288,7 @@
 
 **存量订正待批要点**（对应 §9.5 第 3 项）：待核查数量=36 条；判定规则=`refund_cases.EXECUTED ⋈ settlement_entries` 正向条目；预期影响=红冲生成后教师待结算自动冲减 ¥6,205；备份=订正前 `settlement_entries` 全表快照 + pg_dump；回滚=按 `reverses_entry_id` 精确反查删除生成条目。
 
-**另实证独立缺陷（不依赖红冲批准，建议单独排期修复）**：`summaryOf` 用 `PageRequest.of(0,50)` 汇总——主库教师 6fbeb796 现有 84 条 PENDING，DB 全量净额 ¥18,105 vs API 返回 ¥11,220（**少报 ¥6,885/38%**，entries 恰 50 条）。修复=全量聚合查询（明细仍可分页）+ 对未来负向红冲条目的代数和兼容。
+**~~另实证独立缺陷~~ ✅ 已修复（2026-10-10，不依赖红冲批准）**：`summaryOf` 用 `PageRequest.of(0,50)` 汇总——主库教师 6fbeb796 现有 84 条 PENDING，DB 全量净额 ¥18,105 vs API 返回 ¥11,220（**少报 ¥6,885/38%**，entries 恰 50 条）。**修复=新增 `sumNetCentsByTeacherIdAndStatus` DB 端 SUM 全量聚合（明细保持 50 条分页，DTO/前端零改动）；SettlementSummaryIT 场景 A–F 覆盖；真实 API 实证 1,810,500 == psql SUM**。注：对未来负向红冲条目的代数和兼容未预实现——红冲获批实施时按 §9.4 第 2 步调整聚合语义（javadoc 已注明）。
 
 ### 9.5 待负责人确认（资金规则，未确认前不实施）
 

@@ -99,7 +99,10 @@ public class RefundApplicationService {
         impact.put("refundAmountYuan", String.format("%.2f", refundCase.getComputedAmountCents() / 100.0));
         impact.put("affectedLessons", refundCase.getAffectedLessons());
         impact.put("walletCreditTarget", "家庭统一教育支付钱包（原路入账）");
-        impact.put("orderAfterRefund", "已支付订单将关闭，教师课酬结算条目作废");
+        impact.put("orderAfterRefund", "已支付订单将关闭");
+        // 如实告知（2026-10-10 核实）：当前执行路径不调整教师课酬结算条目——退款成功 ≠ 课酬已冲回；
+        // 红冲机制待负责人批准后实施（docs/PRODUCT_DECISIONS_PENDING.md §9），届时本文案随之更新。
+        impact.put("settlementNote", "教师课酬结算条目暂不随退款自动调整；退款成功不代表教师课酬已完成红冲");
         impact.put("reason", refundCase.getReason());
 
         var grant = twoPhaseService.issue("refund:arbitrate", refundCaseId, impact.toString());
