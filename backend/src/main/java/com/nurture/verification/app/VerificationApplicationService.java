@@ -54,7 +54,7 @@ public class VerificationApplicationService {
 
     @Transactional(readOnly = true)
     public VerificationCase latestOfTeacher(UUID teacherAccountId) {
-        return verificationRepository.findFirstByTeacherIdOrderBySubmittedAtDesc(teacherAccountId)
+        return verificationRepository.findFirstByTeacherIdOrderBySubmittedAtDescIdDesc(teacherAccountId)
                 .orElse(null);
     }
 
@@ -102,7 +102,7 @@ public class VerificationApplicationService {
     /** 导师是否已通过资质认证（供 matching 信任证据使用）。 */
     @Transactional(readOnly = true)
     public boolean isApproved(UUID teacherAccountId) {
-        return verificationRepository.findFirstByTeacherIdOrderBySubmittedAtDesc(teacherAccountId)
+        return verificationRepository.findFirstByTeacherIdOrderBySubmittedAtDescIdDesc(teacherAccountId)
                 .map(c -> c.getStatus() == VerificationCase.VerificationStatus.APPROVED)
                 .orElse(false);
     }

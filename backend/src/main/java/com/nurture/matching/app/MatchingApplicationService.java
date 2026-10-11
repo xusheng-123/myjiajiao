@@ -37,6 +37,7 @@ public class MatchingApplicationService {
     private final com.nurture.matching.infra.FavoriteTeacherRepository favoriteTeacherRepository;
     private final com.nurture.identity.app.IdentityApplicationService identityService;
     private final PlatformConfigReader configReader;
+    private final PublicTeacherCatalog publicCatalog;
 
     public MatchingApplicationService(TeacherApplicationService teacherService,
                                       VerificationApplicationService verificationService,
@@ -45,7 +46,7 @@ public class MatchingApplicationService {
                                       StudentDemandRepository demandRepository,
                                       PlatformConfigReader configReader,
             com.nurture.matching.infra.FavoriteTeacherRepository favoriteTeacherRepository,
-            com.nurture.identity.app.IdentityApplicationService identityService) {
+            com.nurture.identity.app.IdentityApplicationService identityService, PublicTeacherCatalog publicCatalog) {
         this.teacherService = teacherService;
         this.verificationService = verificationService;
         this.reviewService = reviewService;
@@ -54,6 +55,7 @@ public class MatchingApplicationService {
         this.configReader = configReader;
         this.favoriteTeacherRepository = favoriteTeacherRepository;
         this.identityService = identityService;
+        this.publicCatalog = publicCatalog;
     }
 
     // ------------------------------------------------------------ 筛选检索
@@ -119,21 +121,24 @@ public class MatchingApplicationService {
         });
         return results;
     }
-    @Transactional(readOnly=true)
+    @Transactional(readOnly=true,isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public Page<TeacherCandidate> publicPage(String subject,String gradeBand,Long maxPrice,String styleTag,String keyword,String sort,int page,int size) {
         if(page<0 || page>10000 || size<1 || size>50 || maxPrice!=null && maxPrice<0)throw new IllegalArgumentException("检索或分页参数超出范围");
         if(subject!=null && subject.length()>60 || gradeBand!=null && gradeBand.length()>32 || styleTag!=null && styleTag.length()>32 || keyword!=null && keyword.length()>100)throw new IllegalArgumentException("筛选条件过长");
-        var results=collect(subject,gradeBand,maxPrice,styleTag,keyword,false,null,0,true);
-        java.util.Comparator<TeacherCandidate> comparator=switch(sort) {
-            case "recommended"->java.util.Comparator.<TeacherCandidate>comparingInt(this::evidenceScore).reversed().thenComparing(java.util.Comparator.comparingInt((TeacherCandidate c)->c.reasons().size()).reversed());
-            case "price-asc"->java.util.Comparator.comparingLong(TeacherCandidate::pricePerHourCents);
-            case "price-desc"->java.util.Comparator.comparingLong(TeacherCandidate::pricePerHourCents).reversed();
-            case "rating-desc"->java.util.Comparator.comparingDouble((TeacherCandidate c)->c.averageRating()==null?0:c.averageRating()).reversed();
-            case "reviews-desc"->java.util.Comparator.comparingLong(TeacherCandidate::reviewCount).reversed();
-            default->throw new IllegalArgumentException("排序方式无效");
-        };
-        results.sort(comparator.thenComparing(c->c.teacherId().toString()).thenComparing(TeacherCandidate::subject).thenComparing(TeacherCandidate::gradeBand));
-        int start=(int)Math.min((long)page*size,results.size());return new org.springframework.data.domain.PageImpl<>(results.subList(start,Math.min(start+size,results.size())),PageRequest.of(page,size),results.size());
+        if(sort==null || !java.util.Set.of("recommended","price-asc","price-desc","rating-desc","reviews-desc").contains(sort))throw new IllegalArgumentException("排序方式无效");
+        return publicCatalog.page(new PublicTeacherCatalog.Filter(subject,gradeBand,maxPrice,styleTag,keyword,sort),page,size,OffsetDateTime.now())
+                .map(this::publicCandidate);
+    }
+
+    private TeacherCandidate publicCandidate(PublicTeacherCatalog.Row row) {
+        List<String> reasons=new ArrayList<>();
+        reasons.add("已通过平台资质认证（身份与学历核验）");
+        if(row.reviewCount()>0)reasons.add(String.format("学员评价 %.1f 分（%d 条评价）",row.averageRating(),row.reviewCount()));
+        if(row.pricePerHourCents()<=20000)reasons.add("课时定价亲民，适合长期稳定陪跑");
+        if(row.gradeBand()!=null)reasons.add("专注 "+row.gradeBand()+" 学段教学");
+        return new TeacherCandidate(row.teacherId(),row.subject(),row.gradeBand(),row.pricePerHourCents(),true,
+                row.averageRating()>0?Math.round(row.averageRating()*10)/10.0:null,row.reviewCount(),row.nextOpenSlotAt(),
+                row.styleTags(),reasons,row.displayName(),row.school(),row.highestDegree(),row.yearsOfTeaching());
     }
 
     private int evidenceScore(TeacherCandidate c) {

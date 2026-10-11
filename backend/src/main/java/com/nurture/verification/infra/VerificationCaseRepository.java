@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface VerificationCaseRepository extends JpaRepository<VerificationCase, UUID> {
 
-    Optional<VerificationCase> findFirstByTeacherIdOrderBySubmittedAtDesc(UUID teacherId);
+    Optional<VerificationCase> findFirstByTeacherIdOrderBySubmittedAtDescIdDesc(UUID teacherId);
 
     Page<VerificationCase> findByStatus(VerificationCase.VerificationStatus status, Pageable pageable);
 

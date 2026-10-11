@@ -17,7 +17,7 @@ backend/
     learning/        # V9 新增：成长中心/课后任务/课堂记录/档案/答疑（原4实体/4仓库；V15新增计划/目标/关联/历史4实体4仓库及独立app/api；V16错题/附件/容量3实体3仓库及相应服务）
   src/main/resources/
     application.yml  # 唯一配置文件；生产经 env 注入（NURTURE_*）
-    db/migration/    # Flyway V1–V20（V13试听限次、V14编号序列、V15学习计划、V16错题/文件/容量、V17重复档期、V18客服、V19小测、V20咨询附件）
+    db/migration/    # Flyway V1–V21（V13试听限次、V14编号序列、V15学习计划、V16错题/文件/容量、V17重复档期、V18客服、V19小测、V20咨询附件、V21公开读取索引）
   src/test/java/com/nurture/
     arch/ArchitectureTest.java          # ArchUnit 1.5.1，5项全量严格规则/反例，无冻结豁免
     it/                                 # 147 IT 用例（真 PostgreSQL nurture_test 库，当前verify证据）
@@ -49,7 +49,7 @@ frontend/dist/nurture-frontend/browser/  # 生产构建产物（Pages 输出目�
 
 ## 请求路径（真实）
 
-本机：浏览器4200 → `/api`代理8080 → Spring Boot过滤器链（幂等 → 安全 → 审计）→ Controller（@PreAuthorize角色或SCOPE_）→ ApplicationService（业务 + 对象级授权）→ Repository → PostgreSQL（唯一事实源，源码Flyway V1–V20，ddl-auto=validate）。当前8080连接phase8隔离验收库V20，历史主库保持V10。
+本机：浏览器4200 → `/api`代理8080 → Spring Boot过滤器链（幂等 → 安全 → 审计）→ Controller（@PreAuthorize角色或SCOPE_）→ ApplicationService（业务 + 对象级授权）→ Repository → PostgreSQL（唯一事实源，源码Flyway V1–V21，ddl-auto=validate）。当前8080连接phase8隔离验收库V20，历史主库保持V10。
 
 部署目标仍为Cloudflare Pages前端/Tunnel API，但完整Staging尚未建立。已发布的owner-private Sites只托管静态Angular，没有Java/PostgreSQL/API，顶部明确提示接口未连接。
 
@@ -72,7 +72,7 @@ frontend/dist/nurture-frontend/browser/  # 生产构建产物（Pages 输出目�
 - `TeacherRegistrationService`：身份注册与教师资料原子保存；ProfileView在事务内复制标签。
 - `SmsDelivery`：短信投递端口；默认Unavailable实现，能力false/503，不伪造可用OTP。
 
-公开教师端点只匿名允许白名单详情/列表，且要求账户有效、审核通过、在售；不包含联系方式或资质文件key；公开分页当前全候选过滤排序，需另做投影/负载验证。资质下载只运营、固定kind、附件无缓存并记录读审计。咨询沿用数据库文本消息/私有附件+参与者权限、最新100/历史分页与已读；前端可见页面15秒轮询，未引入WebSocket或外部消息中间件。
+公开教师端点只匿名允许白名单详情/列表，且要求账户有效、审核通过、在售；不包含联系方式或资质文件key；公开分页源码已改为matching.app PublicTeacherCatalog/infra参数化SQL只读投影，COUNT+当页两查询/数据库排序与分页；本机20k匹配条目已验证，生产持续负载尚未验证。资质下载只运营、固定kind、附件无缓存并记录读审计。咨询沿用数据库文本消息/私有附件+参与者权限、最新100/历史分页与已读；前端可见页面15秒轮询，未引入WebSocket或外部消息中间件。
 
 ## 测试拓扑
 
@@ -83,3 +83,7 @@ frontend/dist/nurture-frontend/browser/  # 生产构建产物（Pages 输出目�
 admin模块的客服工单/回复/证据/容量支持四角色归属、版本行锁、审计/站内通知，无自动退款。learning新增测评/尝试两实体，题目存验证JSON，有限客观题/一次评分/教师批注/真实报告；messaging新增咨询文件/容量，与消息同事务记录attachment_id。文件类型/内容验证与受控下载复用shared存储，逻辑保留配额，病毒扫描/物理自动清理尚未提供。
 
 学生历史钱包只读接口经parent.app，按账户→既有parent_profile→wallet查询，不ensure创建、不转移。幂等过滤器要求规范36字符UUIDv4/RFC variant；合法大小写均接受。auth/landing/match品牌装饰按组件标签限定到styles/brand-presentation.css，声明保留、原预算零warning。
+
+## 续作1查询读取边界
+
+PublicTeacherCatalog应用端口返回限定公开Row；matching.infra JDBC只读投影跨单体中公开账户、审核、师资、评价和档期表，禁止跨模块写入与foreign domain/infra类依赖。同一REPEATABLE_READ快照与now确保页/COUNT一致，最新审核submitted_at/id稳定。V21新增四索引，49单元/架构+13专项IT通过，全套IT待三项后总回归；8080仍phase8/V20，8081仅loopback性能库V21，见PROJECT_HANDOFF §4。
