@@ -42,6 +42,10 @@ public class AvailabilitySlot extends AggregateRoot {
     @Column(name = "version", nullable = false)
     private long version;
 
+    @Column(name="series_id") private UUID seriesId;
+    public void attachSeries(UUID id){this.seriesId=id;}
+    public UUID getSeriesId(){return seriesId;}
+
     protected AvailabilitySlot() {
     }
 

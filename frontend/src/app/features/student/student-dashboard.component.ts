@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { API } from '../../core/api/endpoints';
 import { NoticeCenterComponent } from '../../shared/components/notice-center.component';
+import { CalendarExportComponent } from '../../shared/components/calendar-export.component';
 interface TaskView {
   taskId: string;
   title: string;
@@ -49,7 +50,7 @@ interface MyOrder {
 @Component({
   selector: 'nur-student-dashboard',
   standalone: true,
-  imports: [DatePipe, RouterLink, NoticeCenterComponent],
+  imports: [DatePipe, RouterLink, NoticeCenterComponent, CalendarExportComponent],
   templateUrl: './student-dashboard.component.html',
   styleUrl: './student-dashboard.component.css',
 })

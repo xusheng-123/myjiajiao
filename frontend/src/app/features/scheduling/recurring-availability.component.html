@@ -1,0 +1,22 @@
+<main class="plans-shell"><header><div><h1 class="nur-serif">重复档期与日历</h1><p>一次安排有限次数的每周档期，逐次确认冲突。</p></div><a routerLink="/teacher/dashboard">返回工作台</a></header>
+  <p>发布的是可约档期。每节课仍由学生预约并按现有流程确认、下单；这里不自动预约或批量扣款。</p><nur-calendar-export />
+  @if(notice()){<p class="read-note" role="status">{{notice()}}</p>}
+  <section class="nur-card"><h2>每周重复规则</h2><form (ngSubmit)="inspect()">
+    <label>首次日期<input id="series-date" name="date" type="date" required [disabled]="busy()" [ngModel]="date()" (ngModelChange)="date.set($event);reset()"></label>
+    <label>开始时间<input id="series-time" name="time" type="time" required [disabled]="busy()" [ngModel]="time()" (ngModelChange)="time.set($event);reset()"></label>
+    <label>时区<input name="zone" maxlength="80" required [disabled]="busy()" [ngModel]="zone()" (ngModelChange)="zone.set($event);reset()" placeholder="如 Asia/Shanghai"></label>
+    <label>每次时长（分钟，15–180）<input name="duration" type="number" min="15" max="180" required [disabled]="busy()" [ngModel]="duration()" (ngModelChange)="duration.set($event);reset()"></label>
+    <label>重复周数（1–12）<input id="series-weeks" name="weeks" type="number" min="1" max="12" required [disabled]="busy()" [ngModel]="weeks()" (ngModelChange)="weeks.set($event);reset()"></label>
+    <p>只发布未来180天内的有限档期。每周同一当地时间；遇夏令时跳转或重复时刻，请调整或跳过该日。</p><button type="submit" class="primary" [disabled]="busy()||!date()||!time()">预览逐次冲突</button>
+  </form></section>
+  @if(preview();as p){<section class="nur-card" id="series-preview"><h2>逐次预览</h2><p>本次规则含 {{p.occurrences.length}} 次，计划发布 {{p.publishCount}} 次。{{valid()?'':'例外已调整，请重新预览。'}}</p>
+    @for(o of p.occurrences;track o.date){<section class="milestone"><h3>{{o.date}} · {{o.skipped?'已跳过':o.conflicts.length?'有冲突':'可发布'}}</h3>@if(!o.skipped){<p>{{display(o.startAt)}} 至 {{display(o.endAt)}}</p>}
+      <label>跳过这一天<input type="checkbox" [checked]="skipped().includes(o.date)" [disabled]="busy()" (change)="skip(o.date,$any($event.target).checked)"></label>
+      @if(!skipped().includes(o.date)){<label>这一天改为开始时间（可选）<input type="time" [value]="exceptions()[o.date]||''" [disabled]="busy()" (change)="exception(o.date,$any($event.target).value)"></label>}
+      @for(c of o.conflicts;track c.slotId){<p>已有{{status(c.status)}}档期：{{display(c.startAt)}} 至 {{display(c.endAt)}}</p>}
+    </section>}
+    <div class="actions"><button type="button" (click)="inspect()" [disabled]="busy()">重新预览</button><button type="button" class="primary" (click)="publish()" [disabled]="busy()||!valid()||!p.ready">确认发布 {{p.publishCount}} 个档期</button></div>
+  </section>}
+  <section class="nur-card"><h2>已发布的重复规则</h2>@if(!series().length){<p>暂无已发布规则。</p>}@for(s of series();track s.seriesId){<div class="milestone"><p>{{s.startDate}}起 · {{s.startTime}} · {{s.weekCount}}周 · {{s.timeZone}}</p><button type="button" (click)="open(s)" [disabled]="busy()">查看这组档期</button></div>}@if(pages()>1){<nav class="actions"><button type="button" (click)="turn(-1)" [disabled]="page()===0||busy()">上一页规则</button><span>{{page()+1}}/{{pages()}}</span><button type="button" (click)="turn(1)" [disabled]="page()+1>=pages()||busy()">下一页规则</button></nav>}</section>
+  @if(created();as s){<section class="nur-card" id="series-created"><h2>这组已发布档期</h2><p>已发布档期的预约与状态以工作台为准；空闲档期可单独下架。</p>@for(slot of s.slots;track slot.slotId){<div class="milestone"><p>{{display(slot.startAt,s.timeZone)}} 至 {{display(slot.endAt,s.timeZone)}} · {{status(slot.status)}}</p>@if(slot.status==='OPEN'){<button type="button" (click)="block(slot)" [disabled]="busy()">下架此档期</button>}</div>}</section>}
+</main>

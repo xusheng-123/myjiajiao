@@ -11,6 +11,8 @@ import java.util.List;
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
     @org.springframework.data.jpa.repository.Query(value="SELECT DISTINCT teacher_id FROM bookings WHERE student_id=:student AND (status IN ('CONFIRMED','IN_PROGRESS','COMPLETED') OR (status='CLOSED' AND cancel_reason IS NULL))",nativeQuery=true)
     List<UUID> learningTeachers(UUID student);
+    @org.springframework.data.jpa.repository.Query(value="SELECT b.* FROM bookings b JOIN availability_slots s ON s.id=b.slot_id WHERE b.student_id=:student AND b.status<>'CANCELLED' AND NOT(b.status='CLOSED' AND b.cancel_reason IS NOT NULL) AND s.start_at>=:from AND s.start_at<:to ORDER BY s.start_at,b.id LIMIT 2001",nativeQuery=true)
+    List<Booking> calendarBookings(UUID student,java.time.OffsetDateTime from,java.time.OffsetDateTime to);
 
     Page<Booking> findByStudentIdOrderByCreatedAtDesc(UUID studentId, Pageable pageable);
 

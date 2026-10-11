@@ -19,13 +19,17 @@ import java.util.UUID;
 public class SchedulingApplicationService {
 
     private final AvailabilitySlotRepository slotRepository;
+    private final com.nurture.scheduling.infra.SchedulingPublicationLock publicationLock;
 
-    public SchedulingApplicationService(AvailabilitySlotRepository slotRepository) {
+    public SchedulingApplicationService(AvailabilitySlotRepository slotRepository,com.nurture.scheduling.infra.SchedulingPublicationLock publicationLock) {
         this.slotRepository = slotRepository;
+        this.publicationLock=publicationLock;
     }
 
     @Transactional
     public AvailabilitySlot publishSlot(UUID teacherId, OffsetDateTime startAt, OffsetDateTime endAt) {
+        if(startAt==null || endAt==null || !endAt.isAfter(startAt))throw new IllegalArgumentException("档期起止时间无效");
+        publicationLock.lock(teacherId);
         List<AvailabilitySlot> overlapping = slotRepository.findOverlapping(teacherId, startAt, endAt);
         if (!overlapping.isEmpty()) {
             throw new IllegalStateException("所发布时段与现有档期重叠（含重叠边界），请调整后再发布");
@@ -61,6 +65,8 @@ public class SchedulingApplicationService {
     public List<AvailabilitySlot> calendarOf(UUID teacherId, OffsetDateTime from, OffsetDateTime to) {
         return slotRepository.findByTeacherIdAndStartAtBetweenOrderByStartAtAsc(teacherId, from, to);
     }
+    @Transactional(readOnly=true)
+    public List<SlotView> calendarViewsOf(UUID teacherId,OffsetDateTime from,OffsetDateTime to){return calendarOf(teacherId,from,to).stream().map(SlotView::from).toList();}
 
     /** 供 booking 域调用：占用/释放时段。 */
     @Transactional

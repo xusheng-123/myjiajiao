@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { API } from '../../core/api/endpoints';
 import { NoticeCenterComponent } from '../../shared/components/notice-center.component';
+import { CalendarExportComponent } from '../../shared/components/calendar-export.component';
 
 interface Binding {
   bindingId: string;
@@ -49,7 +50,7 @@ interface FamilyOrder {
 @Component({
   selector: 'nur-parent-dashboard',
   standalone: true,
-  imports: [NoticeCenterComponent, DatePipe, RouterLink],
+  imports: [NoticeCenterComponent, DatePipe, RouterLink, CalendarExportComponent],
   templateUrl: './parent-dashboard.component.html',
   styleUrl: './parent-dashboard.component.css',
 })

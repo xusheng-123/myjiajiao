@@ -30,7 +30,7 @@
 | `docs/FEATURE_ROADMAP.md` | 功能增补路线图（缺口复核 / A-F 新功能评估 / 四阶段顺序） | 规划下一批功能时 |
 | `README.md`（功能根目录） | 构建与启动命令速查 | 启动环境时 |
 
-## 3. 当前开发进度总表（2026-10-11 阶段4交付核实）
+## 3. 当前开发进度总表（2026-10-11 阶段5交付核实）
 
 状态图例：✅已完成且已验证 · 🟡已实现未充分验证 · 🔶部分实现 · 🔵规划中 · ⛔阻塞
 
@@ -47,7 +47,7 @@
 | 短信不可用如实503/密码默认、家长付款旅程引导 | ✅ | SmsDeliveryFailureTest 3例、能力端点IT、相关订单归属与UI |
 | 完整竞品能力、真实短信/支付、全栈部署 | 🔶 / ⛔ | 见 docs/补缺执行清单_2026-10-10.md，未完成项保持未完成 |
 
-**八阶段执行进度（2026-10-11）**：阶段1–4✅。阶段4V16错题分类复习/原子转真实任务、三端教学资料与任务/答疑附件、真实作业反馈与教师回答；白名单内容检查、20MB单个/200MB保留容量、关联20文件、权限下载/审计、提交行锁与回滚清理。最终43单元/架构+104IT零失败，E2E220/0、探针19拒绝/0漏洞、配置/构建、材料6截图与计划回归6截图桌面/375px通过。主库仍V10。报告docs/交付报告_阶段4错题与教学附件_2026-10-11.md；阶段3报告保留。下一步阶段5重复档期/例外/ICS，从V17起；阶段5–8未完成。
+**八阶段执行进度（2026-10-11）**：阶段1–5✅。阶段5V17有限重复档期/真实冲突预览、跳过与当天时间例外、发布咨询锁、规则分页/刷新恢复、三角色ICS导出；不创建订单或批量扣款。最终46单元/架构+113IT零失败，E2E220/0、探针19拒绝/0漏洞、配置/构建及6桌面/375px三端旅程通过；主库仍V10。报告docs/交付报告_阶段5重复档期与日历_2026-10-11.md；阶段3/4报告保留。下一步阶段6运营/检索分页、重新上架、客服与首页治理，从V18起；阶段6–8未完成。
 
 以下既有轮次表保留原验证范围；本轮最终回归基线为单元38+ArchUnit2（合计40）、IT65、E2E218/0、探针19项拒绝/0漏洞、配置门禁全过、production build通过。正式课、聊天、退款UI、材料查看及Mock默认问题已补齐，早期竞品静态评估不再代表当前状态。
 
@@ -115,36 +115,36 @@
 🔵 教育合规（ICP / 协议 / 未成年人条款）——正式运营最大前置
 🔵 生产备份调度、AI 上层能力（均规划中）
 
-## 4. 当前工作现场（2026-10-11 阶段4最终快照）
+## 4. 当前工作现场（2026-10-11 阶段5最终快照）
 
-本次已恢复隔离环境并完成阶段3/4验证；夜间旧PID失效的差异已解决。历史截图、副本和产物保留。
+阶段5草稿状态已由完整测试替代，当前运行最终隔离副本；旧PID均按命令核实后停止，未杀其他服务。
 
-- **代码与迁移**：V1–V16，历史迁移未改。主库nurture仍V10；8080连nurture_gap_acceptance_phase4_20261011（V16），IT库V16；旧phase3/phase2副本保留。
-- **测试**：Java25 verify于07:43:37 BUILD SUCCESS，Surefire43（41单元+2ArchUnit）/Failsafe104；新12IT/3unit；Angular production成功；E2E220/0、探针19拒绝/0漏洞、配置全过；错题/附件桌面375px6图及阶段3计划6图回归；V16演练回滚14表指纹不变。原XML不可混计，失败与修复日志保留。
-- **运行**：Docker deploy-postgres-1 healthy；8080 PID14088，4200 PID18036，5432 PID36760（实时核实）；8081无本轮服务。
-- **产物**：backend/target/phase4-runtime.jar SHA256 89E38A068B95BEB7F5F43DF328AA6D15BCA93749701B552F084A5EC142B8FFE8；上传target/phase4-files；日志phase4-release-retry.log、phase4-{server,e2e,probe,config,migration,plan-browser}.log、phase4-final-browser.log与frontend/phase4-final-build.log；截图.walk/learning-materials/和learning-plans/。运行副本避Windows锁。
+- **代码与迁移**：V1–V17，历史迁移未改。主库nurture仍V10；8080连nurture_gap_acceptance_phase5_20261011（V17），IT库V17，旧phase4/phase3/phase2副本保留。
+- **测试**：07:57:16 Java25 verify BUILD SUCCESS，Surefire46（44单元+2ArchUnit）/Failsafe113；新9IT/3unit；Angular production成功；E2E220/0、探针19拒绝/0漏洞、配置全过；重复档期冲突/例外/刷新与三端ICS桌面375px6图通过，V17回滚15表旧列指纹一致。统计以日志为准，失败日志保留。
+- **运行**：Docker deploy-postgres-1 healthy；8080 PID9336，4200 PID18036，5432 PID36760（实时核实），8081无本轮服务。
+- **产物**：backend/target/phase5-runtime.jar SHA256 010E74AFF2F8B269094D4B0D6422C3D578CF94BADDCF6FFDF4AA24FB4A12C888；上传target/phase5-files；日志phase5-final-verify.log、phase5-{server,e2e,probe,config,migration}.log、phase5-browser-retry.log与frontend/phase5-final-build.log；截图.walk/recurring-schedule/。运行副本避Windows锁。
 - **历史资金**：未对主库迁移或订正。已备份恢复nurture_gap_acceptance_20261010_legacy并完成V11/V12真实Flyway迁移；17会话/18消息/90结算保持。副本重查A类38条/¥6545，事务订正对账通过且ROLLBACK恢复全部资金指纹。主库仍V10，不能把副本演练视为实际订正；下一步制定受控执行/回退范围，不去掉脚本保护直接执行。
-- **版本保护**：核心补缺已提交本地检查点 `b9c7ae42cf30a8fdb7bc9489dd7e5693545d55d6`（88文件），无远端；最新阶段提交以git log为准。接手前已有 `tools/settlement_walkthrough.png` 未跟踪，保持原样。禁止reset/clean。AGENTS迁移核实已更新V16、本地Git无远端；旧报告继续保留历史范围。
-- **阶段1收尾**：备份deploy/backups/stage1_20261010；stage1订正隔离库V12已提交38笔负向条目，回退副本nurture_gap_acceptance_stage1_recovery_20261010保持V10并恢复318文件。主库指纹不变；阶段1当时8080连旧final验收库，当前已切phase4，阶段1的8081已停止。
+- **版本保护**：核心补缺已提交本地检查点 `b9c7ae42cf30a8fdb7bc9489dd7e5693545d55d6`（88文件），无远端；最新阶段提交以git log为准。接手前已有 `tools/settlement_walkthrough.png` 未跟踪，保持原样。禁止reset/clean。AGENTS迁移核实已更新V17、本地Git无远端；旧报告继续保留历史范围。
+- **阶段1收尾**：备份deploy/backups/stage1_20261010；stage1订正隔离库V12已提交38笔负向条目，回退副本nurture_gap_acceptance_stage1_recovery_20261010保持V10并恢复318文件。主库指纹不变；阶段1当时8080连旧final验收库，当前已切phase5，阶段1的8081已停止。
 - **交付报告**：`docs/交付报告_核心旅程补缺_2026-10-10.md`、`交付报告_退款红冲与账务安全_2026-10-10.md`、`交付报告_验收与交接_2026-10-10.md`，执行清单 `docs/补缺执行清单_2026-10-10.md`。
 - **Sites**：私有静态前端预览v2部署succeeded，commit `fac74ba3dfb1c496fa1402d2e0ce722674d8d769`，保持原URL和owner-only，版本/部署ID见验收报告；不连接 Java/PostgreSQL，顶部说明接口操作不可用，不等同完整Staging。
 
 ## 5. 当前运行与验证方式（PowerShell，本轮实测）
 
-先确认Docker Desktop与数据库容器健康、验收库已创建。禁止将测试命令指向历史主库；下面 phase4 库已存在，可恢复本轮现场；完整E2E固定试听夹具不可在已消耗名额的同库重复，复跑须新建隔离验收库，禁止清旧记录绕过规则。
+先确认Docker Desktop与数据库容器健康、验收库已创建。禁止将测试命令指向历史主库；下面 phase5 库已存在，可恢复本轮现场；完整E2E固定试听夹具不可在已消耗名额的同库重复，复跑须新建隔离验收库，禁止清旧记录绕过规则。
 
 ```powershell
 # 在 backend/ 构建；默认PATH可能是Java11，必须指定Java25
 $env:JAVA_HOME='C:/Users/lxs/apps/jdk-25.0.4.1+1'
 $env:Path="$env:JAVA_HOME/bin;$env:Path"
 & 'C:/Users/lxs/apps/apache-maven-3.9.16/bin/mvn.cmd' -B -s C:/Users/lxs/apps/maven-settings.xml -Pintegration verify
-# 核实并停止此前自己启动的phase4-runtime.jar进程后复制新构建，勿杀全部Java
-Copy-Item target/nurture-backend-1.0.0.jar target/phase4-runtime.jar
-$env:NURTURE_DB_URL='jdbc:postgresql://localhost:5432/nurture_gap_acceptance_phase4_20261011'
+# 核实并停止此前自己启动的phase5-runtime.jar进程后复制新构建，勿杀全部Java
+Copy-Item target/nurture-backend-1.0.0.jar target/phase5-runtime.jar
+$env:NURTURE_DB_URL='jdbc:postgresql://localhost:5432/nurture_gap_acceptance_phase5_20261011'
 $env:NURTURE_ADMIN_PHONE='13800000000'
 $env:NURTURE_ADMIN_PASSWORD='Admin#2026'
-$env:NURTURE_STORAGE_DIR='./target/phase4-files'
-& "$env:JAVA_HOME/bin/java.exe" -jar target/phase4-runtime.jar --nurture.payment.sandbox.enabled=true
+$env:NURTURE_STORAGE_DIR='./target/phase5-files'
+& "$env:JAVA_HOME/bin/java.exe" -jar target/phase5-runtime.jar --nurture.payment.sandbox.enabled=true
 # 另一个终端 frontend/
 npm.cmd start -- --host 127.0.0.1
 npx.cmd ng build --configuration production
@@ -155,17 +155,18 @@ python deploy/verify_config.py
 python tools/gap_fill_walkthrough.py
 python tools/learning_plan_walkthrough.py
 python tools/learning_materials_walkthrough.py
+python tools/recurring_schedule_walkthrough.py
 python tools/settlement_correction_rehearsal.py nurture_gap_acceptance_20261010_final
 # 以下只在重新恢复的V10历史副本上执行；当前legacy已升级V12，勿直接重跑迁移演练
 # python tools/legacy_migration_rehearsal.py <nurture_gap_acceptance_开头的V10副本名>
 python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 ```
 
-本机验收账号：学生13900000002/Student#2026、家长13900000003/Parent#2026、教师13900000001/Teacher#2026、运营13800000000/Admin#2026（只用于开发验收）。E2E先生成夹具再跑浏览器。注册限流生产规则50次/自然小时/IP不降低，测试按类/浏览器夹具隔离XFF桶。运行中的副本被Windows锁定时，只停止已确认CommandLine为phase4-runtime.jar（或确属本轮旧gap-runtime.jar）的本轮进程再复制，不按进程名全杀。
+本机验收账号：学生13900000002/Student#2026、家长13900000003/Parent#2026、教师13900000001/Teacher#2026、运营13800000000/Admin#2026（只用于开发验收）。E2E先生成夹具再跑浏览器。注册限流生产规则50次/自然小时/IP不降低，测试按类/浏览器夹具隔离XFF桶。运行中的副本被Windows锁定时，只停止已确认CommandLine为phase5-runtime.jar（或确属本轮旧gap-runtime.jar）的本轮进程再复制，不按进程名全杀。
 
 ## 6. 新模型接手指南（按顺序执行）
 
-1. 读本文件 → 2. 读 `项目交接.md` 的「当前进度」+「下一步」两节 → 3. 按需读 docs/ → 4. 核实：`ls backend/src/main/resources/db/migration/` 应为 V1–V16；`netstat` 看服务状态 → 5. **禁止**：重置/清理、改历史 Migration、动核心交易链路、引入禁用组件 → 6. 从第 7 节「下一步」第一项开始 → 7. 完成任务后回写交接文档（规则见 `AGENTS.md`）。
+1. 读本文件 → 2. 读 `项目交接.md` 的「当前进度」+「下一步」两节 → 3. 按需读 docs/ → 4. 核实：`ls backend/src/main/resources/db/migration/` 应为 V1–V17；`netstat` 看服务状态 → 5. **禁止**：重置/清理、改历史 Migration、动核心交易链路、引入禁用组件 → 6. 从第 7 节「下一步」第一项开始 → 7. 完成任务后回写交接文档（规则见 `AGENTS.md`）。
 
 **历史陷阱速查**（完整版见交接文档末尾）：Docker 迁移 SQL 忌 min(uuid)；ArchUnit 须 1.5.1（Java 25）；匿名访问统一 403 非 401；越权探针写操作必须带幂等键；改迁移后必须重新 package；CSS `::after` 在产物中会被简写；e2e 的 notifications 返回键是 `items`；档期 DELETE=置 BLOCKED 非物理删。
 
@@ -179,8 +180,8 @@ python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 | 已完成 | 阶段2每生每师免费试听限次与随机编号碰撞修复 | V13限次/并发行锁/只读资格UI，V14新编号序列，历史副本演练回滚；报告见docs | 40+79全过、E2E220/0、真实浏览器试听规则；历史记录不改 |
 | 已完成 | 阶段3学习计划A | V15四表、预期版本行锁、原子发任务、三端UI与实时权限；报告见阶段3交付 | 40+92全过、E2E220/0、完整桌面/375px旅程 |
 | 已完成 | 阶段4错题本B/附件C | V16错题/文件/容量，三端UI与受控下载，复用存储/任务；报告见阶段4交付 | 43+104、E2E220/0、三端完整旅程/字节验证 |
-| P1-1 | 阶段5重复排课/ICS | 从scheduling读现有档期；V17起材料化有限重复规则、逐次冲突预览与例外跳过/时间调整，教师归属与并发发布锁，ICS导出 | 不自动下单/批量扣款，时区/DST/冲突/幂等与真实浏览器验证 |
-| P1-4 | 运营队列分页/状态筛选、客服证据、公开检索分页、首页示例治理 | admin dashboard/matching/landing；当前列表仍受首20限制 | 翻页无遗漏、证据归属审计、示例清晰标注 |
+| 已完成 | 阶段5重复档期/ICS | V17有限材料化、冲突/例外/发布锁、规则分页和三端私有ICS；报告见阶段5 | 46+113、E2E220/0、6截图真浏览器；不批量扣款 |
+| P1-1 | 阶段6运营分页/状态筛选、重新上架、客服证据、公开检索分页、首页示例治理 | 从admin dashboard队列读/翻页入手；teacher offering状态恢复；matching新增兼容分页契约；V18客服工单/私有证据，landing去无依据营销数字 | 超20无遗漏、归属/审计/幂等、销售检索一致、示例清晰 |
 | P2 | 测验/阶段评估、外部提醒/PWA、课堂回放协作衔接 | ROADMAP D与执行清单；只计算真实学习证据，保持外部课堂方案 | 不虚构掌握度，不自研RTC/不接大模型 |
 | ⛔ | 真实短信/支付退款提现、完整Staging | 用户明确当前没有外部资源；取得测试资源后按供应商适配与RUNBOOK实施 | 真投递/验签/重放/对账及全栈部署验收，不把静态预览当上线 |
 
@@ -189,15 +190,16 @@ python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 ## 8. 风险与限制
 
 - V13保留历史重复活动试听，不能自动撤销旧预约；新预约受统一名额限制。计划开课时间已过的取消会消耗名额，界面已说明；旧CANCELLED不追罚。V14编号序列可有空号、超过六位时自然扩展，旧编号保留；不可多实例混跑旧随机编号生成版本与新序列版本。
-- 阶段4本地43/104/220与真浏览器已通过；Sites仍私有静态v2，尚未包含本阶段新界面，阶段8统一更新；后端API仍未托管。
+- 阶段5本地46/113/220与真浏览器已通过；Sites仍私有静态v2，尚未包含本阶段新界面，阶段8统一更新；后端API仍未托管。
 
 - 历史主库还在V10，没有应用新退款行为或订正旧账；配套备份/318上传文件恢复及38笔精确批次提交/重放/回退恢复已在隔离库通过18项断言。实际投入使用前仍须受控执行与重查，当前dry-run强制回滚不能用于直接修正。
 - V12会合并同一师生重复会话并迁移消息，旧重复ID链接可能失效；已在恢复副本验证18条历史消息和合成重复组守恒、唯一约束及无孤儿；实际主库迁移仍未执行。
 - 用户暂无短信服务商/支付商户/服务器/域名；没有真实投递、渠道退款或提现、没有完整Staging。Sites只为owner-private前端静态预览，顶栏说明API未连接。
 - 退款仅全额、仅PENDING自动红冲；SETTLED/PAID_OUT及异常账目需人工核查。红冲fee=0保留原抽成快照，不用fee列总和推导退款后平台净收入。
 - 学生前端默认家长付款，后端仍兼容旧学生payer订单；阶段1已明确保留原payer、不转移余额、不重复退款；主库58个学生payer订单均未付，无学生钱包余额。旧余额自助只读界面仍未补，家长下单仍需有效学生绑定。
-- 聊天15秒轮询文本、没有附件/推送；运营列表仍首20/缺队列分页，公开检索数量有限；学习计划、错题本、教学资料/作业/答疑附件已完成；重复排课、测验与课堂协作仍待实施。
+- 聊天15秒轮询文本、没有附件/推送；运营列表仍首20/缺队列分页，公开检索数量有限；学习计划、错题本、教学资料/作业/答疑附件已完成；有限重复档期与ICS已完成；测验、消息附件与课堂协作仍待实施。
 - 教师教龄为自报，公开资质只代表平台审核；旧账号缺资料需本人编辑。首页旧营销评价示例待治理。保留auth/landing/match三处CSS预算警告，production build无错误。
 - 既有UUID校验仅解析而非严格v4/variant；ArchUnit只禁跨模块infra和api依赖infra，尚未覆盖全部架构文字承诺。未在本轮冒充已修复。
 - 教学文件逻辑下架仍计200MB保留容量，目前没有自动物理清理/病毒扫描；聊天附件仍阶段7范围。
-- 本地Git无远端，阶段3在929ca88保护、核心补缺已在b9c7ae4保护，后续阶段提交以git log为准；文件系统及现有历史需保护，禁止reset/clean。`tools/settlement_walkthrough.png`接手前已存在。旧报告与表格按历史范围阅读，以最新代码与本节快照为准。
+- 重复规则仅有限档期生成、例外在发布前设置，不是无限滚动排课或外部日历同步。
+- 本地Git无远端，阶段4在ba2ddcd、阶段3在929ca88保护、核心补缺已在b9c7ae4保护，后续阶段提交以git log为准；文件系统及现有历史需保护，禁止reset/clean。`tools/settlement_walkthrough.png`接手前已存在。旧报告与表格按历史范围阅读，以最新代码与本节快照为准。
