@@ -40,23 +40,33 @@ public class SupportCaseService {
  private void read(SupportCase c){member();if(!admin() && !c.getOwnerId().equals(CallerContext.require().accountId()))throw new AccessDeniedException("只能查看本人提交的客服工单");}
  private SupportCase get(UUID id,boolean lock){var c=(lock?cases.locked(id):cases.findById(id)).orElseThrow(()->new IllegalArgumentException("工单不存在"));read(c);return c;}
  private String name(UUID id){return identity.displayNameOf(id).orElse("账户");}
+ private String name(java.util.Map<UUID,String> names,UUID id){return names.getOrDefault(id,"账户");}
+ private java.util.Map<UUID,String> namesOf(java.util.Collection<UUID> ids){return identity.displayNamesOf(ids);}
  private CourseView course(BookingApplicationService.SupportCourse b){return new CourseView(b.bookingId(),b.subject(),b.status(),b.type(),b.startAt(),name(b.studentId()),name(b.teacherId()));}
+ private CourseView course(BookingApplicationService.SupportCourse b,java.util.Map<UUID,String> names){return new CourseView(b.bookingId(),b.subject(),b.status(),b.type(),b.startAt(),name(names,b.studentId()),name(names,b.teacherId()));}
  private CourseView linkedCourse(SupportCase c){
   if(c.getBookingId()==null)return null;var caller=CallerContext.require();var roles=booking.rolesOf(c.getBookingId());
   boolean allowed=admin() || (caller.role()==CallerRole.PARENT?parents.isActiveGuardian(caller.accountId(),roles.studentId()):booking.isParticipant(c.getBookingId(),caller.accountId()));
   return allowed?course(booking.supportCourseFact(c.getBookingId())):null;
  }
  private CaseView view(SupportCase c){return new CaseView(c.getId(),name(c.getOwnerId()),c.getCategory().name(),c.getTitle(),c.getDescription(),c.getBookingId(),c.getStatus().name(),c.getRevision(),c.getCreatedAt(),c.getUpdatedAt(),linkedCourse(c));}
+ private CaseView view(SupportCase c,java.util.Map<UUID,String> names){return new CaseView(c.getId(),name(names,c.getOwnerId()),c.getCategory().name(),c.getTitle(),c.getDescription(),c.getBookingId(),c.getStatus().name(),c.getRevision(),c.getCreatedAt(),c.getUpdatedAt(),linkedCourse(c));}
  private static String text(String value,int max){if(value==null || value.isBlank() || value.length()>max)throw new IllegalArgumentException("内容不能为空或超过长度限制");return value.trim();}
  private static Pageable page(int page,int size,boolean history){if(page<0 || page>10000 || size<1 || size>50)throw new IllegalArgumentException("分页参数超出范围");return PageRequest.of(page,size,Sort.by(Sort.Direction.DESC,history?"createdAt":"updatedAt","id"));}
  @Transactional(readOnly=true) public Page<CaseView> list(String status,int page,int size){
   member();var state=status==null || status.isBlank()?null:SupportCase.Status.valueOf(status);var owner=admin()?null:CallerContext.require().accountId();
-  return cases.findAll((root,query,cb)->{List<jakarta.persistence.criteria.Predicate> p=new ArrayList<>();if(owner!=null)p.add(cb.equal(root.get("ownerId"),owner));if(state!=null)p.add(cb.equal(root.get("status"),state));return cb.and(p.toArray(jakarta.persistence.criteria.Predicate[]::new));},page(page,size,false)).map(this::view);
+  var found=cases.findAll((root,query,cb)->{List<jakarta.persistence.criteria.Predicate> p=new ArrayList<>();if(owner!=null)p.add(cb.equal(root.get("ownerId"),owner));if(state!=null)p.add(cb.equal(root.get("status"),state));return cb.and(p.toArray(jakarta.persistence.criteria.Predicate[]::new));},page(page,size,false));
+  var names=namesOf(found.getContent().stream().map(SupportCase::getOwnerId).distinct().toList());
+  return found.map(c->view(c,names));
  }
  @Transactional(readOnly=true) public CaseView detail(UUID id){return view(get(id,false));}
  @Transactional(readOnly=true) public Page<CourseView> courseOptions(String status,int page,int size){
   customer();var caller=CallerContext.require();var children=caller.role()==CallerRole.PARENT?parents.activeChildAccountIds(caller.accountId()):List.<UUID>of();
-  return booking.supportCourseOptions(children,status,page,size).map(this::course);
+  var found=booking.supportCourseOptions(children,status,page,size);
+  var ids=new java.util.HashSet<UUID>();
+  found.getContent().forEach(b->{ids.add(b.studentId());ids.add(b.teacherId());});
+  var names=namesOf(ids);
+  return found.map(b->course(b,names));
  }
  @Transactional public CaseView create(SupportCase.Category category,String title,String description,UUID bookingId){
   customer();if(category==null)throw new IllegalArgumentException("请选择工单类别");var caller=CallerContext.require();

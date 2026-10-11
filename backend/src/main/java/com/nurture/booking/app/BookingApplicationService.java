@@ -280,6 +280,11 @@ public class BookingApplicationService {
     private SupportCourse supportCourse(Booking b) {
         return new SupportCourse(b.getId(),b.getStudentId(),b.getTeacherId(),b.getSubject(),b.getStatus().name(),b.getType().name(),schedulingService.slotOf(b.getSlotId()).orElseThrow(()->new IllegalStateException("课程时段缺失")).startAt());
     }
+    private SupportCourse supportCourse(Booking b,java.util.Map<UUID,java.time.OffsetDateTime> slotStarts) {
+        var startAt=slotStarts.get(b.getSlotId());
+        if(startAt==null)throw new IllegalStateException("课程时段缺失");
+        return new SupportCourse(b.getId(),b.getStudentId(),b.getTeacherId(),b.getSubject(),b.getStatus().name(),b.getType().name(),startAt);
+    }
     /** Customer scope is server-derived; no caller/student IDs are accepted from the HTTP request. */
     @Transactional(readOnly=true)
     public Page<SupportCourse> supportCourseOptions(List<UUID> activeChildren,String status,int page,int size) {
@@ -287,11 +292,15 @@ public class BookingApplicationService {
         var caller=CallerContext.require();var role=caller.role();
         if(role!=CallerRole.STUDENT && role!=CallerRole.TEACHER && role!=CallerRole.PARENT)throw new org.springframework.security.access.AccessDeniedException("课程选择仅供本人师生与有效监护人");
         var state=status==null || status.isBlank()?null:Booking.BookingStatus.valueOf(status);
-        return bookingRepository.findAll((root,query,cb)->{
+        var found=bookingRepository.findAll((root,query,cb)->{
             var owned=role==CallerRole.PARENT?(activeChildren.isEmpty()?cb.disjunction():root.get("studentId").in(activeChildren)):
                     cb.equal(root.get(role==CallerRole.TEACHER?"teacherId":"studentId"),caller.accountId());
             return state==null?owned:cb.and(owned,cb.equal(root.get("status"),state));
-        },PageRequest.of(page,size,org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,"createdAt","id"))).map(this::supportCourse);
+        },PageRequest.of(page,size,org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,"createdAt","id")));
+        var slotIds=found.getContent().stream().map(Booking::getSlotId).distinct().toList();
+        var slotStarts=new java.util.HashMap<UUID,java.time.OffsetDateTime>();
+        schedulingService.slotViewsOf(slotIds).forEach(s->slotStarts.put(s.slotId(),s.startAt()));
+        return found.map(b->supportCourse(b,slotStarts));
     }
     /** A support case owner/admin must authorize the relationship before using this fact port. */
     @Transactional(readOnly=true)

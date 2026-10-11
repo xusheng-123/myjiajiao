@@ -49,6 +49,13 @@ public class SchedulingApplicationService {
         return slotRepository.findById(slotId).map(SlotView::from);
     }
 
+    /** 批量档期视图（分页场景避免逐行 N+1 查询）。 */
+    @Transactional(readOnly = true)
+    public List<SlotView> slotViewsOf(java.util.Collection<UUID> slotIds) {
+        if (slotIds.isEmpty()) return List.of();
+        return slotRepository.findAllById(slotIds).stream().map(SlotView::from).toList();
+    }
+
     public List<SlotView> openSlotViewsOf(UUID teacherAccountId) {
         return openSlotsOf(teacherAccountId).stream().map(SlotView::from).toList();
     }

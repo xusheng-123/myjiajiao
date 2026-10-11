@@ -88,6 +88,10 @@ admin模块的客服工单/回复/证据/容量支持四角色归属、版本行
 
 PublicTeacherCatalog应用端口返回限定公开Row；matching.infra JDBC只读投影跨单体中公开账户、审核、师资、评价和档期表，禁止跨模块写入与foreign domain/infra类依赖。同一REPEATABLE_READ快照与now确保页/COUNT一致，最新审核submitted_at/id稳定。V21新增四索引，49单元/架构+13专项IT通过，全套IT待三项后总回归；8080仍phase8/V20，8081仅loopback性能库V21，见PROJECT_HANDOFF §4。
 
+## 性能轮查询结构（2026-10-11，V22）
+
+公开检索页查询为两阶段：matched（瘦行单遍：五排序共用的ELIGIBLE+过滤，关键词strpos为权威谓词+四列ILIKE预过滤超集）→ paged（证据按教师聚合一次后排序分页）→ 外层重申排序并仅为当页回取展示字段。verification用DISTINCT ON(teacher_id)去重（等价旧submitted_at/id最新语义）；stats/nextslots为索引覆盖的全表聚合；目录事务内SET LOCAL禁并行gather。V22新增accounts.display_name与subject_offerings.grade_band trgm GIN（合计六个目录访问索引）。批量读取端口：scheduling.app slotViewsOf、identity.app displayNamesOf（课程选择/工单列表分页防N+1）。e2e_test.py/probe_authz.py支持NURTURE_E2E_BASE环境变量（默认仍8080）。
+
 ## 客服课程与保留容量（2026-10-11）
 
 客服课程使用booking.app/parent.app端口派生本人/ACTIVE子女范围，分页返回摘要，详情实时验证监护授权。三类上传个人配额保持原事务锁，通过shared/storage/StorageQuotaView返回真实剩余/移除保留/预警；前端共享storage-quota组件，任务/答疑附件输出changed通知容量刷新。清理工具是tools/file_retention.py离线只读DB引用盘点+可恢复文件隔离，只允许命名测试副本/明确目录；不属于运行时业务API、不自动删除/改变配额，参考FILE_RETENTION.md。

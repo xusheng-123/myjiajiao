@@ -4,10 +4,10 @@
 判定：[VULN] = 存在越权（应被拒而未拒）；[OK] = 已正确拒绝；[INFO] = 业务语义项。
 每次运行使用随机手机号，与主 E2E 互不干扰。
 """
-import json, sys, urllib.request, urllib.error, uuid, random
+import json, os, sys, urllib.request, urllib.error, uuid, random
 
 sys.stdout.reconfigure(encoding="utf-8")
-BASE = "http://localhost:8080/api/v1"
+BASE = os.environ.get("NURTURE_E2E_BASE", "http://localhost:8080/api/v1")
 VULN, OK = [], []
 
 def http(method, path, body=None, token=None, idem=None):

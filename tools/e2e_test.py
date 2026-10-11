@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """润物细无声 · Nurture — 端到端 API 冒烟与漏洞挖掘脚本（stdlib only）"""
-import json, sys, urllib.request, urllib.error, uuid, datetime, io, mimetypes, base64, random
+import json, os, sys, urllib.request, urllib.error, uuid, datetime, io, mimetypes, base64, random
 
-BASE = "http://localhost:8080/api/v1"
+BASE = os.environ.get("NURTURE_E2E_BASE", "http://localhost:8080/api/v1")
+ORIGIN = BASE[:-len("/api/v1")] if BASE.endswith("/api/v1") else BASE
 FRONT = "http://localhost:4200"
 sys.stdout.reconfigure(encoding="utf-8")
 PASS, FAIL = 0, 0
@@ -740,7 +741,7 @@ def main():
     check("伪造 Agent Token 被拒", st in (401, 403), f"{st}")
 
     print("== 14. 契约与前端代理 ==")
-    st, _, docs = http("GET", "http://localhost:8080/api/v1/api-docs")
+    st, _, docs = http("GET", BASE + "/api-docs")
     check("OpenAPI 契约可访问", st == 200 and "/api/v1" in json.dumps(docs), f"{st}")
     check("契约含 Idempotency-Key 参数", "Idempotency-Key" in json.dumps(docs), "")
     st, _, front = http("GET", FRONT)
@@ -834,9 +835,9 @@ def main():
     check("订单详情确认已付", st == 200 and odet4.get("status") == "PAID", f"{st} {odet4}")
 
     # 15.5 健康检查（P0-2 / 安全验收补充）：actuator health 可匿名访问
-    st, _, health = http("GET", "http://localhost:8080/actuator/health")
+    st, _, health = http("GET", ORIGIN + "/actuator/health")
     check("健康检查端点可用(200)", st == 200 and health.get("status") == "UP", f"{st} {health}")
-    st, _, forbidden_health = http("GET", "http://localhost:8080/actuator/env")
+    st, _, forbidden_health = http("GET", ORIGIN + "/actuator/env")
     check("actuator 敏感端点不可达(401)", st in (401, 403, 404), f"{st}")
 
     print("== 16. 支付模式 B 专项：连点重试 / 金额防篡改 / 结算联动 ==")

@@ -202,6 +202,16 @@ public class IdentityApplicationService implements ApiTokenVerifier, AccountStat
         return accountRepository.findById(accountId).map(Account::getDisplayName);
     }
 
+    /** 批量显示名（分页列表避免逐行 N+1 查询；缺失的 id 不在结果中）。 */
+    @Transactional(readOnly = true)
+    public java.util.Map<UUID, String> displayNamesOf(java.util.Collection<UUID> accountIds) {
+        if (accountIds.isEmpty()) return java.util.Map.of();
+        var names = new java.util.HashMap<UUID, String>(accountIds.size() * 2);
+        accountRepository.findAllById(accountIds)
+                .forEach(a -> names.put(a.getId(), a.getDisplayName()));
+        return names;
+    }
+
     @Transactional(readOnly = true)
     public boolean existsAccount(UUID accountId) {
         return accountRepository.existsById(accountId);
