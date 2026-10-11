@@ -1,5 +1,17 @@
 # DECISIONS — 关键决策记录（只记对未来有影响的）
 
+## 2026-10-11 方向 D 全站 UI 重构：品牌语言变更与工程治理
+
+**品牌变更（用户拍板）**：视觉方向由「竹林暗色+楷体」正式切换为方向 D「黛绿 #1E4D3E + 暖金 #A8875A + 宋体（Source Han Serif/Noto Serif）标题 + 雾白 #F2F3EE/雾青 #E6EBE5 浅色底」。禁区：深色区块、楷体、竹剪影、水墨晕染。设计单一事实源 docs/ui-redesign-2026-10-11/design-system-d.md。原「不改品牌/深色主题」硬约束由用户本轮显式变更，品牌锁基线随之从 096e474 更新至 38682ba（618 条声明，verify_brand_css.cjs 默认值已同步）——此后改品牌仍需走基线更新流程。
+
+**旧令牌别名而非全量替换**：tokens.css 重写时保留旧令牌名（--color-accent→暖金、--font-brand→宋体栈、--bg-deep→雾青等）映射到新值，存量组件 CSS 零改动完成换装；新代码一律使用 D 权威令牌名。
+
+**多代理编排纪律**：主代理只做设计契约/全局令牌/头尾/首页/登录，五域（导师、学生+家长、学习互动、找老师、运营）并行子代理；文件所有权矩阵互斥、endpoints.ts 主代理独占先补齐缺口常量、routes.ts 冻结不加路由——五域并行零合并冲突。样式超预算（anyComponentStyle 按文件计处理后体积）通过 styleUrls 数组拆第二样式文件治理，不提高预算。
+
+**否决/如实记录**：家长代管预约取消未接 UI——后端 requireCancellableByCaller 仅学生/导师/管理员，家长调用 403，不接假入口（如需家长代管须后端先放开鉴权）；D1 平台配置只做真实按键 PUT+权威回显，后端无 GET configs 列表端点不伪造读取；C1 评价后端返回 List 无分页无 createdAt，前端切片分页并防御性兼容；学生域 A1 两阶段取消走查仅执行 preview（read-only），未点终态 execute。
+
+**RevealDirective 无帧兜底（走查抓出的真实缺陷）**：IntersectionObserver 回调在 Chromium 系按帧派发，无头/嵌入式 WebView 或后台节流使帧停摆时回调永不到达，.nur-reveal 元素被 opacity:0 永久困住（IAB 走查环境实测 rafTicks=0 复现）。修复为 IO 之外加 350ms 计时器+scroll/resize 纯几何判定兜底，语义等价（任一像素进入视口-40px 底边距即显现），真实浏览器行为不变（140f7fa）。同类教训：IAB 环境 window.scrollTo/scrollIntoView 可能不生效、fullPage 截图会重复拼接首屏——长页面验收用 body zoom 缩放截图或新开标签页（旧标签页复合器会随导航次数劣化）。
+
 ## 2026-10-11 性能轮：检索两阶段重写与门槛判定
 
 10万条目/32并发下，原逐行LATERAL（verification每查询98,000次探测）与价格序全表扫描是结构性瓶颈；重写为matched瘦行单遍扫描+证据按教师聚合一次+仅当页回取展示字段，verification改DISTINCT ON去重。否决：全量matched MATERIALIZED（93.5k行溢出work_mem实测更慢）、并行gather保留（pgbench证明并发争抢，SET LOCAL范围内禁用）、按matched教师聚合stats（需双扫描，实测全表聚合更便宜：2万评价/2.5万档期索引覆盖）。V22新增display_name/grade_band trgm索引使四分支BitmapOr可走索引；关键词预过滤保持strpos为权威谓词——无空格关键词不可能跨concat分隔符，预过滤精确等价；含空格关键词保留strpos兜底分支，不为索引牺牲语义。
