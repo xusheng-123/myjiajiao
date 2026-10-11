@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, inject, signal } from '@angular/core';
+import { Component, Input, OnChanges, inject, signal, output } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 export interface LearningFile { fileId: string; filename: string; sizeBytes: number; category: string; canDelete: boolean; }
@@ -17,6 +17,7 @@ export interface LearningFile { fileId: string; filename: string; sizeBytes: num
     }
   </section>`, styles: [`.attachments{margin-top:1rem;border-top:1px solid var(--border-subtle);padding-top:.5rem;overflow-wrap:anywhere}h4{margin:.5rem 0}p{font-size:.85rem;color:var(--text-muted)}.file-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0}button{min-height:44px;padding:.35rem .8rem;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);color:var(--text-main)}input{max-width:100%;display:block;margin:.5rem 0}button:disabled{opacity:.5}`] })
 export class LearningAttachmentsComponent implements OnChanges {
+  readonly changed=output<void>();
   @Input() taskId = ''; @Input() questionId = ''; @Input() status = '';
   private http = inject(HttpClient); private version = 0; private target = ''; private category = '';
   readonly rows = signal<LearningFile[]>([]); readonly ready = signal(false); readonly busy = signal(false);
@@ -41,8 +42,8 @@ export class LearningAttachmentsComponent implements OnChanges {
     const input=event.target as HTMLInputElement;const file=input.files?.[0];if(!file)return;
     if(file.size===0||file.size>20971520){this.notice.set('文件不能为空且不得超过20MB。');input.value='';return;}
     const form=new FormData();form.append('category',this.category);form.append('contextId',this.taskId||this.questionId);form.append('file',file);
-    this.busy.set(true);this.http.post('/api/v1/learning/files',form).subscribe({next:()=>{this.busy.set(false);input.value='';this.notice.set('附件已保存。');this.load();},error:e=>{this.busy.set(false);input.value='';this.notice.set(e.error?.detail??'上传失败，请重试。');}});
+    this.busy.set(true);this.http.post('/api/v1/learning/files',form).subscribe({next:()=>{this.busy.set(false);input.value='';this.notice.set('附件已保存。');this.changed.emit();this.load();},error:e=>{this.busy.set(false);input.value='';this.notice.set(e.error?.detail??'上传失败，请重试。');}});
   }
   download(f:LearningFile):void{this.busy.set(true);this.http.get('/api/v1/learning/files/'+f.fileId+'/download',{responseType:'blob'}).subscribe({next:blob=>{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=f.filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);this.busy.set(false);},error:()=>{this.busy.set(false);this.notice.set('文件暂时无法下载，请刷新权限后重试。');}});}
-  remove(f:LearningFile):void{if(!window.confirm('移除此附件？上传文件将保留用于审计，仍计入个人容量。'))return;this.busy.set(true);this.http.delete('/api/v1/learning/files/'+f.fileId).subscribe({next:()=>{this.busy.set(false);this.load();},error:e=>{this.busy.set(false);this.notice.set(e.error?.detail??'移除失败。');}});}
+  remove(f:LearningFile):void{if(!window.confirm('移除此附件？上传文件将保留用于审计，仍计入个人容量。'))return;this.busy.set(true);this.http.delete('/api/v1/learning/files/'+f.fileId).subscribe({next:()=>{this.busy.set(false);this.changed.emit();this.load();},error:e=>{this.busy.set(false);this.notice.set(e.error?.detail??'移除失败。');}});}
 }

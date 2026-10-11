@@ -6,13 +6,14 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { API_BASE } from '../../core/api/endpoints';
 import { QueuePagerComponent } from '../../shared/components/queue-pager.component';
+import { StorageQuotaComponent } from '../../shared/components/storage-quota.component';
 interface Course {bookingId:string;subject:string;status:string;type:string;startAt:string;studentName:string;teacherName:string;}
 interface Case {caseId:string;ownerName:string;category:string;title:string;description:string;bookingId:string|null;course:Course|null;status:string;revision:number;createdAt:string;updatedAt:string;}
 interface Reply {replyId:string;authorName:string;authorRole:string;body:string;kind:string;createdAt:string;}
 interface Evidence {fileId:string;filename:string;sizeBytes:number;sha256:string;canDelete:boolean;}
 interface Page<T>{content:T[];totalPages:number;totalElements:number;}
 const BASE=API_BASE+'/support/cases';
-@Component({selector:'nur-support-cases',standalone:true,imports:[FormsModule,DatePipe,RouterLink,QueuePagerComponent],
+@Component({selector:'nur-support-cases',standalone:true,imports:[FormsModule,DatePipe,RouterLink,QueuePagerComponent,StorageQuotaComponent],
  template:`<main class="shell"><a [routerLink]="'/' + role().toLowerCase() + '/dashboard'">返回工作台</a>
  <h1 class="nur-serif">客服与申诉</h1><p>描述预约、支付或学习问题，与运营沟通并保留处理记录。</p>
  @if(notice()){<p class="notice" role="status">{{notice()}}</p>}
@@ -34,7 +35,7 @@ const BASE=API_BASE+'/support/cases';
  </section>
  @if(selected();as c){<section class="nur-card" id="support-detail"><h2>{{c.title}}</h2><p>{{label(c.category)}} · {{label(c.status)}} · {{c.createdAt | date:'yyyy-MM-dd HH:mm'}}</p><p class="body">{{c.description}}</p>
  @if(c.course;as b){<h3>关联课程</h3><p id="support-linked-course" class="body">{{courseText(b)}}<br />课程编号：{{b.bookingId}}</p>}@else if(c.bookingId){<p class="hint">已关联课程，当前暂无课程详情访问权限。</p>}
- <h3>私有证据</h3><p class="hint">PDF、PNG、JPEG，每份不超过10MB，每个工单最多保留10份；个人客服证据保留容量100MB。仅本人及运营可读取，移除后保留文件与容量供审计。</p>
+ <h3>私有证据</h3><nur-storage-quota endpoint="/api/v1/support/cases/quota" [revision]="quotaRevision()" /><p class="hint">PDF、PNG、JPEG，每份不超过10MB，每个工单最多保留10份；个人客服证据保留容量100MB。仅本人及运营可读取，移除后保留文件与容量供审计。</p>
  @for(f of files();track f.fileId){<div class="file"><span>{{f.filename}} · {{(f.sizeBytes/1024).toFixed(1)}} KB</span><button type="button" (click)="download(f)" [disabled]="busy()">下载证据</button>@if(f.canDelete){<button type="button" (click)="remove(f)" [disabled]="busy()">移除</button>}</div>}
  @if(c.status!=='CLOSED'){<label>补充证据<input type="file" accept=".pdf,.png,.jpg,.jpeg" (change)="upload($event)" [disabled]="busy()" /></label>}
  <h3>沟通与处理记录</h3>
@@ -59,7 +60,7 @@ export class SupportCasesComponent{
  readonly cases=signal<Case[]>([]);readonly page=signal(0);readonly pages=signal(0);readonly total=signal(0);readonly loading=signal(false);
  readonly selected=signal<Case|null>(null);readonly files=signal<Evidence[]>([]);readonly replies=signal<Reply[]>([]);
  readonly replyPage=signal(0);readonly replyPages=signal(0);readonly replyTotal=signal(0);readonly historyLoading=signal(false);
- readonly busy=signal(false);readonly notice=signal('');private listVersion=0;private detailVersion=0;private historyVersion=0;
+ readonly quotaRevision=signal(0);readonly busy=signal(false);readonly notice=signal('');private listVersion=0;private detailVersion=0;private historyVersion=0;
  readonly courses=signal<Course[]>([]);readonly chosenCourse=signal<Course|null>(null);readonly coursePage=signal(0);readonly coursePages=signal(0);readonly courseTotal=signal(0);readonly courseLoading=signal(false);readonly courseError=signal('');private courseVersion=0;courseFilter='';
  readonly courseStatuses=[{value:'REQUESTED',label:'待确认'},{value:'CONFIRMED',label:'已确认'},{value:'IN_PROGRESS',label:'进行中'},{value:'COMPLETED',label:'已完成'},{value:'CANCELLED',label:'已取消'}];
  readonly categories=[{value:'SCHEDULE',label:'预约与课程'},{value:'PAYMENT',label:'订单与支付'},{value:'LEARNING',label:'学习服务'},{value:'ACCOUNT',label:'账户问题'},{value:'OTHER',label:'其他'}];
@@ -85,7 +86,7 @@ export class SupportCasesComponent{
  history():void{const c=this.selected();if(!c)return;const v=++this.historyVersion;this.historyLoading.set(true);
  this.http.get<Page<Reply>>(BASE+'/'+c.caseId+'/replies',{params:{page:this.replyPage(),size:20}}).subscribe({next:d=>{if(v!==this.historyVersion || this.selected()?.caseId!==c.caseId)return;this.replies.set([...d.content].reverse());this.replyPages.set(d.totalPages);this.replyTotal.set(d.totalElements);this.historyLoading.set(false);},error:e=>{if(v!==this.historyVersion)return;this.historyLoading.set(false);this.failure(e);}});}
  turnHistory(delta:number):void{if(this.historyLoading() || this.replyPage()+delta<0 || this.replyPage()+delta>=this.replyPages())return;this.replyPage.update(x=>x+delta);this.history();}
- private loadFiles():void{const c=this.selected();if(!c)return;this.http.get<Evidence[]>(BASE+'/'+c.caseId+'/evidence').subscribe({next:f=>{if(this.selected()?.caseId===c.caseId)this.files.set(f);},error:e=>this.failure(e)});}
+ private loadFiles():void{this.quotaRevision.update(x=>x+1);const c=this.selected();if(!c)return;this.http.get<Evidence[]>(BASE+'/'+c.caseId+'/evidence').subscribe({next:f=>{if(this.selected()?.caseId===c.caseId)this.files.set(f);},error:e=>this.failure(e)});}
  private refreshed(c:Case,message:string):void{this.busy.set(false);this.notice.set(message);if(this.selected()?.caseId===c.caseId){this.selected.set(c);this.replyPage.set(0);this.history();this.loadFiles();}this.load();}
  create():void{if(this.busy() || !this.title.trim() || !this.description.trim())return;this.busy.set(true);this.http.post<Case>(BASE,{category:this.category,title:this.title,description:this.description,bookingId:this.chosenCourse()?.bookingId??null}).subscribe({next:c=>{this.busy.set(false);this.title='';this.description='';this.chosenCourse.set(null);this.notice.set('工单已提交，可补充证据并等待运营回复。');this.page.set(0);this.filter='';this.load();this.open(c.caseId);},error:e=>{this.failure(e);if(e.status===403){this.chosenCourse.set(null);this.loadCourses();}}});}
  reply():void{const c=this.selected();if(!c || this.busy() || !this.replyBody.trim())return;this.busy.set(true);this.http.post<Case>(BASE+'/'+c.caseId+'/replies',{body:this.replyBody}).subscribe({next:x=>{this.replyBody='';this.refreshed(x,'回复已保存。');},error:e=>this.failure(e)});}

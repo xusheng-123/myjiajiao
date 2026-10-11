@@ -25,6 +25,7 @@
           }
         </ol>
         @if (busy()) { <p role="status">正在更新消息…</p> }
+        <nur-storage-quota endpoint="/api/v1/messaging/files/quota" [revision]="quotaRevision()" />
         <label class="hint">发送附件<input type="file" accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx" (change)="upload($event)" [disabled]="sending() || busy()" /></label>
         <p class="hint">支持PDF、图片与无宏Office文档，每份≤10MB、个人保留容量100MB、每会话最多100份。已发附件与消息保留，暂无撤回或自动清理。</p>
         <form (submit)="$event.preventDefault(); send()">

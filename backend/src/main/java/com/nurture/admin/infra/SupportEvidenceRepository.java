@@ -8,4 +8,5 @@ public interface SupportEvidenceRepository extends JpaRepository<SupportEvidence
  @org.springframework.data.jpa.repository.Query("select f from SupportEvidence f where f.id=:id") Optional<SupportEvidence> locked(UUID id);
  List<SupportEvidence> findByCaseIdAndDeletedFalseOrderByCreatedAtAscIdAsc(UUID caseId);
  long countByCaseId(UUID caseId);
+ @org.springframework.data.jpa.repository.Query("select coalesce(sum(f.sizeBytes),0) from SupportEvidence f where f.ownerId=:owner and f.deleted=true") long removedBytes(UUID owner);
 }

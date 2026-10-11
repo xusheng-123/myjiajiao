@@ -102,13 +102,14 @@ class OfflinePaymentConcurrencyIT {
     }
 
     @Test
-    @DisplayName("6 运营并发确认同一订单：恰好 1 次成功，支付/结算/通知/审计各恰好一次")
+    @DisplayName("6 运营并发确认同一订单：恰好1次转换，重放无副作用，支付/结算/通知/审计各一次")
     void concurrentConfirmProducesExactlyOneTransition() throws Exception {
         ExecutorService pool = Executors.newFixedThreadPool(CONCURRENT_OPERATORS);
         CountDownLatch startGate = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(CONCURRENT_OPERATORS);
         AtomicInteger successes = new AtomicInteger();
         AtomicInteger failures = new AtomicInteger();
+        AtomicInteger replays = new AtomicInteger();
 
         List<Future<String>> results = new java.util.ArrayList<>();
         for (int i = 0; i < CONCURRENT_OPERATORS; i++) {
@@ -118,9 +119,13 @@ class OfflinePaymentConcurrencyIT {
                 try {
                     // 不同操作者 = 不同幂等键（幂等过滤器不拦，考验业务状态机 + 数据库约束）
                     var outcome = paymentService.confirmOfflinePayment(targetOrderId);
-                    successes.incrementAndGet();
+                    assertThat(outcome.get("status")).isEqualTo("PAID");
+                    assertThat(outcome.get("orderId")).isEqualTo(targetOrderId.toString());
+                    assertThat(outcome.get("amountCents")).isEqualTo(30000L);
+                    boolean replay = Boolean.TRUE.equals(outcome.get("idempotent"));
+                    if (replay) replays.incrementAndGet(); else successes.incrementAndGet();
                     done.countDown();
-                    return "OK:" + outcome.get("status");
+                    return (replay ? "REPLAY:" : "OK:") + outcome.get("status");
                 } catch (Exception e) {
                     failures.incrementAndGet();
                     done.countDown();
@@ -143,7 +148,7 @@ class OfflinePaymentConcurrencyIT {
 
         // 核心断言 1：恰好一次成功状态迁移
         assertThat(successes.get()).as("成功确认数必须为 1，实际结果=%s", outcomes).isEqualTo(1);
-        assertThat(failures.get()).as("其余 %d 个并发请求必须失败", CONCURRENT_OPERATORS - 1)
+        assertThat(failures.get()+replays.get()).as("其余请求只能回滚或返回已有PAID的幂等重放，不可再次转换")
                 .isEqualTo(CONCURRENT_OPERATORS - 1);
 
         // 核心断言 2：数据库终态
@@ -171,5 +176,6 @@ class OfflinePaymentConcurrencyIT {
                 "SELECT count(*) FROM payment_attempts WHERE order_id=? AND status='INITIATED'",
                 Integer.class, targetOrderId);
         assertThat(pendingAttempts).as("不得残留 INITIATED 半成功尝试").isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_messages WHERE aggregate_id=? AND event_type='order.paid'",Integer.class,targetOrderId)).as("付款outbox也恰好一次").isEqualTo(1);
     }
 }

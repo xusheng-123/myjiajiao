@@ -9,4 +9,6 @@ public interface LearningFileRepository extends JpaRepository<LearningFile,UUID>
     long countByTaskIdAndDeletedFalse(UUID id);
     long countByQuestionIdAndDeletedFalse(UUID id);
     long countByBookingIdAndDeletedFalse(UUID id);
+    @Query("select coalesce(sum(f.sizeBytes),0) from LearningFile f where f.ownerId=:owner and f.deleted=true")
+    long removedBytes(UUID owner);
 }

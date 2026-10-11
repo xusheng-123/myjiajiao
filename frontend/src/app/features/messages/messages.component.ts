@@ -6,11 +6,12 @@ import { API } from '../../core/api/endpoints';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLE_HOME } from '../../core/auth/auth.models';
 
+import { StorageQuotaComponent } from '../../shared/components/storage-quota.component';
 interface Conversation { conversationId: string; counterpartName: string; subject: string | null; unreadCount: number; }
 interface Message { messageId: string; body: string; sentAt: string; readAt: string | null; mine: boolean; attachmentId?:string|null; }
 
 @Component({
-  selector: 'nur-messages', standalone: true, imports: [RouterLink, DatePipe],
+  selector: 'nur-messages', standalone: true, imports: [RouterLink, DatePipe, StorageQuotaComponent],
   templateUrl: './messages.component.html', styleUrl: './messages.component.css',
 })
 export class MessagesComponent implements OnInit, OnDestroy {
@@ -21,6 +22,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
   readonly conversations = signal<Conversation[]>([]);
   readonly active = signal<Conversation | null>(null);
   readonly messages = signal<Message[]>([]);
+  readonly quotaRevision = signal(0);
   readonly draft = signal('');
   readonly notice = signal('');
   readonly loaded = signal(false);
@@ -81,7 +83,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
     if(!file || !id || this.sending())return;
     if(file.size>10485760){this.notice.set('咨询附件不能超过10MB。');input.value='';return;}
     const form=new FormData();form.append('file',file);this.sending.set(true);
-    this.http.post('/api/v1/messaging/conversations/'+id+'/files',form).subscribe({next:()=>{this.sending.set(false);input.value='';this.notice.set('附件已发送并与消息共同保留。');this.refresh();},error:e=>{this.sending.set(false);input.value='';this.notice.set(e.error?.detail??'上传失败，请重试。');}});
+    this.http.post('/api/v1/messaging/conversations/'+id+'/files',form).subscribe({next:()=>{this.sending.set(false);input.value='';this.quotaRevision.update(x=>x+1);this.notice.set('附件已发送并与消息共同保留。');this.refresh();},error:e=>{this.sending.set(false);input.value='';this.notice.set(e.error?.detail??'上传失败，请重试。');}});
   }
   download(m:Message):void{
     if(!m.attachmentId || this.sending())return;this.sending.set(true);

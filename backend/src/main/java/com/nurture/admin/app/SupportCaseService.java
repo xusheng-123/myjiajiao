@@ -87,7 +87,7 @@ public class SupportCaseService {
  private void notifyOwner(SupportCase c,String message){if(admin())messaging.notify(c.getOwnerId(),"SUPPORT",message,c.getTitle()+"；请在客服与申诉中查看详情。");}
  private EvidenceView view(SupportEvidence f,SupportCase c){return new EvidenceView(f.getId(),f.getFilename(),f.getSizeBytes(),f.getSha256(),!c.closed() && f.getOwnerId().equals(CallerContext.require().accountId()),f.getCreatedAt());}
  @Transactional(readOnly=true) public List<EvidenceView> files(UUID id){var c=get(id,false);return evidence.findByCaseIdAndDeletedFalseOrderByCreatedAtAscIdAsc(id).stream().map(f->view(f,c)).toList();}
- @Transactional(readOnly=true) public Map<String,Long> quota(){member();return Map.of("storedBytes",quotas.findById(CallerContext.require().accountId()).map(SupportStorageQuota::getStoredBytes).orElse(0L),"limitBytes",QUOTA,"maxFileBytes",MAX_FILE);}
+ @Transactional(readOnly=true) public com.nurture.shared.storage.StorageQuotaView quota(){member();var owner=CallerContext.require().accountId();return com.nurture.shared.storage.StorageQuotaView.of(quotas.findById(owner).map(SupportStorageQuota::getStoredBytes).orElse(0L),QUOTA,MAX_FILE,evidence.removedBytes(owner));}
  @Transactional public EvidenceView upload(UUID id,String filename,String type,byte[] bytes){
   var c=get(id,true);if(c.closed())throw new IllegalStateException("工单已关闭，不能补传证据");
   if(bytes.length>MAX_FILE || filename==null || !filename.toLowerCase(Locale.ROOT).matches(".*\\.(pdf|png|jpg|jpeg)$"))throw new IllegalArgumentException("证据仅支持10MB以内的PDF、PNG、JPEG");

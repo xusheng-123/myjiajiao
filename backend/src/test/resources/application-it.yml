@@ -5,6 +5,11 @@ spring:
     url: jdbc:postgresql://127.0.0.1:5432/nurture_test
     username: nurture
     password: nurture
+    hikari:
+      # Several cached Spring contexts coexist with local acceptance servers.
+      # Six connections retain concurrent lock tests without exhausting PG's 100 clients.
+      maximum-pool-size: 6
+      minimum-idle: 1
   jpa:
     hibernate:
       ddl-auto: validate

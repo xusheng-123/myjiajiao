@@ -1,6 +1,6 @@
 # ARCHITECTURE — 真实架构速查（只描述当前存在，不做设计）
 
-> 引用方：`PROJECT_HANDOFF.md`。目录基准：`线上家教平台（功能）/`。核实更新：2026-10-11 八阶段最终交付。
+> 引用方：`PROJECT_HANDOFF.md`。目录基准：`线上家教平台（功能）/`。核实更新：2026-10-11 三项续作最终交付。
 
 ## 目录结构
 
@@ -20,7 +20,7 @@ backend/
     db/migration/    # Flyway V1–V21（V13试听限次、V14编号序列、V15学习计划、V16错题/文件/容量、V17重复档期、V18客服、V19小测、V20咨询附件、V21公开读取索引）
   src/test/java/com/nurture/
     arch/ArchitectureTest.java          # ArchUnit 1.5.1，5项全量严格规则/反例，无冻结豁免
-    it/                                 # 147 IT 用例（真 PostgreSQL nurture_test 库，当前verify证据）
+    it/                                 # 162 IT 用例（真PostgreSQL nurture_test，最终完整verify）
     ...                                 # 单元测试 44 项
 frontend/
   src/app/
@@ -87,3 +87,7 @@ admin模块的客服工单/回复/证据/容量支持四角色归属、版本行
 ## 续作1查询读取边界
 
 PublicTeacherCatalog应用端口返回限定公开Row；matching.infra JDBC只读投影跨单体中公开账户、审核、师资、评价和档期表，禁止跨模块写入与foreign domain/infra类依赖。同一REPEATABLE_READ快照与now确保页/COUNT一致，最新审核submitted_at/id稳定。V21新增四索引，49单元/架构+13专项IT通过，全套IT待三项后总回归；8080仍phase8/V20，8081仅loopback性能库V21，见PROJECT_HANDOFF §4。
+
+## 客服课程与保留容量（2026-10-11）
+
+客服课程使用booking.app/parent.app端口派生本人/ACTIVE子女范围，分页返回摘要，详情实时验证监护授权。三类上传个人配额保持原事务锁，通过shared/storage/StorageQuotaView返回真实剩余/移除保留/预警；前端共享storage-quota组件，任务/答疑附件输出changed通知容量刷新。清理工具是tools/file_retention.py离线只读DB引用盘点+可恢复文件隔离，只允许命名测试副本/明确目录；不属于运行时业务API、不自动删除/改变配额，参考FILE_RETENTION.md。

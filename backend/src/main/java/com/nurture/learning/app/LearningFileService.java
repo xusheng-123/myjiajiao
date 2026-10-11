@@ -34,7 +34,6 @@ public class LearningFileService {
     public record View(UUID fileId,String filename,String contentType,long sizeBytes,String category,UUID bookingId,UUID taskId,
             UUID questionId,String sha256,boolean canDelete,Instant createdAt) {}
     public record Download(String filename,String contentType,byte[] content) {}
-    public record Quota(long storedBytes,long limitBytes,long maxFileBytes) {}
     public record Context(UUID studentId,String category,boolean canUpload) {}
     public record TaskWork(UUID taskId,String title,String description,String status,String submission,String feedback,boolean canSubmit,boolean canFeedback) {}
     public record QuestionWork(UUID questionId,String title,String content,String answer,String status,boolean canAnswer) {}
@@ -94,10 +93,11 @@ public class LearningFileService {
         },LearningParticipantAccess.page(page,size)).map(this::view);
     }
     @Transactional(readOnly=true)
-    public Quota quota() {
+    public com.nurture.shared.storage.StorageQuotaView quota() {
         var role=CallerContext.require().role();
         if(role!=CallerRole.STUDENT && role!=CallerRole.TEACHER) throw new AccessDeniedException("仅上传者可查看个人容量");
-        return new Quota(quotas.findById(CallerContext.require().accountId()).map(LearningStorageQuota::getStoredBytes).orElse(0L),OWNER_QUOTA,LearningFileValidator.MAX_BYTES);
+        var owner=CallerContext.require().accountId();
+        return com.nurture.shared.storage.StorageQuotaView.of(quotas.findById(owner).map(LearningStorageQuota::getStoredBytes).orElse(0L),OWNER_QUOTA,LearningFileValidator.MAX_BYTES,files.removedBytes(owner));
     }
     @Transactional(readOnly=true)
     public List<BookingApplicationService.TeachingLesson> lessons(UUID student) {
