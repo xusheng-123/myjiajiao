@@ -11,7 +11,7 @@
 
 ## 二、硬约束速查（完整版见 docs/PROJECT_CONTEXT.md）
 
-- 禁：微服务化、Redis/Kafka/K8s/OpenSearch、自研 RTC、大模型 API、改品牌/深色主题、重写核心交易链路、改历史 Migration、生产部署/生产库操作、git reset/clean（本项目已有**本地 Git、无远端**；未提交文件与历史必须保护）。
+- 禁：微服务化、Redis/Kafka/K8s/OpenSearch、自研 RTC、大模型 API、改品牌/深色主题、重写核心交易链路、改历史 Migration、生产部署/生产库操作、git reset/clean（本项目为本地 Git + 远程 `origin = https://github.com/xusheng-123/myjiajiao.git`，2026-10-11 起，推送账号 xusheng-123；未提交文件与历史必须保护，禁止强推）。
 - 安全永不妥协：不为过测试降低校验；新写操作必须幂等 + 权限 + 输入校验；高后果操作落审计。
 
 ## 三、每次重要任务完成后（经验证后执行）

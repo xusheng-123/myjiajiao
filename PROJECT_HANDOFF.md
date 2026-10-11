@@ -65,7 +65,7 @@
 ### 版本保护（2026-10-09 新增）
 | 项 | 状态 | 说明 |
 |---|---|---|
-| 本地 Git 仓库 | ✅ | 基线 `9631f8d`（480 文件）+ G3 `7979522` + G7 `3f6da7d`；identity 本地署名，**无远程仓库**（恢复能力=commit 历史本身） |
+| 本地 Git 仓库 | ✅ | 基线 `9631f8d`（480 文件）+ G3 `7979522` + G7 `3f6da7d`；identity 本地署名。**2026-10-11 已添加远程** `origin = https://github.com/xusheng-123/myjiajiao.git`，main 全历史已推送并设跟踪，远程 HEAD=`bd8f054` 与本地一致（推送账号 xusheng-123，URL 内嵌用户名区分本机缓存的另一账号 wohaoshuai-666） |
 | .gitignore | ✅ | 排除 node_modules/dist/target/日志/deploy 备份与部署包/.env（.env.example 反排除保留）/运行期上传文件 backend/data/files/（历史已跟踪文件不受影响）/__pycache__ |
 | 凭据核查 | ✅ | application.yml 密钥全部 `${VAR:dev默认}` 注入，仓库内仅开发占位值；无硬编码真实凭据 |
 | Sites 前端预览 | ✅ | 2026-10-11最新私有静态版本已更新（部署succeeded）：`https://nurture-platform-preview.kelly-cooper-4963.chatgpt.site`；Angular 前端静态包，构建提交 `537ac59f2aba9d31b885f6b4d02c43cf69bd7014`。后端 API 未部署，页面已显式标注受影响功能 |
@@ -275,4 +275,4 @@ python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 - UUID现在严格规范v4/variant；原ArchUnit方向错误已修复，五项全量严格检查包含坏/好反例，无冻结豁免。接口状态快照为字符串，改变状态名称须同步应用端口消费者。
 - 教学文件逻辑下架仍计200MB，咨询与工单证据各100MB；三类容量反馈和引用保留已完成。仅离线命名副本无引用7天文件可恢复隔离/30天复核窗口，不提供生产永久清理、自动到期销毁或病毒扫描。
 - 重复规则仅有限档期生成、例外在发布前设置，不是无限滚动排课或外部日历同步。
-- 本地Git无远端，阶段4在ba2ddcd、阶段3在929ca88保护、核心补缺已在b9c7ae4保护，后续阶段提交以git log为准；文件系统及现有历史需保护，禁止reset/clean。`tools/settlement_walkthrough.png`接手前已存在。旧报告与表格按历史范围阅读，以最新代码与本节快照为准。
+- 本地Git原无远端；2026-10-11已添加远程origin=https://github.com/xusheng-123/myjiajiao.git并推送main（bd8f054）。保护规则不变：文件系统及现有历史需保护，禁止reset/强推/clean。阶段4在ba2ddcd、阶段3在929ca88保护、核心补缺已在b9c7ae4保护，后续阶段提交以git log为准。`tools/settlement_walkthrough.png`接手前已存在。旧报告与表格按历史范围阅读，以最新代码与本节快照为准。
