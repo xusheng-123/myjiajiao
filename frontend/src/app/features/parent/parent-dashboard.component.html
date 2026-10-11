@@ -26,6 +26,7 @@
             </span>
             @if (child.status === 'ACTIVE') {
               <a routerLink="/learning/plans" [queryParams]="{childProfileId: child.studentId}">学习计划</a>
+              <a routerLink="/learning/assessments" [queryParams]="{childProfileId: child.studentId}">阶段小测与报告</a>
               <a routerLink="/learning/mistakes" [queryParams]="{childProfileId: child.studentId}">错题与复习</a>
               <a routerLink="/learning/materials" [queryParams]="{childProfileId: child.studentId}">教学资料与作业</a>
               <nur-calendar-export [childProfileId]="child.studentId" />

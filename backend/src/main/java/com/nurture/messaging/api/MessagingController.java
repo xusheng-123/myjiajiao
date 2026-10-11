@@ -49,10 +49,10 @@ public class MessagingController {
     }
 
     public record MessageView(UUID messageId, UUID senderId, String senderRole, String body,
-                              java.time.Instant sentAt, java.time.Instant readAt, boolean mine) {
+                              java.time.Instant sentAt, java.time.Instant readAt, boolean mine, UUID attachmentId) {
         static MessageView from(Message m) {
             return new MessageView(m.getId(), m.getSenderId(), m.getSenderRole().name(), m.getBody(), m.getSentAt(),
-                    m.getReadAt(), CallerContext.require().accountId().equals(m.getSenderId()));
+                    m.getReadAt(), CallerContext.require().accountId().equals(m.getSenderId()),m.getAttachmentId());
         }
     }
 
@@ -105,6 +105,6 @@ public class MessagingController {
     public Map<String, Object> notifications(@RequestParam(defaultValue = "0") int page,
                                              @RequestParam(defaultValue = "10") int size) {
         var result = messagingService.noticesOf(CallerContext.require().accountId(), page, size);
-        return Map.of("total", result.getTotalElements(), "items", result.getContent());
+        return Map.of("total", result.getTotalElements(), "items", result.getContent(), "pages",result.getTotalPages(),"unreadTotal",messagingService.unreadNotices(CallerContext.require().accountId()));
     }
 }

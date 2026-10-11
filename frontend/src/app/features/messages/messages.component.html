@@ -20,11 +20,13 @@
         <ol class="messages" aria-live="polite" aria-relevant="additions">
           @for (m of messages(); track m.messageId) {
             <li [class.mine]="m.mine"><small>{{ m.mine ? '我' : c.counterpartName }} · {{ m.sentAt | date:'M月d日 HH:mm' }}</small>
-              <p>{{ m.body }}</p>@if (m.mine) { <small>{{ m.readAt ? '对方已读' : '已发送' }}</small> }
+              <p>{{ m.body }}</p>@if(m.attachmentId){<button type="button" (click)="download(m)" [disabled]="sending()">下载附件</button>}@if (m.mine) { <small>{{ m.readAt ? '对方已读' : '已发送' }}</small> }
             </li>
           }
         </ol>
         @if (busy()) { <p role="status">正在更新消息…</p> }
+        <label class="hint">发送附件<input type="file" accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx" (change)="upload($event)" [disabled]="sending() || busy()" /></label>
+        <p class="hint">支持PDF、图片与无宏Office文档，每份≤10MB、个人保留容量100MB、每会话最多100份。已发附件与消息保留，暂无撤回或自动清理。</p>
         <form (submit)="$event.preventDefault(); send()">
           <label for="message-draft">发送消息</label>
           <textarea id="message-draft" rows="3" maxlength="4000" [value]="draft()" [disabled]="sending()" (input)="draft.set($any($event.target).value)"></textarea>

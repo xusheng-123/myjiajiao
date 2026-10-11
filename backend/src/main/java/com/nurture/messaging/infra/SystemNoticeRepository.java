@@ -9,5 +9,7 @@ import java.util.UUID;
 
 public interface SystemNoticeRepository extends JpaRepository<SystemNotice, UUID> {
 
-    Page<SystemNotice> findByRecipientIdOrderByCreatedAtDesc(UUID recipientId, Pageable pageable);
+    long countByRecipientIdAndReadAtIsNull(UUID recipientId);
+
+    Page<SystemNotice> findByRecipientIdOrderByCreatedAtDescIdDesc(UUID recipientId, Pageable pageable);
 }

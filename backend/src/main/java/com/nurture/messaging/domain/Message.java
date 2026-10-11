@@ -39,6 +39,10 @@ public class Message extends AggregateRoot {
     @Column(name = "read_at")
     private Instant readAt;
 
+    private UUID attachmentId;
+    public UUID getAttachmentId(){return attachmentId;}
+    public void attach(UUID id){if(attachmentId!=null)throw new IllegalStateException("消息附件已固定");attachmentId=id;}
+
     protected Message() {
     }
 

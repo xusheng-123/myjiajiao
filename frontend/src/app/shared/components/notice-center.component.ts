@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { QueuePagerComponent } from './queue-pager.component';
 import { API } from '../../core/api/endpoints';
 
 interface NoticeView {
@@ -19,7 +20,7 @@ interface NoticeView {
 @Component({
   selector: 'nur-notice-center',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe,QueuePagerComponent],
   template: `
     <section class="notice-card nur-card" aria-labelledby="notice-title">
       <button
@@ -38,6 +39,8 @@ interface NoticeView {
       </button>
       @if (open()) {
         <div id="notice-list" class="notice-list">
+          <nur-queue-pager label="通知" [page]="page()" [pages]="pages()" [total]="total()" [busy]="loading()" (turn)="turn($event)" (reload)="load()" />
+          @if(error()){<p role="alert">通知读取失败，请点击刷新重试。</p>}
           @if (loading()) {
             <p class="notice-empty">正在获取通知…</p>
           } @else if (notices().length === 0) {
@@ -53,6 +56,7 @@ interface NoticeView {
                   <p class="notice-item-body">{{ n.body }}</p>
                 }
                 <p class="notice-item-time">{{ n.createdAt | date: 'M月d日 HH:mm' }}</p>
+                @if(!n.read){<button type="button" (click)="markRead(n)" [disabled]="marking()">标记已读</button>}
               </article>
             }
           }
@@ -150,6 +154,11 @@ export class NoticeCenterComponent {
   readonly notices = signal<NoticeView[]>([]);
   readonly unreadCount = signal(0);
 
+  readonly page=signal(0);readonly pages=signal(0);readonly total=signal(0);readonly error=signal(false);readonly marking=signal(false);
+  private version=0;
+  turn(delta:number):void{if(this.loading() || this.page()+delta<0 || this.page()+delta>=this.pages())return;this.page.update(x=>x+delta);this.load();}
+  markRead(n:NoticeView):void{if(this.marking())return;this.marking.set(true);this.http.post(API.messaging.notifications+'/'+n.noticeId+':read',{}).subscribe({next:()=>{this.marking.set(false);this.load();},error:()=>{this.marking.set(false);this.error.set(true);}});}
+
   toggle(): void {
     this.open.update((v) => !v);
     if (this.open() && this.notices().length === 0) {
@@ -158,16 +167,18 @@ export class NoticeCenterComponent {
   }
 
   load(): void {
-    this.loading.set(true);
+    const version=++this.version;this.loading.set(true);this.error.set(false);
     this.http
-      .get<{ total: number; items: NoticeView[] }>(`${API.messaging.notifications}?page=0&size=10`)
+      .get<{ total: number; items: NoticeView[]; pages:number;unreadTotal:number }>(`${API.messaging.notifications}?page=${this.page()}&size=10`)
       .subscribe({
         next: (data) => {
+          if(version!==this.version)return;
+          this.pages.set(data.pages);this.total.set(data.total);
           this.notices.set(data.items ?? []);
-          this.unreadCount.set((data.items ?? []).filter((n) => !n.read).length);
+          this.unreadCount.set(data.unreadTotal);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => {if(version!==this.version)return;this.loading.set(false);this.error.set(true);},
       });
   }
 

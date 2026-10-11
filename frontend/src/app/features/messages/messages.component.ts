@@ -7,7 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ROLE_HOME } from '../../core/auth/auth.models';
 
 interface Conversation { conversationId: string; counterpartName: string; subject: string | null; unreadCount: number; }
-interface Message { messageId: string; body: string; sentAt: string; readAt: string | null; mine: boolean; }
+interface Message { messageId: string; body: string; sentAt: string; readAt: string | null; mine: boolean; attachmentId?:string|null; }
 
 @Component({
   selector: 'nur-messages', standalone: true, imports: [RouterLink, DatePipe],
@@ -75,6 +75,17 @@ export class MessagesComponent implements OnInit, OnDestroy {
         });
       }, error: e => { this.busy.set(false); this.notice.set(e.error?.detail ?? '消息加载失败，请重试。'); },
     });
+  }
+  upload(event:Event):void{
+    const input=event.target as HTMLInputElement,file=input.files?.[0],id=this.active()?.conversationId;
+    if(!file || !id || this.sending())return;
+    if(file.size>10485760){this.notice.set('咨询附件不能超过10MB。');input.value='';return;}
+    const form=new FormData();form.append('file',file);this.sending.set(true);
+    this.http.post('/api/v1/messaging/conversations/'+id+'/files',form).subscribe({next:()=>{this.sending.set(false);input.value='';this.notice.set('附件已发送并与消息共同保留。');this.refresh();},error:e=>{this.sending.set(false);input.value='';this.notice.set(e.error?.detail??'上传失败，请重试。');}});
+  }
+  download(m:Message):void{
+    if(!m.attachmentId || this.sending())return;this.sending.set(true);
+    this.http.get('/api/v1/messaging/files/'+m.attachmentId+'/download',{responseType:'blob'}).subscribe({next:blob=>{this.sending.set(false);const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=m.body.replace(/^附件：/,'');a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);},error:e=>{this.sending.set(false);this.notice.set(e.error?.detail??'附件下载失败。');}});
   }
   send(): void {
     const id = this.active()?.conversationId, body = this.draft().trim();

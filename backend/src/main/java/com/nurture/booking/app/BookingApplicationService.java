@@ -455,6 +455,9 @@ public class BookingApplicationService {
         return bookingRepository.hasLearningRelation(teacherId,studentId);
     }
 
+    @Transactional(readOnly=true)
+    public long completedAssessmentLessons(UUID student,UUID teacher){return bookingRepository.completedAssessmentLessons(student,teacher);}
+
     public record TeachingLesson(UUID bookingId,String subject,String status,OffsetDateTime startAt) {}
 
     @Transactional(readOnly = true)

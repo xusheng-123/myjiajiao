@@ -56,7 +56,7 @@ public class MessagingApplicationService {
     public Message send(UUID conversationId, String body) {
         if (body == null || body.isBlank() || body.length() > 4000) throw new IllegalArgumentException("消息须为 1–4000 字");
         CallerPrincipal caller = CallerContext.require();
-        Conversation conversation = conversationRepository.findById(conversationId)
+        Conversation conversation = conversationRepository.locked(conversationId)
                 .orElseThrow(() -> new IllegalArgumentException("会话不存在"));
         boolean participant = conversation.getStudentId().equals(caller.accountId())
                 || conversation.getTeacherId().equals(caller.accountId());
@@ -128,7 +128,8 @@ public class MessagingApplicationService {
 
     @Transactional(readOnly = true)
     public Page<NoticeView> noticesOf(UUID recipientId, int page, int size) {
-        return noticeRepository.findByRecipientIdOrderByCreatedAtDesc(recipientId, PageRequest.of(page, size))
+        if(page<0 || page>10000 || size<1 || size>100)throw new IllegalArgumentException("通知分页参数无效");
+        return noticeRepository.findByRecipientIdOrderByCreatedAtDescIdDesc(recipientId, PageRequest.of(page, size))
                 .map(n -> new NoticeView(n.getId(), n.getNoticeType(), n.getTitle(), n.getBody(),
                         n.getCreatedAt(), n.getReadAt() != null));
     }
@@ -143,6 +144,9 @@ public class MessagingApplicationService {
         }
         notice.markRead();
     }
+
+    @Transactional(readOnly=true)
+    public long unreadNotices(UUID recipientId){return noticeRepository.countByRecipientIdAndReadAtIsNull(recipientId);}
 
     public record NoticeView(UUID noticeId, String type, String title, String body,
                              java.time.Instant createdAt, boolean read) {
