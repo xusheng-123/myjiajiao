@@ -18,11 +18,14 @@
   scroll-margin-top: calc(var(--header-height) + 16px);
 }
 
-.nur-section--tint {
-  background: linear-gradient(180deg, var(--color-secondary-bg) 0%, var(--bg-page) 100%);
+/* 方向 D：区块底色严格在 --bg-page / --bg-mist 间交替，禁用渐变与深色 */
+.nur-section--tint,
+.nur-section--mist {
+  background: var(--bg-mist);
 }
 
 .nur-section--deep {
+  /* 深色区块已废弃（方向 D 禁区）：--bg-deep / --text-on-deep 别名回落为雾青浅底 */
   background: var(--bg-deep);
   color: var(--text-on-deep);
 }
@@ -98,6 +101,7 @@
 .nur-btn--primary {
   background: var(--color-primary);
   color: #fff;
+  box-shadow: var(--shadow-primary); /* 方向 D：主按钮黛绿起影 */
 }
 
 .nur-btn--primary:hover {
@@ -112,10 +116,11 @@
   box-shadow: var(--shadow-subtle);
 }
 
+/* 方向 D 次按钮：半透明白底 + 1px 黛瓦线描边 */
 .nur-btn--ghost {
-  background: transparent;
-  border-color: var(--border-subtle);
-  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.5);
+  border-color: var(--line);
+  color: var(--text-title);
 }
 
 .nur-btn--ghost:hover {
@@ -123,26 +128,27 @@
   color: var(--color-primary);
 }
 
-/* 深色段上的反白按钮 */
+/* 雾青区块上的实心反白按钮（原深色段用法，D 化后适配浅底） */
 .nur-btn--light {
-  background: var(--bg-page);
+  background: var(--bg-card);
   color: var(--color-primary);
 }
 
 .nur-btn--light:hover {
   background: #fff;
-  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-hover);
   transform: translateY(-1px);
 }
 
 .nur-btn--ghost-light {
   background: transparent;
-  border-color: rgba(243, 241, 234, 0.4);
-  color: var(--text-on-deep);
+  border-color: var(--line);
+  color: var(--text-main);
 }
 
 .nur-btn--ghost-light:hover {
-  border-color: var(--text-on-deep);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .nur-btn--sm {
@@ -306,7 +312,7 @@ a.nur-chip:hover {
 .nur-reveal {
   opacity: 0;
   transform: translateY(10px);
-  transition: opacity 560ms var(--ease-nurture), transform 560ms var(--ease-nurture);
+  transition: opacity var(--duration-enter) var(--ease), transform var(--duration-enter) var(--ease);
   transition-delay: calc(var(--stagger-index, 0) * var(--stagger-step));
 }
 
@@ -321,4 +327,44 @@ a.nur-chip:hover {
     transform: none;
     transition: none;
   }
+}
+
+/* ---------- 方向 D · 苔青涟漪（≤400ms，仅 transform/opacity） ---------- */
+.nur-ripple-host {
+  position: relative;
+  overflow: hidden;
+}
+
+.nur-ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgba(30, 77, 62, 0.22);
+  transform: scale(0);
+  opacity: 0.9;
+  animation: nur-ripple 380ms var(--ease) forwards;
+}
+
+.nur-btn--primary .nur-ripple {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+@keyframes nur-ripple {
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nur-ripple {
+    display: none;
+  }
+}
+
+/* ---------- 方向 D · 暖金眉标（英文衬线宽字距） ---------- */
+.nur-brand-en {
+  font-family: var(--font-serif);
+  letter-spacing: 0.4em;
+  color: var(--color-gold);
 }

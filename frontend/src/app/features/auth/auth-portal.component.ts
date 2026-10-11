@@ -4,7 +4,6 @@ import { Role, ROLE_HOME, ROLE_LABELS } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE } from '../../core/api/endpoints';
-import { GardenSceneComponent } from '../../shared/components/garden-scene/garden-scene.component';
 
 type LoginChannel = 'sms' | 'password' | 'register';
 
@@ -14,13 +13,13 @@ interface FieldStatus {
 }
 
 /**
- * 统一鉴权门户 — 「雨后竹林·月洞门」视觉，多角色 Tab 分页 + 双通道登录 + 注册/入驻申请。
+ * 统一鉴权门户 — 方向 D「黛绿暖金」浅色视觉（2026-10-11 重构），多角色 Tab 分页 + 双通道登录 + 注册/入驻申请。
  * 表单交互满足 ADHD 友好性：清晰提示、就地容错、双通道状态标识、无刺眼红框报错。
  */
 @Component({
   selector: 'nur-auth-portal',
   standalone: true,
-  imports: [GardenSceneComponent],
+  imports: [],
   templateUrl: './auth-portal.component.html',
   styleUrl: './auth-portal.component.css',
 })

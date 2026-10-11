@@ -1,88 +1,36 @@
-import { Component, ElementRef, inject, NgZone, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { TeachersApi } from '../../core/api/teachers-api';
 import { TeacherSummary } from '../../shared/models/teacher.model';
 import { Router, RouterLink } from '@angular/router';
 import { SiteFooterComponent } from '../../layout/site-footer/site-footer.component';
 import { SiteHeaderComponent } from '../../layout/site-header/site-header.component';
 import { TeacherCardComponent } from '../../shared/components/teacher-card/teacher-card.component';
-import { GardenSceneComponent } from '../../shared/components/garden-scene/garden-scene.component';
 import { RevealDirective } from '../../shared/directives/reveal.directive';
-import {
-  FEATURED_TEACHERS,
-  PRINCIPLES,
-  PROCESS_STEPS,
-  SERVICES,
-  SUBJECTS,
-  VOICES,
-} from './landing-data';
+import { RippleDirective } from '../../shared/directives/ripple.directive';
+import { PRINCIPLES, PROCESS_STEPS, SERVICES, SUBJECTS, VOICES } from './landing-data';
 
 /**
- * 首页（规范二十六）：
- * Navbar → Hero → Brand Philosophy → Service Features → Teacher Showcase
- * → Subject Categories → Learning Process → Testimonials → Brand Vision → CTA → Footer。
- * 每屏一个主任务，克制留白，不堆卡片。
+ * 首页（方向 D · 黛绿暖金，2026-10-11 重构）：
+ * 摄影 Hero（月洞门雨后庭院，雾散入场）→ 办学理念 → 服务体系 → 精选导师
+ * → 学科门类 → 学习流程 → 学员心声 → 品牌愿景 → 漏窗 CTA → Footer。
+ * 区块底色严格 --bg-page / --bg-mist 交替；每屏一个主任务，克制留白。
  */
 @Component({
   selector: 'nur-landing',
   standalone: true,
-  imports: [SiteHeaderComponent, SiteFooterComponent, TeacherCardComponent, GardenSceneComponent, RevealDirective, RouterLink],
+  imports: [
+    SiteHeaderComponent,
+    SiteFooterComponent,
+    TeacherCardComponent,
+    RevealDirective,
+    RippleDirective,
+    RouterLink,
+  ],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.css',
 })
-export class LandingComponent implements OnInit, OnDestroy {
-
-  private readonly zone = inject(NgZone);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private removeParallax?: () => void;
-
-  ngOnInit(): void {
-    this.teachersApi.search({}).subscribe({
-      next: rows => this.teachers.set([...new Map(rows.map(t => [t.teacherId, t])).values()].slice(0, 3)),
-      error: () => this.teachersError.set(true),
-    });
-    this.setupBreathingParallax();
-  }
-
-  ngOnDestroy(): void {
-    this.removeParallax?.();
-  }
-
-  /**
-   * 雨后呼吸感·鼠标视差：仅桌面精确指针且未开启「减少动效」时启用。
-   * 监听在 Angular 区域外 + requestAnimationFrame 节流，写入 CSS 变量，
-   * 不触发任何变更检测；位移量 2–5px，仅作用于雾层/竹竿/竹叶三个环境层。
-   */
-  private setupBreathingParallax(): void {
-    const fine = window.matchMedia('(hover: hover) and (pointer: fine)');
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (!fine.matches || reduced.matches) {
-      return;
-    }
-    this.zone.runOutsideAngular(() => {
-      let frame = 0;
-      let lastX = 0;
-      let lastY = 0;
-      const onMove = (event: PointerEvent) => {
-        lastX = event.clientX;
-        lastY = event.clientY;
-        if (frame) {
-          return;
-        }
-        frame = requestAnimationFrame(() => {
-          frame = 0;
-          const nx = (lastX / window.innerWidth) * 2 - 1;
-          const ny = (lastY / window.innerHeight) * 2 - 1;
-          this.host.nativeElement.style.setProperty('--px', nx.toFixed(3));
-          this.host.nativeElement.style.setProperty('--py', ny.toFixed(3));
-        });
-      };
-      window.addEventListener('pointermove', onMove, { passive: true });
-      this.removeParallax = () => window.removeEventListener('pointermove', onMove);
-    });
-  }
-
+export class LandingComponent implements OnInit {
   private readonly router = inject(Router);
-
   private readonly teachersApi = inject(TeachersApi);
   readonly teachers = signal<TeacherSummary[]>([]);
   readonly teachersError = signal(false);
@@ -91,6 +39,13 @@ export class LandingComponent implements OnInit, OnDestroy {
   readonly subjects = SUBJECTS;
   readonly steps = PROCESS_STEPS;
   readonly voices = VOICES;
+
+  ngOnInit(): void {
+    this.teachersApi.search({}).subscribe({
+      next: rows => this.teachers.set([...new Map(rows.map(t => [t.teacherId, t])).values()].slice(0, 3)),
+      error: () => this.teachersError.set(true),
+    });
+  }
 
   /** 全站唯一主 CTA：开启专属因材点拨 → 统一鉴权门户。 */
   beginNurture(): void {

@@ -1,8 +1,9 @@
-/* 页脚 — 深墨绿双段收尾，米白文字，安静笃定 */
+/* 页脚 — 方向 D：雾青浅底收尾，黛瓦文字，暖金点缀（禁深色区块） */
 
 .site-footer {
-  background: var(--bg-deeper);
-  color: var(--text-on-deep);
+  background: var(--bg-mist);
+  color: var(--text-main);
+  border-top: 1px solid var(--line);
 }
 
 .sf-grid {
@@ -15,21 +16,24 @@
 /* ---------- 品牌区 ---------- */
 .sf-logo {
   margin: 0 0 var(--space-2);
-  font-family: var(--font-brand);
+  font-family: var(--font-serif);
   font-size: 1.5rem;
+  font-weight: 600;
   letter-spacing: 0.16em;
+  color: var(--text-title);
 }
 
 .sf-slogan {
   margin: 0 0 var(--space-2);
-  color: var(--text-on-deep-muted);
+  color: var(--text-muted);
   font-size: 0.92rem;
   letter-spacing: 0.14em;
 }
 
 .sf-en {
   margin: 0;
-  color: rgba(243, 241, 234, 0.4);
+  color: var(--color-gold);
+  font-family: var(--font-serif);
   font-size: 0.68rem;
   letter-spacing: 0.42em;
 }
@@ -37,7 +41,7 @@
 /* ---------- 栏目 ---------- */
 .sf-col-title {
   margin: 0 0 var(--space-4);
-  color: var(--text-on-deep);
+  color: var(--text-title);
   font-family: var(--font-serif);
   font-size: 1rem;
   letter-spacing: 0.2em;
@@ -55,29 +59,29 @@
   display: inline-flex;
   align-items: center;
   min-height: var(--touch-target);
-  color: var(--text-on-deep-muted);
+  color: var(--text-muted);
   font-size: 0.92rem;
   letter-spacing: 0.08em;
   text-decoration: none;
-  transition: color var(--duration-enter) var(--ease-nurture);
+  transition: color 200ms var(--ease);
 }
 
 .sf-link:hover {
-  color: var(--text-on-deep);
+  color: var(--color-primary);
 }
 
 .sf-list--text li {
   display: flex;
   align-items: center;
   min-height: var(--touch-target);
-  color: var(--text-on-deep-muted);
+  color: var(--text-muted);
   font-size: 0.92rem;
   letter-spacing: 0.06em;
 }
 
 /* ---------- 底栏 ---------- */
 .sf-bottom {
-  border-top: 1px solid rgba(243, 241, 234, 0.14);
+  border-top: 1px solid var(--line);
 }
 
 .sf-bottom-inner {
@@ -91,18 +95,19 @@
 
 .sf-bottom-inner p {
   margin: 0;
-  color: rgba(243, 241, 234, 0.5);
+  color: var(--text-muted);
   font-size: 0.8rem;
   letter-spacing: 0.08em;
 }
 
 .sf-verse {
   font-family: var(--font-serif);
+  color: var(--color-gold-text);
   letter-spacing: 0.24em;
 }
 
-/* ---------- 响应式 ---------- */
-@media (max-width: 860px) {
+/* ---------- 响应式（收敛断点：768px） ---------- */
+@media (max-width: 768px) {
   .sf-grid {
     grid-template-columns: 1fr;
     gap: var(--space-6);

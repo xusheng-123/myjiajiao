@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>润物细无声 · NURTURE —— 视觉重构 Workshop</title>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/workshop.css">
+</head>
+<body>
+
+<nav class="ws-nav">
+  <div class="ws-nav-inner">
+    <span class="ws-brand">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3 C 8 8, 5 10.5, 5 15 a7 7 0 0 0 14 0 C 19 10.5, 16 8, 12 3 Z" fill="#2F5D3F"/>
+        <path d="M12 8 v 9" stroke="#F4F7F3" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      润物细无声 · NURTURE
+    </span>
+    <div class="ws-nav-links">
+      <a href="#directions">方向候选</a>
+      <a href="#tokens">设计令牌</a>
+      <a href="#components">组件实验室</a>
+      <a href="#motion">动效实验室</a>
+      <a href="#pages">页面方案</a>
+    </div>
+  </div>
+</nav>
+
+<main class="ws-main">
+
+  <!-- ================= 开场 ================= -->
+  <section class="ws-section" style="padding-top: var(--sp-8)">
+    <p class="ws-eyebrow enter">UI/UX REDESIGN WORKSHOP · 2026-10-11</p>
+    <h1 class="enter">苏州园林，雨后初晴</h1>
+    <p class="ws-lead enter">粉墙黛瓦 · 雨后青苔 · 雨过天青 · 框景借景 · 留白。
+    本页是「视觉工作坊」：所有候选方向、设计令牌与组件均以<b>真实 HTML/CSS</b> 呈现，可点、可悬停、可键盘操作，
+    并遵循 <code>prefers-reduced-motion</code>。整体重做尚未开始——看完这里，再定方向。</p>
+    <p class="note enter">色彩比例：粉墙白 70% ｜ 素笺卡片 20% ｜ 苔青+天青 ≤8% ｜ 海棠 ≤2%。全站无深色底区块；标题用楷体，正文用系统无衬线。</p>
+  </section>
+
+  <!-- ================= 方向候选 ================= -->
+  <section class="ws-section" id="directions">
+    <p class="ws-eyebrow">01 · DIRECTIONS</p>
+    <h2>美术方向候选</h2>
+    <p class="ws-lead">由视觉总监代理生图探索：气质板 + 色彩材质卡 + <b>三个首屏方向</b>（A 月洞门借景 / B 素笺留白 / C 雨雾浸润·海棠漏窗）。框景（月洞门/海棠漏窗）全站至多 2 处。</p>
+
+    <div class="grid grid-2" style="margin-top: var(--sp-4)">
+      <figure class="figure enter-item">
+        <img src="../images/preview/moodboard-01.jpg" alt="视觉气质板：粉墙黛瓦色谱、宣纸质感与园林元素小样">
+        <figcaption>视觉气质板 Moodboard</figcaption>
+      </figure>
+      <figure class="figure enter-item">
+        <img src="../images/preview/color-material-01.jpg" alt="色彩与材质参考：70/20/8/2 色彩比例与控件状态范例">
+        <figcaption>色彩与材质参考（70 / 20 / 8 / 2 比例尺）</figcaption>
+      </figure>
+      <figure class="figure enter-item">
+        <img src="../images/preview/hero-dir-a.jpg" alt="首屏方向 A：月洞门借景，右侧透出书房与雨后庭院">
+        <figcaption><b>方向 A · 月洞门借景型</b> —— 意象与情感共鸣强；需注意摄影复杂度带来的视觉噪点</figcaption>
+      </figure>
+      <figure class="figure enter-item">
+        <img src="../images/preview/hero-dir-b.jpg" alt="首屏方向 B：素笺留白主导，卡片承载名师档案与学习节律">
+        <figcaption><b>方向 B · 素笺留白节律型</b> —— 单一视觉焦点，认知摩擦最低，工程成本最低</figcaption>
+      </figure>
+      <figure class="figure enter-item">
+        <img src="../images/preview/hero-dir-c.jpg" alt="首屏方向 C：雨雾渐变居中构图，右侧海棠漏窗透出导师实景">
+        <figcaption><b>方向 C · 雨雾浸润型</b> —— 居中楷体标题 + 雨雾渐变 + 海棠漏窗实景，意境最「雨后初晴」；漏窗即全站 2 处框景预算之一</figcaption>
+      </figure>
+      <figure class="figure enter-item">
+        <img src="assets/hero/hero.webp" alt="方向 D：月洞门摄影 Hero，黛绿暖金，左侧雾气留白叠加文字">
+        <figcaption><b>方向 D · 月洞门黛绿暖金（新增 · 有活页面）</b> —— 用户指定规格：真实摄影 Hero（月洞门 + 湿润青石板 + 暖金灯笼）、衬线标题、黛绿 #1E4D3E 主色、暖金点缀。<a href="hero-d.html" style="font-weight:600">打开活页面演示 →</a>（桌面/移动双版，AVIF 164KB / WebP 227KB）</figcaption>
+      </figure>
+    </div>
+    <div class="note" style="margin-top: var(--sp-3)">
+      <b>四方向速评：</b>A 情感最强但摄影噪点需控制；B 最克制、组件化成本最低；C 兼具意境与秩序（居中构图对移动端最友好）；D 唯一带真实摄影 Hero 与完整工程规格（性能/无障碍/动效全部量化），风格为黛绿 + 暖金、衬线标题。
+      A/B/C 同属「苔青 + 楷体」家族，D 是「黛绿 + 宋体」另一家族——选家族比选单页更关键。
+    </div>
+
+    <h3 style="margin-top: var(--sp-6)">方向 B 的纯 HTML 实景小样（非图片，真实渲染）</h3>
+    <div class="hero-demo bg-bamboo">
+      <div class="grid grid-2" style="align-items: center; gap: var(--sp-6)">
+        <div>
+          <p class="ws-eyebrow">更温和的陪伴 / 更长远的成长</p>
+          <h2 class="hero-title">让每个孩子，找到自己的生长节律</h2>
+          <p class="hero-sub">一对一温和辅导 · 专注力友好 · 循序渐进的成长陪伴</p>
+          <div class="row">
+            <a class="btn btn-primary" href="#components">开启成长定制</a>
+            <a class="btn btn-ghost" href="#tokens">了解课程体系</a>
+          </div>
+        </div>
+        <div class="card">
+          <span class="badge badge-moss"><span class="dot"></span>清华理科名师 · 善于启发</span>
+          <h3 style="margin-top: 10px">李泽远 老师</h3>
+          <p class="card-meta">“我相信，每个孩子都有自己的节奏，而好的教育，是发现并唤醒这种节奏。”</p>
+          <div class="row" style="margin-top: 8px">
+            <span class="badge badge-outline">数学</span>
+            <span class="badge badge-outline">物理</span>
+            <span class="badge badge-outline">思维启发</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 设计令牌 ================= -->
+  <section class="ws-section" id="tokens">
+    <p class="ws-eyebrow">02 · DESIGN TOKENS</p>
+    <h2>设计令牌</h2>
+    <p class="ws-lead">全部令牌定义在 <code>assets/tokens.css</code>，按用户确认的「加深版」调色：苔青饱满、墨色足、层级分明。</p>
+
+    <h3>色彩</h3>
+    <div class="grid grid-4" style="margin-top: var(--sp-2)">
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#F4F7F3"></div><div class="swatch-body"><b>粉墙白 · 主背景</b>#F4F7F3 · 70%</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#EDF2EB"></div><div class="swatch-body"><b>粉墙深 · 次背景</b>#EDF2EB</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#FBFAF6; border-bottom:1px solid #C7CFC6"></div><div class="swatch-body"><b>素笺 · 卡片</b>#FBFAF6 · 20%</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#F0EDE6"></div><div class="swatch-body"><b>素笺浅底 · CTA 新叶底</b>#F0EDE6</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#2F5D3F"></div><div class="swatch-body"><b>苔青 · 品牌主色</b>#2F5D3F · ≤5%</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#26492F"></div><div class="swatch-body"><b>苔青 · 悬停</b>#26492F</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#6E9AAD"></div><div class="swatch-body"><b>天青 · 辅助</b>#6E9AAD · ≤3%</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#C2554B"></div><div class="swatch-body"><b>海棠 · 点缀</b>#C2554B · ≤2%</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#232A26"></div><div class="swatch-body"><b>黛瓦墨 · 主文本</b>#232A26</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#5D6660"></div><div class="swatch-body"><b>黛瓦次 · 次文本</b>#5D6660</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#C7CFC6"></div><div class="swatch-body"><b>细瓦线 · 边框</b>#C7CFC6</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#B9C2B8"></div><div class="swatch-body"><b>太湖石 · 卡片默认边框</b>#B9C2B8</div></div>
+    </div>
+
+    <h3 style="margin-top: var(--sp-6)">状态语义色</h3>
+    <div class="grid grid-4">
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#E3EEE5; border-left: 6px solid #2F5D3F"></div><div class="swatch-body"><b>成功 · 雨后青</b>#2F5D3F / 底 #E3EEE5</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#F7EEDC; border-left: 6px solid #A87614"></div><div class="swatch-body"><b>警告 · 银杏金</b>#A87614 / 底 #F7EEDC</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#F9E6E2; border-left: 6px solid #B3402F"></div><div class="swatch-body"><b>错误 · 暮霞红</b>#B3402F / 底 #F9E6E2</div></div>
+      <div class="swatch enter-item"><div class="swatch-color" style="background:#E4EEF2; border-left: 6px solid #4E7E96"></div><div class="swatch-body"><b>信息 · 晴雨蓝</b>#4E7E96 / 底 #E4EEF2</div></div>
+    </div>
+
+    <h3 style="margin-top: var(--sp-6)">字体（楷体标题 + 无衬线正文）</h3>
+    <div class="card">
+      <h1 style="margin-bottom: 4px">H1 · 润物细无声（楷体）</h1>
+      <h2 style="margin-bottom: 4px">H2 · 好雨知时节，当春乃发生（楷体）</h2>
+      <h3>H3 · 界面小节标题（无衬线 Semi-bold）</h3>
+      <p>正文 · 系统无衬线，行高 1.7。清晰的阅读节奏能显著减轻视线的跳跃负担，长段落也不使用楷体。</p>
+      <p class="card-meta" style="margin:0">注释 · 0.875rem，用于元数据与辅助说明。</p>
+    </div>
+
+    <h3 style="margin-top: var(--sp-6)">间距与边框</h3>
+    <p class="ws-lead">8pt 呼吸步进：8 / 16 / 24 / 32 / 48 / 64 / 96px。区块上下间距 ≥96px。全站用 1px 黛瓦细线 + 纸面微漫反射，不用重阴影。</p>
+  </section>
+
+  <!-- ================= 组件实验室 ================= -->
+  <section class="ws-section" id="components">
+    <p class="ws-eyebrow">03 · COMPONENTS</p>
+    <h2>组件实验室</h2>
+    <p class="ws-lead">以下全部是活组件：可点击、可悬停、可用键盘 Tab 聚焦（聚焦环为 2px 白 + 2px 苔青双环）。</p>
+
+    <h3>按钮（点击有苔青涟漪）</h3>
+    <div class="demo-stage">
+      <div class="row">
+        <button class="btn btn-primary">主按钮 · 预约试听</button>
+        <button class="btn btn-secondary">次按钮 · 查看详情</button>
+        <button class="btn btn-ghost">幽灵按钮 · 稍后再说</button>
+        <button class="btn btn-primary" disabled>禁用态</button>
+        <button class="btn btn-primary" data-loading-demo>点击模拟提交</button>
+      </div>
+    </div>
+
+    <h3 style="margin-top: var(--sp-6)">素笺卡片（悬停：上移 2px，边框太湖石 → 苔青）</h3>
+    <div class="grid grid-3">
+      <div class="card card-hoverable enter-item">
+        <p class="card-kicker">今日任务</p>
+        <h3 style="margin-top:6px">完成数学练习卷第三章</h3>
+        <p class="card-meta">预计 25 分钟 · 李老师布置</p>
+        <button class="btn btn-primary" style="margin-top: var(--sp-2)">继续学习</button>
+      </div>
+      <div class="card card-hoverable enter-item">
+        <p class="card-kicker">下一节课</p>
+        <h3 style="margin-top:6px">物理 · 周六 14:00</h3>
+        <p class="card-meta">李泽远老师 · 还有 2 天</p>
+        <button class="btn btn-secondary" style="margin-top: var(--sp-2)">查看安排</button>
+      </div>
+      <div class="card card-hoverable enter-item">
+        <p class="card-kicker">成长摘要</p>
+        <h3 style="margin-top:6px">本周专注 6 次</h3>
+        <p class="card-meta">比上周多 2 次 · 稳步前进</p>
+        <button class="btn btn-ghost" style="margin-top: var(--sp-2)">看看细节</button>
+      </div>
+    </div>
+
+    <h3 style="margin-top: var(--sp-6)">徽章与标签</h3>
+    <div class="demo-stage">
+      <div class="row">
+        <span class="badge badge-moss"><span class="dot"></span>已通过审核</span>
+        <span class="badge badge-celadon"><span class="dot"></span>连线中</span>
+        <span class="badge badge-begonia"><span class="dot"></span>2 项待处理</span>
+        <span class="badge badge-outline">数学</span>
+        <span class="badge badge-outline">小学三年级</span>
+      </div>
+    </div>
+
+    <h3 style="margin-top: var(--sp-6)">表单（含错误态：不只报错，还告诉用户怎么继续）</h3>
+    <div class="card" style="max-width: 420px">
+      <div class="stack">
+        <div class="field">
+          <label for="f-phone">手机号</label>
+          <input class="input" id="f-phone" type="tel" placeholder="请输入 11 位手机号">
+          <span class="hint">用于登录与课程通知，我们不会用于其他用途。</span>
+        </div>
+        <div class="field is-error">
+          <label for="f-code">验证码</label>
+          <input class="input" id="f-code" type="text" value="123" aria-invalid="true">
+          <span class="error-text">验证码应为 6 位数字，请检查短信后重新输入；没收到可 60 秒后重发。</span>
+        </div>
+        <button class="btn btn-primary" data-toast="success" data-toast-title="登录成功" data-toast-body="欢迎回来，今天也有一节课在等你。">登录</button>
+      </div>
+    </div>
+
+    <h3 style="margin-top: var(--sp-6)">Tabs / Toast / 空状态 / 骨架屏</h3>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" aria-selected="true" data-panel="p1">待处理</button>
+          <button class="tab" role="tab" aria-selected="false" data-panel="p2">已确认</button>
+          <button class="tab" role="tab" aria-selected="false" data-panel="p3">已完成</button>
+        </div>
+        <div id="p1" class="tab-panel" style="padding-top: var(--sp-2)">
+          <p class="card-meta">3 个预约等待你确认，最早的在明天 10:00。</p>
+          <div class="row">
+            <button class="btn btn-primary" data-toast="success" data-toast-title="已确认预约" data-toast-body="王小明 · 周六 10:00 · 数学试听">确认一个试试</button>
+          </div>
+        </div>
+        <div id="p2" class="tab-panel" hidden style="padding-top: var(--sp-2)"><p class="card-meta">本周已确认 5 节课。</p></div>
+        <div id="p3" class="tab-panel" hidden style="padding-top: var(--sp-2)"><p class="card-meta">本月已完成 18 节课。</p></div>
+      </div>
+      <div class="empty">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none" aria-hidden="true">
+          <path d="M14 66 C 17 48 14 34 20 16" stroke="#2F5D3F" stroke-width="2" stroke-linecap="round"/>
+          <path d="M20 20 q 12 -6 20 -16" stroke="#2F5D3F" stroke-width="2" stroke-linecap="round"/>
+          <path d="M18 36 q 13 -2 23 -10" stroke="#2F5D3F" stroke-width="2" stroke-linecap="round"/>
+          <path d="M52 66 C 55 52 51 40 57 26" stroke="#6E9AAD" stroke-width="2" stroke-linecap="round"/>
+          <path d="M57 30 q 10 -7 14 -15" stroke="#6E9AAD" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p class="empty-title">这里还空着，像雨前的小院</p>
+        <p class="empty-body">还没有课后任务。完成第一节课后，老师布置的任务会出现在这里。</p>
+        <button class="btn btn-secondary">去预约第一节课</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top: var(--sp-3)">
+      <p class="card-kicker" style="margin-bottom: var(--sp-2)">骨架屏（加载中占位）</p>
+      <div class="stack">
+        <div class="skeleton" style="height: 22px; width: 42%"></div>
+        <div class="skeleton" style="height: 14px; width: 88%"></div>
+        <div class="skeleton" style="height: 14px; width: 64%"></div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: var(--sp-6)">数据表格（运营/列表页基底）</h3>
+    <div class="table-wrap">
+      <table class="ws-table">
+        <thead><tr><th>预约编号</th><th>学生</th><th>课程</th><th>时间</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">B-202610</td><td>王小明</td><td>数学试听</td><td>周六 10:00</td><td><span class="badge badge-begonia"><span class="dot"></span>待确认</span></td><td><button class="btn btn-secondary" style="padding:6px 14px; font-size: var(--fs-small)">处理</button></td></tr>
+          <tr><td class="mono">B-202609</td><td>李思思</td><td>物理正式课</td><td>周六 14:00</td><td><span class="badge badge-moss"><span class="dot"></span>已确认</span></td><td><button class="btn btn-ghost" style="padding:6px 14px; font-size: var(--fs-small)">详情</button></td></tr>
+          <tr><td class="mono">B-202608</td><td>陈果</td><td>英语正式课</td><td>周日 09:30</td><td><span class="badge badge-celadon"><span class="dot"></span>已完成</span></td><td><button class="btn btn-ghost" style="padding:6px 14px; font-size: var(--fs-small)">详情</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= 动效实验室 ================= -->
+  <section class="ws-section" id="motion">
+    <p class="ws-eyebrow">04 · MOTION</p>
+    <h2>动效实验室：「润物」而非炫技</h2>
+    <div class="grid grid-2" style="margin-top: var(--sp-2)">
+      <div class="card">
+        <h3>允许</h3>
+        <p class="card-meta">点击涟漪（苔青，scale+opacity，≤400ms）· 入场淡入上移 8px（240ms，列表错落 40ms）· 悬停卡片上移 2px + 边框变苔青。</p>
+        <div class="row" style="margin-top: var(--sp-2)">
+          <button class="btn btn-primary">点我感受涟漪</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>禁止与降级</h3>
+        <p class="card-meta">飘雨粒子、持续落叶、鼠标视差、水波滤镜一律不做。系统开启「减少动态效果」时，只保留淡入，涟漪与位移自动关闭；<b>内容默认可见，动画从不成为可见性的前提</b>。</p>
+        <div class="stack" style="margin-top: var(--sp-2)">
+          <div class="card enter-item" style="padding: 12px 16px"><span class="card-meta">列表项入场 · 错落 40ms（共 4 项）</span></div>
+          <div class="card enter-item" style="padding: 12px 16px"><span class="card-meta">第二项</span></div>
+          <div class="card enter-item" style="padding: 12px 16px"><span class="card-meta">第三项</span></div>
+          <div class="card enter-item" style="padding: 12px 16px"><span class="card-meta">第四项</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 页面方案 ================= -->
+  <section class="ws-section" id="pages">
+    <p class="ws-eyebrow">05 · PAGE CONCEPTS</p>
+    <h2>关键页面方案图</h2>
+    <p class="ws-lead">视觉总监按「楷体标题 + 色彩加深」最终约束生成中，生成完毕会自动出现在下方。每张图都是候选方案，看完可指认修改点。</p>
+    <div class="grid grid-2" id="page-gallery" style="margin-top: var(--sp-4)">
+      <figure class="figure enter-item"><img src="../images/preview/page-home-desktop.jpg" alt="首页桌面端方案" onerror="this.closest('figure').style.display='none'"><figcaption>首页 · 桌面端</figcaption></figure>
+      <figure class="figure enter-item"><img src="../images/preview/page-home-mobile.jpg" alt="首页移动端方案" onerror="this.closest('figure').style.display='none'"><figcaption>首页 · 移动端 375px</figcaption></figure>
+      <figure class="figure enter-item"><img src="../images/preview/page-login.jpg" alt="登录页方案" onerror="this.closest('figure').style.display='none'"><figcaption>登录页（无角色选择 tab，含演示体验区）</figcaption></figure>
+      <figure class="figure enter-item"><img src="../images/preview/page-student-dash.jpg" alt="学生工作台方案" onerror="this.closest('figure').style.display='none'"><figcaption>学生工作台 · 主任务「继续学习」</figcaption></figure>
+      <figure class="figure enter-item"><img src="../images/preview/page-parent-dash.jpg" alt="家长工作台方案" onerror="this.closest('figure').style.display='none'"><figcaption>家长工作台 · 主任务「孩子状态」</figcaption></figure>
+      <figure class="figure enter-item"><img src="../images/preview/page-teacher-dash.jpg" alt="导师工作台方案" onerror="this.closest('figure').style.display='none'"><figcaption>导师工作台 · 主任务「处理预约与课程」</figcaption></figure>
+      <figure class="figure enter-item"><img src="../images/preview/page-admin-dash.jpg" alt="运营后台方案" onerror="this.closest('figure').style.display='none'"><figcaption>运营后台 · 审核与工单队列</figcaption></figure>
+      <figure class="figure enter-item"><img src="../images/preview/components-showcase.jpg" alt="关键组件展示图" onerror="this.closest('figure').style.display='none'"><figcaption>关键组件展示图（全状态）</figcaption></figure>
+    </div>
+    <p class="note" style="margin-top: var(--sp-3)">提示：图片生成需要数分钟。若某张暂未出现，稍后刷新本页即可。</p>
+  </section>
+
+  <!-- ================= 收尾 CTA：新叶浅底（禁止深底） ================= -->
+  <section class="ws-section">
+    <div class="demo-stage bg-mountains" style="text-align: center; padding: var(--sp-12) var(--sp-4); background-color: var(--bg-card-tint)">
+      <h2>方向满意吗？</h2>
+      <p class="ws-lead" style="margin: 0 auto var(--sp-3)">确认方向与组件语言后，再进入全站实施；每一步都先出图、再落码、后验收。</p>
+      <div class="row" style="justify-content: center">
+        <button class="btn btn-primary" data-toast="success" data-toast-title="已记录" data-toast-body="方向 B + 加深色板 + 楷体标题，作为实施基线。">就按这个方向实施</button>
+        <button class="btn btn-secondary" data-toast="" data-toast-title="已记录" data-toast-body="请告诉我们要调整的部分：色彩深度 / 月洞门用量 / 字体。">我还想调整</button>
+      </div>
+    </div>
+    <p class="card-meta" style="text-align:center; margin-top: var(--sp-6)">润物细无声 · NURTURE —— 视觉 Workshop ｜ 令牌与组件均为真实可复用 CSS，可直接迁入 Angular 设计系统</p>
+  </section>
+
+</main>
+
+<div class="toast-stack" aria-live="polite"></div>
+<script src="assets/workshop.js"></script>
+</body>
+</html>

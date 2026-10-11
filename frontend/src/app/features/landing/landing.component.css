@@ -1,106 +1,216 @@
-/* Hero 主/次按钮 — 对齐登录门户按钮质感 */
-:host .nur-btn--primary {
-  background: linear-gradient(180deg, #2f6b5a 0%, #1e473c 100%);
-  border: 1px solid rgba(152, 219, 196, 0.38);
-  box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.5), 0 0 26px rgba(47, 107, 90, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+/* ============================================================
+ * 首页 · 方向 D「黛绿暖金」（2026-10-11 重构，用户拍板）
+ * 规格契约：docs/ui-redesign-2026-10-11/design-system-d.md
+ * Hero 原型：docs/ui-redesign-2026-10-11/workshop/hero-d.html
+ * ============================================================ */
+
+:host {
+  display: block;
 }
 
-:host .nur-btn--primary:hover {
-  background: linear-gradient(180deg, #357a67 0%, #225246 100%);
-  border-color: rgba(152, 219, 196, 0.6);
-  box-shadow: 0 16px 36px -4px rgba(45, 101, 86, 0.6), 0 0 34px rgba(47, 107, 90, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+/* ============ Hero：100vh（min 640 / max 900）摄影 + 雾散入场 ============ */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 640px;
+  max-height: 900px;
+  overflow: hidden;
 }
 
-:host .nur-btn--ghost {
-  background: rgba(26, 54, 45, 0.42);
-  backdrop-filter: blur(12px);
-  border-color: rgba(74, 133, 116, 0.28);
-  color: rgba(240, 246, 243, 0.88);
-}
-
-:host .nur-btn--ghost:hover {
-  background: rgba(35, 72, 60, 0.72);
-  border-color: var(--bamboo-light, #4a8574);
-  color: var(--jade-white, #f0f6f3);
-}
-
-/* 深色段上的浅色按钮（--bg-page 已被暗色令牌覆盖，需显式还原浅底） */
-:host .nur-btn--light {
-  background: #f0f6f3;
-  color: #173028;
-}
-
-:host .nur-btn--light:hover {
-  background: #ffffff;
-  color: #12241d;
-}
-
-/* 信任背书微指标条 */
-.trust-bar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-6) var(--space-8);
-  margin: 0;
-  padding: var(--space-5) 0;
-  border-top: 1px solid var(--border-subtle);
+.hero picture,
+.hero .hero-bg {
+  position: absolute;
+  inset: 0;
   width: 100%;
+  height: 100%;
 }
 
-.trust-item {
-  min-width: 160px;
+.hero .hero-bg {
+  object-fit: cover;
+  object-position: 70% center;
+  animation: hero-clear 600ms var(--ease) both;
 }
 
-.trust-item dt {
-  font-family: var(--font-serif);
-  font-size: 1.6rem;
-  color: var(--text-main);
+@keyframes hero-clear {
+  from { filter: blur(12px); opacity: 0.6; }
+  to { filter: blur(0); opacity: 1; }
 }
 
-.trust-item dd {
-  margin: var(--space-1) 0 0;
+/* 左侧文字对比度渐变层（雾白渐隐，摄影图右侧月洞门不被遮挡） */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(242, 243, 238, 0.92) 0%, rgba(242, 243, 238, 0.7) 38%, rgba(242, 243, 238, 0) 62%);
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: var(--container-max);
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 var(--space-5);
+  display: flex;
+  align-items: center;
+}
+
+.hero-col {
+  max-width: 540px;
+}
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.2em;
   color: var(--text-muted);
-  font-size: 0.9rem;
 }
 
-/* Hero 入场动画（与登录门户同一节奏） */
-@keyframes heroRise {
-  from { opacity: 0; transform: translateY(18px); }
+.hero-eyebrow::after {
+  content: '';
+  width: 48px;
+  height: 1px;
+  background: var(--text-muted);
+  opacity: 0.55;
+}
+
+.hero-brand {
+  margin: 22px 0 0;
+  font-family: var(--font-serif);
+  font-size: 20px;
+  letter-spacing: 0.45em;
+  color: var(--color-gold);
+}
+
+.hero-title {
+  margin: 10px 0 0;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(48px, 6vw, 80px);
+  letter-spacing: 0.08em;
+  color: var(--text-title);
+  line-height: 1.18;
+}
+
+.hero-sub {
+  margin: 14px 0 0;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  color: var(--color-gold-text);
+}
+
+.hero-desc {
+  margin: 18px 0 0;
+  max-width: 26em;
+  font-size: 17px;
+  line-height: 1.8;
+  color: var(--text-muted);
+}
+
+/* 文字依次入场：淡入 + 上移 12px，240ms，错落 60ms（仅一次；reduced-motion 下直接可见） */
+.rise {
+  animation: rise var(--duration-rise) var(--ease) both;
+}
+
+.rise:nth-child(1) { animation-delay: 120ms; }
+.rise:nth-child(2) { animation-delay: 180ms; }
+.rise:nth-child(3) { animation-delay: 240ms; }
+.rise:nth-child(4) { animation-delay: 300ms; }
+.rise:nth-child(5) { animation-delay: 360ms; }
+.rise:nth-child(6) { animation-delay: 420ms; }
+.rise:nth-child(7) { animation-delay: 480ms; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.hero-rise {
-  opacity: 0;
-  animation: heroRise 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* ============ Hero 按钮组：高 52 胶囊，间距 16 ============ */
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 34px;
 }
 
-.d-1 { animation-delay: 0.05s; }
-.d-2 { animation-delay: 0.16s; }
-.d-3 { animation-delay: 0.28s; }
-.d-4 { animation-delay: 0.42s; }
-.d-5 { animation-delay: 0.52s; }
-.d-6 { animation-delay: 0.6s; }
-.d-7 { animation-delay: 0.7s; }
-.d-8 { animation-delay: 0.82s; }
-
-/* ============================================================
- * 办学理念 — 窄栏居中，留白呼吸
- * ============================================================ */
-.philosophy {
-  max-width: 760px;
-  text-align: center;
+.hero-btn {
+  height: 52px;
+  padding: 0 30px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
+.hero-btn .arrow {
+  display: inline-block;
+  transition: transform 200ms var(--ease);
+}
+
+.hero-btn:hover .arrow {
+  transform: translateX(3px);
+}
+
+/* ============ 卖点条：距按钮 56px，3 项 1px 竖线分隔 ============ */
+.hero-points {
+  display: flex;
+  gap: 0;
+  margin: 56px 0 0;
+  padding-top: 26px;
+}
+
+.point {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 0 20px;
+  flex: 1;
+  min-width: 0;
+}
+
+.point:first-child {
+  padding-left: 0;
+}
+
+.point + .point {
+  border-left: 1px solid var(--line);
+}
+
+.point svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-primary);
+}
+
+.point-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-title);
+  white-space: nowrap;
+}
+
+.point-desc {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ============ 办学理念 ============ */
 .philosophy-quote {
-  margin: 0 0 var(--space-5);
-  font-size: clamp(1.5rem, 3.4vw, 2rem);
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 4.2vw, 2.9rem);
   letter-spacing: 0.1em;
-  color: var(--text-main);
+  color: var(--text-title);
+  line-height: 1.5;
 }
 
 .philosophy-text {
-  max-width: 560px;
-  margin: 0 auto var(--space-7);
+  max-width: 620px;
+  margin: var(--space-5) 0 0;
   color: var(--text-muted);
   line-height: 2;
 }
@@ -109,108 +219,78 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-5);
-  margin: 0;
-  padding: var(--space-5) 0 0;
-  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-7) 0 0;
+  padding: var(--space-6) 0 0;
   list-style: none;
+  border-top: 1px solid var(--line);
 }
 
 .principle-title {
   margin: 0 0 var(--space-2);
-  font-size: 1.1rem;
-  letter-spacing: 0.16em;
-  color: #8fbfaf;
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--color-primary);
 }
 
 .principle-text {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.92rem;
+  font-size: 0.95rem;
 }
 
-/* 服务体系 / 学习流程 — 三列卡 */
-.services-grid,
-.steps-grid {
+/* ============ 服务体系 ============ */
+.services-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-5);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: none;
 }
 
 .service {
-  padding: var(--space-6) var(--space-5);
-  text-align: center;
+  position: relative;
+  padding: var(--space-7) var(--space-6) var(--space-6);
 }
 
 .service-no {
-  display: block;
-  margin-bottom: var(--space-3);
-  color: var(--color-accent);
-  font-size: 1.3rem;
-  letter-spacing: 0.2em;
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-6);
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  color: var(--color-gold);
+  opacity: 0.5;
 }
 
 .service-title {
   margin: 0 0 var(--space-3);
-  font-size: 1.2rem;
-  letter-spacing: 0.12em;
-  color: var(--text-main);
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-title);
 }
 
 .service-text {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.95rem;
   line-height: 1.9;
 }
 
-/* 学习流程 — 步骤编号在左，语义 ol */
-.step {
-  position: relative;
-  padding: var(--space-2) 0 var(--space-2) 0;
-}
-
-.step-no {
-  display: block;
-  margin-bottom: var(--space-2);
-  color: var(--color-accent);
-  font-size: 1.05rem;
-  letter-spacing: 0.1em;
-}
-
-.step-title {
-  margin: 0 0 var(--space-2);
-  font-size: 1.08rem;
-  letter-spacing: 0.1em;
-  color: var(--text-main);
-}
-
-.step-text {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.92rem;
-  line-height: 1.9;
-}
-
-/* 精选导师 / 学科 / 心声 */
+/* ============ 精选导师 ============ */
 .teachers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-5);
 }
 
-.teachers-item {
-  height: 100%;
-}
-
 .teachers-more {
+  display: flex;
+  justify-content: center;
   margin: var(--space-7) 0 0;
-  text-align: center;
 }
 
+/* ============ 学科门类 ============ */
 .subject-list {
   display: flex;
   flex-wrap: wrap;
@@ -221,6 +301,41 @@
   list-style: none;
 }
 
+/* ============ 学习流程 ============ */
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step-no {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 1.9rem;
+  color: var(--color-gold);
+  letter-spacing: 0.08em;
+}
+
+.step-title {
+  margin: var(--space-2) 0;
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-title);
+}
+
+.step-text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.9;
+}
+
+/* ============ 学员心声 ============ */
 .voices-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -229,143 +344,200 @@
 
 .voice {
   margin: 0;
-  padding: var(--space-6) var(--space-5);
-  background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-subtle);
+  padding: var(--space-6);
 }
 
 .voice-quote {
-  margin: 0 0 var(--space-4);
-  color: var(--text-main);
-  font-size: 1rem;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
   line-height: 2;
+  color: var(--text-title);
 }
 
 .voice-by {
   display: flex;
   align-items: baseline;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
 }
 
 .voice-name {
-  color: var(--text-main);
-  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  color: var(--text-title);
 }
 
 .voice-role {
-  color: var(--text-muted);
   font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
-/* ============================================================
- * 品牌愿景 — 宽留白窄栏
- * ============================================================ */
+/* ============ 品牌愿景 ============ */
 .vision-inner {
-  max-width: 640px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  max-width: 720px;
   text-align: center;
 }
 
+.vision-inner .nur-ornament {
+  justify-content: center;
+  margin: 0 0 var(--space-5);
+}
+
 .vision-title {
-  margin: var(--space-5) 0 var(--space-4);
-  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3.4vw, 2.3rem);
   letter-spacing: 0.1em;
-  line-height: 1.7;
-  color: var(--text-main);
+  color: var(--text-title);
+  line-height: 1.6;
 }
 
 .vision-text {
-  margin: 0;
+  margin: var(--space-5) auto 0;
+  max-width: 560px;
   color: var(--text-muted);
   line-height: 2;
 }
 
-/* ============================================================
- * CTA — 深竹林收束
- * ============================================================ */
+/* ============ 结尾 CTA：雾青底 + 漏窗小图（月洞门拱形画框） ============ */
 .cta-inner {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--space-8);
   align-items: center;
-  text-align: center;
 }
 
 .cta-title {
-  margin: 0 0 var(--space-3);
-  color: var(--text-on-deep);
-  font-size: clamp(1.4rem, 3vw, 1.9rem);
-  letter-spacing: 0.14em;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  letter-spacing: 0.08em;
+  color: var(--text-title);
+  line-height: 1.5;
 }
 
 .cta-lead {
-  margin: 0 0 var(--space-6);
-  color: var(--text-on-deep-muted);
+  margin: var(--space-4) 0 0;
+  color: var(--color-gold-text);
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
   letter-spacing: 0.1em;
 }
 
 .cta-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: var(--space-4);
+  margin-top: var(--space-6);
 }
 
-/* 响应式 */
-@media (max-width: 1024px) {
-  .services-grid,
-  .steps-grid,
-  .voices-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .principles {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.cta-frame {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px 999px 24px 24px; /* 月洞门拱形 */
+  box-shadow: var(--shadow-subtle);
 }
 
-@media (max-width: 720px) {
+.cta-frame picture,
+.cta-frame img {
+  display: block;
+  width: 100%;
+}
+
+.cta-frame img {
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+}
+
+/* ============ 移动端 <768px：图上文下，不叠渐变 ============ */
+@media (max-width: 767px) {
   .hero {
-    padding-top: var(--space-8);
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
   }
 
-  .hero-en { font-size: clamp(1.3rem, 5vw, 1.8rem); letter-spacing: 0.2em; padding-left: 0.2em; }
+  .hero picture {
+    position: relative;
+    height: 46vh;
+  }
 
+  .hero .hero-bg {
+    position: absolute;
+    object-position: 75% center;
+  }
+
+  .hero::after {
+    display: none;
+  }
+
+  .hero-inner {
+    height: auto;
+    padding: 28px 24px 56px;
+  }
+
+  .hero-title {
+    font-size: 44px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .hero-actions .hero-btn {
+    width: 100%;
+  }
+
+  .point {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .point:first-child {
+    padding-left: 12px;
+  }
+
+  .point-title {
+    font-size: 15px;
+  }
+
+  .point-desc {
+    font-size: 12px;
+  }
+
+  .principles,
   .services-grid,
+  .teachers-grid,
   .steps-grid,
   .voices-grid,
-  .principles {
+  .cta-inner {
     grid-template-columns: 1fr;
   }
 
-  .principles {
-    gap: var(--space-5);
-    text-align: center;
-  }
-
-  .cta-actions,
-  .hero-cta {
-    flex-direction: column;
-    align-self: stretch;
-  }
-
-  .cta-actions .nur-btn,
-  .hero-cta .nur-btn {
-    width: 100%;
+  .cta-inner {
+    gap: var(--space-6);
   }
 }
 
-/* ---------- 减少动效 ---------- */
+/* ============ reduced-motion：取消位移与模糊，内容直接可见 ============ */
 @media (prefers-reduced-motion: reduce) {
-  .hero-rise {
+  .hero .hero-bg,
+  .rise {
     animation: none;
-    opacity: 1;
+  }
+
+  .hero-btn,
+  .hero-btn .arrow {
+    transition: none;
   }
 }

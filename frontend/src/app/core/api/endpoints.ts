@@ -62,6 +62,9 @@ export const API = {
     arbitrationPreview: (caseId: string) => `${API_BASE}/admin/refund-cases/${caseId}/arbitration:preview`,
     arbitrationExecute: (caseId: string) => `${API_BASE}/admin/refund-cases/${caseId}/arbitration:execute`,
     auditLogs: `${API_BASE}/admin/audit-logs`,
+    // D1 平台全局参数 / D2 登录限流解锁（2026-10-11 方向 D 重构补齐）
+    updateConfig: (key: string) => `${API_BASE}/admin/configs/${key}`,
+    resetLoginThrottle: `${API_BASE}/admin/security/login-throttle:reset`,
   },
   matching: {
     search: `${API_BASE}/matching/teachers:search`,
@@ -76,9 +79,13 @@ export const API = {
   },
   booking: {
     create: `${API_BASE}/booking/bookings`,
+    mine: `${API_BASE}/booking/me/bookings`,
+    detail: (bookingId: string) => `${API_BASE}/booking/bookings/${bookingId}`,
     cancelPreview: (bookingId: string) => `${API_BASE}/booking/bookings/${bookingId}:cancel/preview`,
     cancelExecute: (bookingId: string) => `${API_BASE}/booking/bookings/${bookingId}:cancel/execute`,
     reschedule: (bookingId: string) => `${API_BASE}/booking/bookings/${bookingId}:reschedule`,
+    start: (bookingId: string) => `${API_BASE}/booking/bookings/${bookingId}:start`,
+    complete: (bookingId: string) => `${API_BASE}/booking/bookings/${bookingId}:complete`,
   },
   classroom: {
     join: (bookingId: string) => `${API_BASE}/classroom/bookings/${bookingId}/join`,
@@ -86,6 +93,8 @@ export const API = {
     ensureSession: (bookingId: string) => `${API_BASE}/classroom/bookings/${bookingId}/session`,
     endSession: (bookingId: string) => `${API_BASE}/classroom/bookings/${bookingId}/session:end`,
     attendance: (bookingId: string) => `${API_BASE}/classroom/bookings/${bookingId}/attendance`,
+    // B6 课前准备任务：导师生成（POST）与学生/导师查看（GET）
+    preparationTasks: (bookingId: string) => `${API_BASE}/classroom/bookings/${bookingId}/preparation-tasks`,
   },
   learning: {
     growth: `${API_BASE}/learning/growth`,
@@ -113,6 +122,9 @@ export const API = {
   review: {
     submit: `${API_BASE}/review/reviews`,
     given: `${API_BASE}/review/me/reviews-given`,
+    // C1 导师公开评价列表 / C2 导师收到的评价（2026-10-11 方向 D 重构补齐）
+    publicList: (revieweeId: string) => `${API_BASE}/review/reviewees/${revieweeId}/reviews`,
+    received: `${API_BASE}/review/me/reviews-received`,
   },
   order: {
     create: `${API_BASE}/order/orders`,

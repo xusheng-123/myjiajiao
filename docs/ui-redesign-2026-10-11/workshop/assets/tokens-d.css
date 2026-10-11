@@ -1,0 +1,21 @@
+/* ============================================================
+   方向 D「月洞门 · 黛绿暖金」令牌（用户规格原样落地）
+   迁移到 Angular 时对应 frontend/src/styles/tokens.css
+   ============================================================ */
+:root {
+  --bg-page: #F2F3EE;         /* 雾白 页面底 */
+  --bg-mist: #E6EBE5;         /* 雾青 交替区块底 */
+  --bg-card: #FFFFFF;
+  --color-primary: #1E4D3E;   /* 黛绿 主按钮，白字对比度 9.6:1 */
+  --color-primary-hover: #173D31;
+  --color-primary-soft: #E3ECE6;
+  --color-gold: #A8875A;      /* 暖金 仅用于装饰与大字 */
+  --color-gold-text: #8E6B3E; /* 暖金 文字版 */
+  --text-title: #1E3A31;
+  --text-main: #2F3A36;
+  --text-muted: #5C6662;
+  --line: rgba(30, 58, 49, 0.14);
+  --font-serif: 'Source Han Serif SC', 'Noto Serif SC', 'Songti SC', serif;
+  --font-sans: -apple-system, 'PingFang SC', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}

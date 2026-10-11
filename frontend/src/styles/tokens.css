@@ -1,58 +1,46 @@
 /* ============================================================
- * 润物细无声 · Nurture — Design Tokens（视觉规范锁定）
- * 墨绿 × 米白 × 浅灰绿 × 低饱和暖金 · 东方人文美学
+ * 润物细无声 · Nurture — Design Tokens（方向 D · 黛绿暖金）
+ * 2026-10-11 全站重构：用户拍板方向 D（苏州园林 · 雨后初晴 · 明亮留白）
+ * 设计契约：docs/ui-redesign-2026-10-11/design-system-d.md
+ * 旧令牌名保留为别名，存量组件零改动自动换装。
  * ============================================================ */
 
 :root {
-  /* ---------- 品牌主色：墨绿 ---------- */
-  --color-primary: #183D36;            /* 墨绿 主品牌色 / 核心 CTA / 焦点环 */
-  --color-primary-hover: #122E29;      /* 墨绿加深 悬停态 */
-  --color-primary-bg: #E9F0ED;         /* 浅灰绿底 微高光 / 标签底 */
+  /* ---------- 方向 D 权威令牌 ---------- */
+  --bg-page: #F2F3EE;                  /* 雾白 全局页面底色 */
+  --bg-mist: #E6EBE5;                  /* 雾青 交替区块底 */
+  --bg-card: #FFFFFF;                  /* 卡片纯白 */
 
-  /* ---------- 品牌辅色：浅灰绿 ---------- */
-  --color-secondary: #59766F;          /* 浅灰绿 次级强调 / 图标 / 辅助按钮 */
-  --color-secondary-hover: #4A645D;    /* 浅灰绿加深悬停 */
-  --color-secondary-bg: #EEF3F1;       /* 浅灰绿浅底 */
+  --color-primary: #1E4D3E;            /* 黛绿 主品牌色（白字对比度 9.6:1） */
+  --color-primary-hover: #173D31;      /* 黛绿加深 悬停态 */
+  --color-primary-soft: #E3ECE6;       /* 黛绿浅底 标签/选中底 */
 
-  /* ---------- 点缀色：低饱和暖金 ---------- */
-  --color-accent: #C99D6B;             /* 暖金 标语高亮 / 核心数据 / 书卷气 */
-  --color-accent-hover: #B78A57;       /* 暖金深色悬停 */
-  --color-accent-bg: #F6EFE3;          /* 暖金浅底 推荐底色 */
+  --color-gold: #A8875A;               /* 暖金 仅装饰与大字 */
+  --color-gold-text: #8E6B3E;          /* 暖金 文字版 */
+  --color-gold-bg: #F3EDE2;            /* 暖金浅底 */
 
-  /* ---------- 背景与表面 ---------- */
-  --bg-page: #F8F7F2;                  /* 米白 全局页面底色 · 宣纸质感 */
-  --bg-card: #FFFFFF;                  /* 卡片纯白底色 */
-  --bg-deep: #14302A;                  /* 深墨绿 愿景/CTA 深色段 */
-  --bg-deeper: #0F2622;                /* 更深墨绿 页脚 */
+  --text-title: #1E3A31;               /* 黛瓦 标题 */
+  --text-main: #2F3A36;                /* 正文 */
+  --text-muted: #5C6662;               /* 辅助说明 */
+  --text-placeholder: #93A09A;         /* 输入占位 */
 
-  /* ---------- 文本墨韵 ---------- */
-  --text-main: #30443F;               /* 墨青 主标题与正文 */
-  --text-muted: #5E6E68;              /* 灰青 副标题与辅助文案 */
-  --text-placeholder: #9AA8A2;        /* 输入占位 / 弱化文本 */
-  --text-on-deep: #F3F1EA;            /* 深色底上的米白文字 */
-  --text-on-deep-muted: #B9C6C1;      /* 深色底上的次级文字 */
+  --line: rgba(30, 58, 49, 0.14);      /* 1px 黛瓦线 边框/分隔 */
 
-  /* ---------- 边框与阴影 ---------- */
-  --border-subtle: #DDE4DF;           /* 轻量边框分割线 */
-  --border-focus: #183D36;            /* 聚焦边框 */
-  --shadow-subtle: 0 4px 20px -2px rgba(24, 61, 54, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
-  --shadow-hover: 0 12px 30px -4px rgba(24, 61, 54, 0.13), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --font-serif: 'Source Han Serif SC', 'Noto Serif SC', 'Songti SC', serif; /* 标题 宋体系（方向D禁楷体） */
+  --font-sans: -apple-system, 'PingFang SC', 'Source Han Sans SC', 'Microsoft YaHei', sans-serif;
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);  /* 方向 D 权威缓动 */
 
   /* ---------- 状态色（双通道表达：颜色 + 图标 + 文字） ---------- */
-  --color-success: #3F7D5F;           /* 成功 · 静竹绿 */
-  --color-success-bg: #E8F1EC;
-  --color-danger: #B0524C;            /* 错误 · 赭红（低饱和） */
+  --color-success: #35705A;            /* 成功 · 雨后青 */
+  --color-success-bg: #E7F0EA;
+  --color-danger: #B0524C;             /* 错误 · 赭红（低饱和） */
   --color-danger-bg: #F7E9E7;
 
-  /* ---------- 字体栈 ---------- */
-  --font-brand: 'Kaiti SC', 'STKaiti', 'KaiTi', 'DFKai-SB', 'Source Han Serif CN', 'Noto Serif CJK SC', serif; /* 主标题 现代行楷 · 书写感 */
-  --font-serif: 'Source Han Serif CN', 'Noto Serif CJK SC', 'Songti SC', 'SimSun', serif;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-
-  /* ---------- 动效（规范锁定） ---------- */
-  --ease-nurture: cubic-bezier(0.16, 1, 0.3, 1);
-  --duration-enter: 400ms;
-  --stagger-step: 80ms;               /* 入场阶梯错落加载步长 */
+  /* ---------- 阴影（黛绿基调） ---------- */
+  --shadow-subtle: 0 4px 20px -2px rgba(30, 77, 62, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  --shadow-hover: 0 12px 30px -4px rgba(30, 77, 62, 0.13), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --shadow-primary: 0 8px 20px rgba(30, 77, 62, 0.22); /* 主按钮起影 */
 
   /* ---------- 圆角与热区（ADHD 友好 / Apple HIG） ---------- */
   --radius-card: 20px;
@@ -72,4 +60,28 @@
   /* ---------- 布局 ---------- */
   --container-max: 1120px;
   --header-height: 72px;
+
+  /* ---------- 动效 ---------- */
+  --duration-enter: 400ms;
+  --duration-rise: 240ms;             /* 文字入场 */
+  --stagger-step: 60ms;               /* 错落步长（方向 D 规格） */
+
+  /* ============================================================
+   * 旧令牌别名（兼容存量组件，逐步收敛到上方权威令牌）
+   * ============================================================ */
+  --color-primary-bg: var(--color-primary-soft);
+  --color-secondary: #55706A;          /* 浅灰绿 次级强调（并入 D 色域） */
+  --color-secondary-hover: #465F59;
+  --color-secondary-bg: #E9EFEA;
+  --color-accent: var(--color-gold);
+  --color-accent-hover: #96774C;
+  --color-accent-bg: var(--color-gold-bg);
+  --bg-deep: var(--bg-mist);           /* 深色区块已禁：旧深底回落为雾青 */
+  --bg-deeper: #DCE3DC;                /* 旧页脚深底回落为浅青灰 */
+  --text-on-deep: var(--text-title);
+  --text-on-deep-muted: var(--text-muted);
+  --border-subtle: #D8DED6;            /* 与 --line 视觉等价的实色（实色场景用） */
+  --border-focus: var(--color-primary);
+  --font-brand: var(--font-serif);     /* 旧行楷品牌字 → 宋体系 */
+  --ease-nurture: var(--ease);
 }

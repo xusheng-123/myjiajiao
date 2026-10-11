@@ -7,7 +7,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="description" content="因材施以微雨，静候学海生花。名校学长与资深导师化作及时微雨，在细微关窍处耐心解惑。" />
   <meta name="color-scheme" content="light" />
-  <meta name="theme-color" content="#183D36" />
+  <meta name="theme-color" content="#1E4D3E" />
+  <!-- 方向 D：首屏 Hero 摄影图预加载（AVIF 优先，移动端独立裁切） -->
+  <link rel="preload" as="image" href="assets/hero/hero.avif" type="image/avif" media="(min-width: 768px)" fetchpriority="high" />
+  <link rel="preload" as="image" href="assets/hero/hero-mobile.avif" type="image/avif" media="(max-width: 767px)" fetchpriority="high" />
   <!-- 品牌字体：Montserrat 品牌字 / ZCOOL XiaoWei 刻本体 / Noto Serif SC 思源宋体（登录门户视觉，离线时回落本地字体栈） -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

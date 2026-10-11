@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>润物教育 · NURTURE —— 方向 D 候选（导航 + Hero）</title>
+<link rel="preload" as="image" href="assets/hero/hero.avif" type="image/avif" media="(min-width: 768px)">
+<link rel="preload" as="image" href="assets/hero/hero-mobile.avif" type="image/avif" media="(max-width: 767px)">
+<link rel="stylesheet" href="assets/tokens-d.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg-page); color: var(--text-main);
+    font-family: var(--font-sans); font-size: 16px; line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { text-decoration: none; color: inherit; }
+  button { font: inherit; }
+
+  /* ============ 导航栏 72px：透明 → 滚动后雾白模糊 + 1px 黛瓦线 ============ */
+  .site-header {
+    position: fixed; inset: 0 0 auto 0; z-index: 100; height: 72px;
+    background: transparent; border-bottom: 1px solid transparent;
+    transition: background 240ms var(--ease), border-color 240ms var(--ease), backdrop-filter 240ms var(--ease);
+  }
+  .site-header.is-scrolled {
+    background: rgba(242, 243, 238, 0.8);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-bottom-color: var(--line);
+  }
+  .nav-inner {
+    max-width: 1200px; height: 72px; margin: 0 auto; padding: 0 24px;
+    display: flex; align-items: center;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-text { line-height: 1.2; }
+  .brand-name { font-family: var(--font-serif); font-size: 18px; font-weight: 600; color: var(--text-title); letter-spacing: 0.06em; }
+  .brand-sub { font-size: 10px; letter-spacing: 0.34em; color: var(--color-gold-text); }
+  .nav-links { display: flex; gap: 40px; margin: 0 auto; list-style: none; }
+  .nav-links a {
+    font-size: 15px; color: var(--text-main); position: relative; padding: 4px 0;
+    transition: color 200ms var(--ease);
+  }
+  .nav-links a:hover { color: var(--color-primary); }
+  .nav-links a[aria-current="page"] { color: var(--color-primary); font-weight: 600; }
+  .nav-links a[aria-current="page"]::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px;
+    background: var(--color-primary); border-radius: 2px;
+  }
+  .btn-login {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0 26px; border-radius: 999px;
+    border: 1px solid var(--color-primary); color: var(--color-primary);
+    background: rgba(255, 255, 255, 0.5); font-size: 15px; font-weight: 600;
+    transition: background 200ms var(--ease), color 200ms var(--ease);
+  }
+  .btn-login:hover { background: var(--color-primary); color: #fff; }
+
+  /* ============ Hero 100vh（min 640 / max 900） ============ */
+  .hero { position: relative; height: 100vh; min-height: 640px; max-height: 900px; overflow: hidden; }
+  .hero picture, .hero img.hero-bg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+  }
+  .hero img.hero-bg {
+    object-fit: cover; object-position: 70% center;
+    animation: hero-clear 600ms var(--ease) both;
+  }
+  @keyframes hero-clear {
+    from { filter: blur(12px); opacity: 0.6; }
+    to   { filter: blur(0);    opacity: 1; }
+  }
+  /* 左侧文字对比度渐变层 */
+  .hero::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(242,243,238,.92) 0%, rgba(242,243,238,.7) 38%, rgba(242,243,238,0) 62%);
+  }
+  .hero-inner {
+    position: relative; z-index: 2; max-width: 1200px; height: 100%;
+    margin: 0 auto; padding: 0 24px; display: flex; align-items: center;
+  }
+  .hero-col { max-width: 540px; }
+
+  .eyebrow {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 14px; letter-spacing: 0.2em; color: var(--text-muted);
+  }
+  .eyebrow::after { content: ""; width: 48px; height: 1px; background: var(--text-muted); opacity: 0.55; }
+  .hero-brand {
+    font-family: var(--font-serif); font-size: 20px; font-weight: 400;
+    letter-spacing: 0.45em; color: var(--color-gold); margin-top: 22px;
+  }
+  .hero-title {
+    font-family: var(--font-serif); font-weight: 600;
+    font-size: clamp(48px, 6vw, 80px); letter-spacing: 0.08em;
+    color: var(--text-title); line-height: 1.18; margin-top: 10px;
+  }
+  .hero-sub {
+    font-family: var(--font-serif); font-size: 22px; letter-spacing: 0.12em;
+    color: var(--color-gold-text); margin-top: 14px;
+  }
+  .hero-desc {
+    font-size: 17px; line-height: 1.8; color: var(--text-muted);
+    max-width: 26em; margin-top: 18px;
+  }
+
+  /* 文字依次入场：淡入 + 上移 12px，240ms，错落 60ms（仅一次） */
+  .rise { animation: rise 240ms var(--ease) both; }
+  .rise:nth-child(1) { animation-delay: 120ms; }
+  .rise:nth-child(2) { animation-delay: 180ms; }
+  .rise:nth-child(3) { animation-delay: 240ms; }
+  .rise:nth-child(4) { animation-delay: 300ms; }
+  .rise:nth-child(5) { animation-delay: 360ms; }
+  .rise:nth-child(6) { animation-delay: 420ms; }
+  .rise:nth-child(7) { animation-delay: 480ms; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ 按钮组：高 52 胶囊，间距 16 ============ */
+  .hero-actions { display: flex; gap: 16px; margin-top: 34px; }
+  .btn {
+    position: relative; overflow: hidden;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 52px; padding: 0 30px; border-radius: 999px;
+    font-size: 16px; font-weight: 600; cursor: pointer; border: 1px solid transparent;
+    transition: background 200ms var(--ease), transform 200ms var(--ease), box-shadow 200ms var(--ease), border-color 200ms var(--ease);
+  }
+  .btn .arrow { display: inline-block; transition: transform 200ms var(--ease); }
+  .btn:hover .arrow { transform: translateX(3px); }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible, .btn-login:focus-visible, .nav-links a:focus-visible {
+    outline: 2px solid var(--color-primary); outline-offset: 3px;
+  }
+  .btn-primary {
+    background: var(--color-primary); color: #fff;
+    box-shadow: 0 8px 20px rgba(30, 77, 62, 0.22);
+  }
+  .btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+  .btn-outline {
+    background: rgba(255, 255, 255, 0.5); color: var(--text-title);
+    border-color: var(--line);
+  }
+  .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary); transform: translateY(-1px); }
+  .btn .ripple {
+    position: absolute; border-radius: 50%; pointer-events: none;
+    background: rgba(30, 77, 62, 0.25); transform: scale(0); opacity: 0.9;
+    animation: ripple 380ms var(--ease) forwards;
+  }
+  .btn-primary .ripple { background: rgba(255, 255, 255, 0.35); }
+  @keyframes ripple { to { transform: scale(2.6); opacity: 0; } }
+
+  /* ============ 卖点条：距按钮 56px，3 项 + 1px 竖线分隔 ============ */
+  .hero-points {
+    display: flex; margin-top: 56px; padding-top: 26px;
+    border-top: none; gap: 0;
+  }
+  .point { display: flex; gap: 12px; align-items: flex-start; padding: 0 20px; flex: 1; min-width: 0; }
+  .point:first-child { padding-left: 0; }
+  .point + .point { border-left: 1px solid var(--line); }
+  .point svg { flex: none; margin-top: 2px; color: var(--color-primary); }
+  .point-title { font-size: 18px; font-weight: 600; color: var(--text-title); white-space: nowrap; }
+  .point-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ============ 移动端 <768px：图上文下，不叠渐变 ============ */
+  @media (max-width: 767px) {
+    .nav-links { display: none; }
+    .hero { height: auto; min-height: 0; max-height: none; display: flex; flex-direction: column; }
+    .hero picture { position: relative; height: 46vh; }
+    .hero img.hero-bg { position: absolute; object-position: 75% center; }
+    .hero::after { display: none; }
+    .hero-inner { height: auto; padding: 28px 24px 56px; }
+    .hero-title { font-size: 44px; }
+    .hero-actions { flex-direction: column; }
+    .hero-actions .btn { width: 100%; }
+    .hero-points { flex-direction: row; flex-wrap: nowrap; gap: 0; }
+    .point { flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 0 12px; flex: 1; }
+    .point:first-child { padding-left: 12px; }
+    .point-title { font-size: 15px; }
+    .point-desc { font-size: 12px; }
+  }
+
+  /* ============ reduced-motion：取消位移与模糊，直接显示 ============ */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .hero img.hero-bg { animation: none; }
+    .rise { animation: none; }
+    .btn, .btn .arrow { transition: none; }
+    .btn:active { transform: none; }
+    .btn .ripple { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header" id="siteHeader">
+  <div class="nav-inner">
+    <a class="brand" href="#">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1E4D3E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3 C 8 8, 5 10.5, 5 15 a7 7 0 0 0 14 0 C 19 10.5, 16 8, 12 3 Z"/>
+        <path d="M12 9 v 8"/>
+      </svg>
+      <span class="brand-text">
+        <span class="brand-name">润物教育</span><br>
+        <span class="brand-sub">NURTURE</span>
+      </span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#" aria-current="page">首页</a></li>
+      <li><a href="#">严选导师</a></li>
+      <li><a href="#">课程体系</a></li>
+      <li><a href="#">学习方案</a></li>
+      <li><a href="#">关于我们</a></li>
+    </ul>
+    <a class="btn-login" href="#">登 录</a>
+  </div>
+</header>
+
+<section class="hero">
+  <picture>
+    <source type="image/avif" srcset="assets/hero/hero-mobile.avif" media="(max-width: 767px)">
+    <source type="image/webp" srcset="assets/hero/hero-mobile.webp" media="(max-width: 767px)">
+    <source type="image/avif" srcset="assets/hero/hero.avif">
+    <img class="hero-bg" src="assets/hero/hero.webp" alt="" role="presentation" fetchpriority="high">
+  </picture>
+
+  <div class="hero-inner">
+    <div class="hero-col">
+      <p class="eyebrow rise">线上家教 · 雨后江南式成长空间</p>
+      <p class="hero-brand rise">NURTURE</p>
+      <h1 class="hero-title rise">润物细无声</h1>
+      <p class="hero-sub rise">因材施教启新程，静候学海生花</p>
+      <p class="hero-desc rise">不催促、不灌输。我们为每个孩子匹配真正合适的老师，以温和而坚定的方式，陪他找到自己的节奏，走得更远。</p>
+      <div class="hero-actions rise">
+        <button class="btn btn-primary">开启匹配好老师 <span class="arrow">›</span></button>
+        <button class="btn btn-outline">探索学习方案 <span class="arrow">›</span></button>
+      </div>
+      <div class="hero-points rise">
+        <div class="point">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
+          </svg>
+          <div><div class="point-title">严选导师</div><div class="point-desc">教学能力与教育情怀并重</div></div>
+        </div>
+        <div class="point">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/>
+          </svg>
+          <div><div class="point-title">专注力友好课堂</div><div class="point-desc">尊重节奏，拒绝填鸭</div></div>
+        </div>
+        <div class="point">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+          </svg>
+          <div><div class="point-title">个性化成长路径</div><div class="point-desc">从当下出发，稳步进步</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // 导航：滚动超过 40px 切换雾白模糊态
+  var header = document.getElementById('siteHeader');
+  function onScroll() { header.classList.toggle('is-scrolled', window.scrollY > 40); }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // 苔青涟漪（reduced-motion 时禁用）
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.btn');
+    if (!btn || reduceMotion) return;
+    var rect = btn.getBoundingClientRect();
+    var d = Math.max(rect.width, rect.height);
+    var s = document.createElement('span');
+    s.className = 'ripple';
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (ev.clientX - rect.left - d / 2) + 'px';
+    s.style.top = (ev.clientY - rect.top - d / 2) + 'px';
+    btn.appendChild(s);
+    s.addEventListener('animationend', function () { s.remove(); });
+  });
+</script>
+</body>
+</html>

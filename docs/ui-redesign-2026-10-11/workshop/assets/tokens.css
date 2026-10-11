@@ -1,0 +1,65 @@
+/* ============================================================
+   NURTURE 润物细无声 · 设计令牌（Workshop 候选版 v2 加深）
+   依据 docs/ui-redesign-2026-10-11/audit/design-constraints.md
+   比例：粉墙白70 / 素笺20 / 苔青+天青≤8 / 海棠≤2，无深色底区块
+   ============================================================ */
+:root {
+  /* 粉墙白族 —— 主背景（雨后白墙，微润不刺眼） */
+  --bg-wall: #F4F7F3;
+  --bg-wall-deep: #EDF2EB;          /* 次背景 / 区块交替 */
+  /* 素笺族 —— 卡片容器（与背景拉开层级，回应“不要太浅”） */
+  --bg-card: #FBFAF6;
+  --bg-card-tint: #F0EDE6;          /* 素笺浅底（CTA 新叶浅底的底） */
+  --bg-card-hover: #FFFFFF;
+  /* 黛瓦族 —— 文本与细线（墨色要足） */
+  --ink-strong: #232A26;
+  --ink-body: #37403B;
+  --ink-muted: #5D6660;
+  --ink-faint: #8A928C;
+  --line-tile: #C7CFC6;             /* 1px 黛瓦细线，清晰可见 */
+  --line-tile-strong: #AEB9AD;
+  --taihu-stone: #B9C2B8;           /* 太湖石色（卡片默认边框） */
+  /* 苔青族 —— 品牌主色（饱满青绿，润而有力） */
+  --moss: #2F5D3F;
+  --moss-hover: #26492F;
+  --moss-active: #1E3B26;
+  --moss-soft: #E3EEE5;             /* 苔青浅底（选中/徽标底） */
+  --moss-ripple: rgba(47, 93, 63, 0.28);
+  /* 天青族 —— 辅助 */
+  --celadon: #6E9AAD;
+  --celadon-soft: #E4EEF2;
+  /* 海棠族 —— 点缀 ≤2% */
+  --begonia: #C2554B;
+  --begonia-soft: #F8E9E6;
+  /* 状态语义 */
+  --success: #2F5D3F;  --success-bg: #E3EEE5;
+  --warning: #A87614;  --warning-bg: #F7EEDC;
+  --error:   #B3402F;  --error-bg:   #F9E6E2;
+  --info:    #4E7E96;  --info-bg:    #E4EEF2;
+  /* 焦点环 */
+  --focus-ring: 0 0 0 2px var(--bg-wall), 0 0 0 4px var(--moss);
+  /* 浅渐变（仅超低饱和） */
+  --grad-mist: linear-gradient(180deg, #F4F7F3 0%, #EDF2EB 100%);
+  --grad-leaf: linear-gradient(135deg, #EDF4EC 0%, #E2EEE6 55%, #DCEAE2 100%);
+  /* 阴影：极克制的纸面漫反射，不用重阴影 */
+  --shadow-paper: 0 1px 2px rgba(35, 42, 38, 0.05), 0 4px 14px rgba(35, 42, 38, 0.05);
+  --shadow-paper-lift: 0 2px 4px rgba(35, 42, 38, 0.06), 0 10px 26px rgba(35, 42, 38, 0.08);
+  /* 字体 */
+  --font-kai: "Kaiti SC", "STKaiti", "KaiTi", "楷体", "TW-Kai", serif;
+  --font-sans: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  /* 字号阶梯 */
+  --fs-h1: clamp(2.25rem, 4.5vw, 3.25rem);
+  --fs-h2: clamp(1.6rem, 3vw, 2.2rem);
+  --fs-h3: 1.25rem;
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-caption: 0.78rem;
+  /* 间距阶梯 8pt */
+  --sp-1: 8px;  --sp-2: 16px; --sp-3: 24px; --sp-4: 32px;
+  --sp-6: 48px; --sp-8: 64px; --sp-12: 96px;
+  /* 圆角 */
+  --r-s: 8px; --r-m: 14px; --r-l: 22px; --r-pill: 999px;
+  /* 动效：润物曲线 */
+  --ease-rain: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-micro: 200ms; --dur-enter: 240ms; --dur-ripple: 380ms;
+}

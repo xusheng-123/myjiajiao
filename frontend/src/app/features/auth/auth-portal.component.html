@@ -1,10 +1,9 @@
-<!-- 统一鉴权门户 — 「雨后竹林·月洞门」视觉（以用户设计稿 test_8.html 为准），功能绑定保持不变 -->
-<nur-garden-scene [lattice]="true" [moonGate]="true" [rain]="true" [plinth]="true" />
-
+<!-- 统一鉴权门户 — 方向 D「黛绿暖金」浅色视觉（2026-10-11 重构），功能绑定保持不变 -->
 <nav class="garden-nav">
   <a href="/" class="brand-logo-wrap" (click)="$event.preventDefault(); backToLanding()" aria-label="返回首页">
-    <svg class="logo-bamboo-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
-      <path d="M12 2v20M7 7h10M6 14h12M8 20h8" stroke-linecap="round"/>
+    <svg class="logo-bamboo-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3 C 8 8, 5 10.5, 5 15 a7 7 0 0 0 14 0 C 19 10.5, 16 8, 12 3 Z"/>
+      <path d="M12 9 v 8"/>
     </svg>
     <span class="nav-logo-text">
       <span class="logo-en">NURTURE</span><span class="logo-slash" aria-hidden="true">/</span><span class="logo-cn">润物细无声</span>
@@ -17,9 +16,6 @@
 </nav>
 
 <main class="hero-chamber">
-  <div class="chamber-line chamber-line--left" aria-hidden="true"></div>
-  <div class="chamber-line chamber-line--right" aria-hidden="true"></div>
-
   <!-- 品牌叙事区（设计稿层级：辅助信息 → 英文品牌 → 中文主标 → 情绪标题 → 价值正文） -->
   <section class="brand-story" aria-label="品牌介绍">
     <div class="hero-aux-line hero-rise d-1">

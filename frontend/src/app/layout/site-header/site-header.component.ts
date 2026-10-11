@@ -39,7 +39,7 @@ export class SiteHeaderComponent {
   readonly menuOpen = signal(false);
 
   onWindowScroll(): void {
-    this.scrolled.set(window.scrollY > 8);
+    this.scrolled.set(window.scrollY > 40); /* 方向 D 规格：40px 阈值 */
   }
 
   toggleMenu(): void {
