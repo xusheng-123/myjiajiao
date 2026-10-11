@@ -123,6 +123,15 @@ public class ParentApplicationService {
                 .orElse(false);
     }
 
+    /** Read only: live ACTIVE children as account IDs; never creates a parent profile. */
+    @Transactional(readOnly=true)
+    public List<UUID> activeChildAccountIds(UUID parentAccountId) {
+        var profile=parentProfileRepository.findByAccountId(parentAccountId);
+        if(profile.isEmpty())return List.of();
+        return bindingRepository.findByParentIdAndStatus(profile.get().getId(),GuardianBinding.BindingStatus.ACTIVE).stream()
+                .map(binding->studentService.profileAccountIdOf(binding.getStudentId())).filter(java.util.Objects::nonNull).distinct().toList();
+    }
+
     @Transactional
     public FamilyWallet ensureWallet(UUID parentAccountId) {
         ParentProfile parent = ensureProfile(parentAccountId);

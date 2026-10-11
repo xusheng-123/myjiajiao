@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 import java.util.List;
 
-public interface BookingRepository extends JpaRepository<Booking, UUID> {
+public interface BookingRepository extends JpaRepository<Booking, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Booking> {
     @org.springframework.data.jpa.repository.Query(value="select count(*) from bookings where student_id=:student "
             +"and (cast(:teacher as uuid) is null or teacher_id=:teacher) and (status='COMPLETED' or (status='CLOSED' and cancel_reason is null))",nativeQuery=true)
     long completedAssessmentLessons(UUID student,UUID teacher);

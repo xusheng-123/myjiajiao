@@ -19,6 +19,8 @@ public class SupportCaseController {
  public record Change(@NotNull SupportCase.Status status,@Min(0) long revision,@NotBlank @Size(max=2000) String note){}
  @GetMapping public Object list(@RequestParam(required=false) String status,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size){return service.list(status,page,size);}
  @GetMapping("/quota") public Object quota(){return service.quota();}
+ @GetMapping("/course-options") @PreAuthorize("hasAnyRole('STUDENT','TEACHER','PARENT')")
+ public Object courses(@RequestParam(required=false) String status,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size){return service.courseOptions(status,page,size);}
  @PostMapping @ResponseStatus(HttpStatus.CREATED) public Object create(@Valid @RequestBody Create r){return service.create(r.category(),r.title(),r.description(),r.bookingId());}
  @GetMapping("/{id}") public Object detail(@PathVariable UUID id){return service.detail(id);}
  @GetMapping("/{id}/replies") public Object history(@PathVariable UUID id,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size){return service.history(id,page,size);}

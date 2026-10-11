@@ -10,6 +10,7 @@ import com.nurture.order.app.OrderApplicationService.OrderSnapshot;
 import com.nurture.refund.app.RefundApplicationService;
 import com.nurture.scheduling.app.SchedulingApplicationService;
 import com.nurture.shared.security.CallerContext;
+import com.nurture.shared.security.CallerRole;
 import com.nurture.shared.twophase.TwoPhaseService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -274,6 +275,27 @@ public class BookingApplicationService {
     public Page<Booking> ofStudent(UUID studentId, Pageable pageable) {
         return bookingRepository.findByStudentIdOrderByCreatedAtDesc(studentId, pageable);
     }
+
+    public record SupportCourse(UUID bookingId,UUID studentId,UUID teacherId,String subject,String status,String type,OffsetDateTime startAt) {}
+    private SupportCourse supportCourse(Booking b) {
+        return new SupportCourse(b.getId(),b.getStudentId(),b.getTeacherId(),b.getSubject(),b.getStatus().name(),b.getType().name(),schedulingService.slotOf(b.getSlotId()).orElseThrow(()->new IllegalStateException("课程时段缺失")).startAt());
+    }
+    /** Customer scope is server-derived; no caller/student IDs are accepted from the HTTP request. */
+    @Transactional(readOnly=true)
+    public Page<SupportCourse> supportCourseOptions(List<UUID> activeChildren,String status,int page,int size) {
+        if(page<0 || page>10000 || size<1 || size>50)throw new IllegalArgumentException("课程分页参数超出范围");
+        var caller=CallerContext.require();var role=caller.role();
+        if(role!=CallerRole.STUDENT && role!=CallerRole.TEACHER && role!=CallerRole.PARENT)throw new org.springframework.security.access.AccessDeniedException("课程选择仅供本人师生与有效监护人");
+        var state=status==null || status.isBlank()?null:Booking.BookingStatus.valueOf(status);
+        return bookingRepository.findAll((root,query,cb)->{
+            var owned=role==CallerRole.PARENT?(activeChildren.isEmpty()?cb.disjunction():root.get("studentId").in(activeChildren)):
+                    cb.equal(root.get(role==CallerRole.TEACHER?"teacherId":"studentId"),caller.accountId());
+            return state==null?owned:cb.and(owned,cb.equal(root.get("status"),state));
+        },PageRequest.of(page,size,org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,"createdAt","id"))).map(this::supportCourse);
+    }
+    /** A support case owner/admin must authorize the relationship before using this fact port. */
+    @Transactional(readOnly=true)
+    public SupportCourse supportCourseFact(UUID id) {return supportCourse(bookingRepository.findById(id).orElseThrow(()->new IllegalArgumentException("课程不存在")));}
 
     /** 教师工作台「当日课程」：今天有课的已确认/进行中预约，按开始时间排序。 */
     @Transactional(readOnly = true)
