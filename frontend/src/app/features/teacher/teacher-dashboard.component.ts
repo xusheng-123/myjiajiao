@@ -174,9 +174,9 @@ export class TeacherDashboardComponent implements OnInit {
     this.loadSubjects();
   }
 
-  /** G6：加载我的开课条目（服务端只返回在售条目）。 */
+  /** G6：加载我的开课条目（包含在售与已下架条目）。 */
   loadSubjects(): void {
-    this.http.get<SubjectOffering[]>(API.teacher.subjects).subscribe({
+    this.http.get<SubjectOffering[]>(API.teacher.subjects, {params:{includeInactive:true}}).subscribe({
       next: (data) => {
         this.subjects.set(data ?? []);
         this.subjectsLoaded.set(true);
@@ -308,6 +308,16 @@ export class TeacherDashboardComponent implements OnInit {
       });
   }
 
+  readonly relistBusy=signal(false);
+  relist(offering:SubjectOffering):void {
+    if(this.relistBusy())return;
+    this.relistBusy.set(true);
+    this.http.post<SubjectOffering>(API.teacher.subjects+'/'+offering.offeringId+':activate',{}).subscribe({
+      next: updated => {this.relistBusy.set(false);this.subjects.update(list=>list.map(o=>o.offeringId===updated.offeringId?updated:o));this.subjectsNotice.set({type:'success',text:'课程已重新上架，公开检索恢复展示。'});},
+      error: e => {this.relistBusy.set(false);this.subjectsNotice.set({type:'error',text:e.error?.detail??'重新上架失败，请稍后重试。'});},
+    });
+  }
+
   askDelist(offering: SubjectOffering): void {
     this.delistingId.set(offering.offeringId);
     this.subjectsNotice.set(null);
@@ -317,7 +327,7 @@ export class TeacherDashboardComponent implements OnInit {
     this.delistingId.set(null);
   }
 
-  /** 下架（停止销售）：二次确认后调用 DELETE；服务端为标记语义，不删除记录，无重新上架入口。 */
+  /** 下架（停止销售）：二次确认后调用 DELETE；服务端为标记语义，不删除记录，保留重新上架入口。 */
   confirmDelist(offering: SubjectOffering): void {
     if (this.delistBusy()) {
       return;

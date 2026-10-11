@@ -8,6 +8,7 @@
       退出
     </button>
   </header>
+  <nav aria-label="客服服务"><a routerLink="/support">客服与申诉</a></nav>
   <nav aria-label="课程服务"><a routerLink="/messages">课前咨询与回复</a> · <a routerLink="/learning/plans">学生学习计划</a> · <a routerLink="/learning/mistakes">学生错题本</a> · <a routerLink="/learning/materials">教学资料与作业</a></nav>
   <nur-teacher-profile-editor />
   <a routerLink="/scheduling/series">重复档期与日历</a>
@@ -206,6 +207,8 @@
             @if (o.active) {
               <button type="button" class="btn-ghost-sm" (click)="startReprice(o)" [attr.aria-expanded]="repricingId() === o.offeringId">调价</button>
               <button type="button" class="btn-ghost-sm" (click)="askDelist(o)" [attr.aria-expanded]="delistingId() === o.offeringId">下架</button>
+            } @else {
+              <button type="button" class="btn-ghost-sm" [disabled]="relistBusy()" (click)="relist(o)">重新上架</button>
             }
           </li>
           @if (repricingId() === o.offeringId) {
@@ -233,7 +236,7 @@
           @if (delistingId() === o.offeringId) {
             <li class="subject-panel">
               <p class="reschedule-hint">
-                确认下架「{{ o.subject }} · {{ o.gradeBand }}」？下架即停止销售：学生将无法再检索到或预约该条目；已生成订单不受影响。下架不是删除记录；平台当前不提供自助重新上架，如需恢复请联系运营。
+                确认下架「{{ o.subject }} · {{ o.gradeBand }}」？下架即停止销售：学生将无法再检索到或预约该条目；已生成订单不受影响。下架记录将保留，可在此重新上架。
               </p>
               <div class="attendance-row">
                 <button type="button" class="btn-primary-sm" [disabled]="delistBusy()" (click)="confirmDelist(o)">

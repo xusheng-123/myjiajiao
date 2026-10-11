@@ -90,8 +90,8 @@ public class TeacherController {
 
     @GetMapping("/subjects")
     @Operation(summary = "我的开课条目（擅长科目与定价）")
-    public List<SubjectOfferingResponse> subjects() {
-        return teacherService.offeringsOf(CallerContext.require().accountId()).stream()
+    public List<SubjectOfferingResponse> subjects(@org.springframework.web.bind.annotation.RequestParam(defaultValue="false") boolean includeInactive) {
+        return teacherService.offeringsOf(CallerContext.require().accountId(),includeInactive).stream()
                 .map(SubjectOfferingResponse::from).toList();
     }
 
@@ -155,4 +155,6 @@ public class TeacherController {
     public void deactivate(@PathVariable UUID offeringId) {
         teacherService.deactivateSubject(CallerContext.require().accountId(), offeringId);
     }
+    @PostMapping("/subjects/{offeringId}:activate")
+    public SubjectOfferingResponse activate(@PathVariable UUID offeringId){return SubjectOfferingResponse.from(teacherService.activateSubject(CallerContext.require().accountId(),offeringId));}
 }

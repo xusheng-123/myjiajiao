@@ -80,6 +80,7 @@ export class TeachersComponent {
   readonly results = signal<TeacherSummary[]>([]);
   readonly loading = signal(true);
   readonly error = signal(false);
+  readonly page=signal(0);readonly pages=signal(0);readonly total=signal(0);private requestVersion=0;
 
   private readonly query = computed<TeacherQuery>(() => ({
     keyword: this.debouncedKeyword().trim() || undefined,
@@ -88,19 +89,20 @@ export class TeachersComponent {
     maxPricePerHourCents: this.maxPrice(),
     styleTag: this.styleTag() || undefined,
     includeUnverified: this.includeUnverified(),
+    sort: this.sortKey(),
   }));
 
   constructor() {
     // 关键词 300ms 防抖，避免每敲一个字就全量检索
-    effect(() => {
+    effect((onCleanup) => {
       const kw = this.keywordInput();
       const timer = setTimeout(() => this.debouncedKeyword.set(kw), 300);
-      return () => clearTimeout(timer);
+      onCleanup(() => clearTimeout(timer));
     });
     // 任一筛选条件变化即重新检索（loading/error/results 不在依赖里，untracked 隔离）
     effect(() => {
       const q = this.query();
-      untracked(() => this.load(q));
+      untracked(() => {this.page.set(0);this.load(q);});
     });
   }
 
@@ -117,22 +119,8 @@ export class TeachersComponent {
   });
 
   readonly visibleTeachers = computed(() => {
-    const list = [...this.results()];
-    switch (this.sortKey()) {
-      case 'price-asc':
-        return list.sort((a, b) => a.pricePerHourCents - b.pricePerHourCents);
-      case 'price-desc':
-        return list.sort((a, b) => b.pricePerHourCents - a.pricePerHourCents);
-      case 'rating-desc':
-        return list.sort((a, b) =>
-          (b.averageRating ?? 0) - (a.averageRating ?? 0) || b.reviewCount - a.reviewCount);
-      case 'reviews-desc':
-        return list.sort((a, b) => b.reviewCount - a.reviewCount);
-      default:
-        return list;
-    }
+    return this.results();
   });
-
   // ---------- 模板事件 ----------
   toggleSubject(value: string): void {
     this.subject.update((current) => (current === value ? '' : value));
@@ -168,17 +156,21 @@ export class TeachersComponent {
   }
 
   private load(query: TeacherQuery): void {
+    const version=++this.requestVersion;
     this.loading.set(true);
     this.error.set(false);
-    this.teachersApi.search(query).subscribe({
-      next: (list) => {
-        this.results.set(list);
+    this.teachersApi.searchPage(query,this.page()).subscribe({
+      next: (result) => {
+        if(version!==this.requestVersion)return;
+        this.results.set(result.content);this.pages.set(result.totalPages);this.total.set(result.totalElements);
         this.loading.set(false);
       },
       error: () => {
+        if(version!==this.requestVersion)return;
         this.error.set(true);
         this.loading.set(false);
       },
     });
   }
+  turnPage(delta:number):void{if(this.loading() || this.page()+delta<0 || this.page()+delta>=this.pages())return;this.page.update(p=>p+delta);this.load(untracked(this.query));}
 }

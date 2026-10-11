@@ -68,8 +68,12 @@ public class MatchingApplicationService {
     public List<TeacherCandidate> search(String subject, String gradeBand, Long maxPricePerHourCents,
                                          String styleTag, String keyword, boolean includeUnverified, UUID selectedTeacherId) {
         int maxSize = (int) configReader.longValue("matching.max-result-size", 20);
+        return collect(subject,gradeBand,maxPricePerHourCents,styleTag,keyword,includeUnverified,selectedTeacherId,maxSize,false);
+    }
+    private List<TeacherCandidate> collect(String subject,String gradeBand,Long maxPricePerHourCents,String styleTag,String keyword,
+            boolean includeUnverified,UUID selectedTeacherId,int maxSize,boolean full) {
 
-        List<TeacherApplicationService.OfferingView> pool = subject != null && !subject.isBlank()
+        List<TeacherApplicationService.OfferingView> pool = full || selectedTeacherId!=null ? teacherService.searchAllActiveOfferings(subject) : subject != null && !subject.isBlank()
                 ? teacherService.searchActiveOfferings(subject)
                 : teacherService.searchActiveOfferings(null);
 
@@ -94,7 +98,7 @@ public class MatchingApplicationService {
             }
             // 自由关键词：科目/学段/院校包含匹配
             if (keyword != null && !keyword.isBlank()) {
-                String haystack = offering.subject() + " " + offering.gradeBand() + " " + brief.school();
+                String haystack = offering.subject() + " " + offering.gradeBand() + " " + brief.school()+" "+account.displayName();
                 if (!haystack.contains(keyword.trim())) {
                     continue;
                 }
@@ -104,7 +108,7 @@ public class MatchingApplicationService {
                 continue;
             }
             results.add(toCandidate(offering, teacherAccountId, verified));
-            if (results.size() >= maxSize) {
+            if (maxSize>0 && results.size() >= maxSize) {
                 break;
             }
         }
@@ -114,6 +118,22 @@ public class MatchingApplicationService {
             return byEvidence != 0 ? byEvidence : Integer.compare(b.reasons().size(), a.reasons().size());
         });
         return results;
+    }
+    @Transactional(readOnly=true)
+    public Page<TeacherCandidate> publicPage(String subject,String gradeBand,Long maxPrice,String styleTag,String keyword,String sort,int page,int size) {
+        if(page<0 || page>10000 || size<1 || size>50 || maxPrice!=null && maxPrice<0)throw new IllegalArgumentException("检索或分页参数超出范围");
+        if(subject!=null && subject.length()>60 || gradeBand!=null && gradeBand.length()>32 || styleTag!=null && styleTag.length()>32 || keyword!=null && keyword.length()>100)throw new IllegalArgumentException("筛选条件过长");
+        var results=collect(subject,gradeBand,maxPrice,styleTag,keyword,false,null,0,true);
+        java.util.Comparator<TeacherCandidate> comparator=switch(sort) {
+            case "recommended"->java.util.Comparator.<TeacherCandidate>comparingInt(this::evidenceScore).reversed().thenComparing(java.util.Comparator.comparingInt((TeacherCandidate c)->c.reasons().size()).reversed());
+            case "price-asc"->java.util.Comparator.comparingLong(TeacherCandidate::pricePerHourCents);
+            case "price-desc"->java.util.Comparator.comparingLong(TeacherCandidate::pricePerHourCents).reversed();
+            case "rating-desc"->java.util.Comparator.comparingDouble((TeacherCandidate c)->c.averageRating()==null?0:c.averageRating()).reversed();
+            case "reviews-desc"->java.util.Comparator.comparingLong(TeacherCandidate::reviewCount).reversed();
+            default->throw new IllegalArgumentException("排序方式无效");
+        };
+        results.sort(comparator.thenComparing(c->c.teacherId().toString()).thenComparing(TeacherCandidate::subject).thenComparing(TeacherCandidate::gradeBand));
+        int start=(int)Math.min((long)page*size,results.size());return new org.springframework.data.domain.PageImpl<>(results.subList(start,Math.min(start+size,results.size())),PageRequest.of(page,size),results.size());
     }
 
     private int evidenceScore(TeacherCandidate c) {

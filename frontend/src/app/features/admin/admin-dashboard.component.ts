@@ -1,8 +1,10 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { DatePipe, KeyValuePipe } from '@angular/common';
 import { AuthService } from '../../core/auth/auth.service';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { API, API_BASE } from '../../core/api/endpoints';
+import { QueuePagerComponent } from '../../shared/components/queue-pager.component';
 import { NoticeCenterComponent } from '../../shared/components/notice-center.component';
 
 interface VerificationCase {
@@ -53,7 +55,7 @@ interface AuditLog {
 @Component({
   selector: 'nur-admin-dashboard',
   standalone: true,
-  imports: [DatePipe, KeyValuePipe, NoticeCenterComponent],
+  imports: [DatePipe, KeyValuePipe, NoticeCenterComponent, QueuePagerComponent, RouterLink],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.css',
 })
@@ -103,10 +105,41 @@ export class AdminDashboardComponent implements OnInit {
     this.loadPendingOrders();
   }
 
-  loadAccounts(): void {
-    this.http.get<{ content: AccountView[] }>(`${API.admin.accounts}?page=0&size=20`)
-      .subscribe({ next: (d) => this.accounts.set(d.content ?? []) });
+  readonly queues = {
+    accounts: {page: signal(0), pages: signal(0), total: signal(0), busy: signal(false), filter: signal(''), version: 0},
+    verifications: {page: signal(0), pages: signal(0), total: signal(0), busy: signal(false), filter: signal(''), version: 0},
+    refunds: {page: signal(0), pages: signal(0), total: signal(0), busy: signal(false), filter: signal(''), version: 0},
+    audit: {page: signal(0), pages: signal(0), total: signal(0), busy: signal(false), filter: signal(''), version: 0},
+    orders: {page: signal(0), pages: signal(0), total: signal(0), busy: signal(false), filter: signal(''), version: 0},
+  };
+  readonly statusOptions = {
+    accounts: [{value:'ACTIVE',label:'正常'},{value:'LOCKED',label:'已锁定'},{value:'CLOSED',label:'已注销'}],
+    verifications: [{value:'SUBMITTED',label:'待审核'},{value:'UNDER_REVIEW',label:'审核中'},{value:'APPROVED',label:'已通过'},{value:'REJECTED',label:'已驳回'}],
+    refunds: [{value:'REQUESTED',label:'待评估'},{value:'EVALUATED',label:'已评估'},{value:'APPROVED',label:'已批准'},{value:'REJECTED',label:'已驳回'},{value:'EXECUTED',label:'已执行'}],
+  };
+  loadQueue(key: keyof typeof this.queues): void {
+    const q=this.queues[key], version=++q.version;
+    const url={accounts:API.admin.accounts,verifications:API.admin.verificationCases,refunds:API.admin.refundCases,audit:API.admin.auditLogs,orders:API.adminOrders.pending}[key];
+    let params=new HttpParams().set('page',q.page()).set('size',20);
+    if(q.filter().trim()) params=params.set(key==='audit'?'actionType':'status',q.filter().trim());
+    q.busy.set(true);
+    this.http.get<{content:any[];totalPages:number;totalElements:number}>(url,{params}).subscribe({
+      next: d => {
+        if(version!==q.version)return;
+        if(q.page()>0 && d.content.length===0){q.page.set(Math.max(0,d.totalPages-1));this.loadQueue(key);return;}
+        q.pages.set(d.totalPages);q.total.set(d.totalElements);q.busy.set(false);
+        ({accounts:this.accounts,verifications:this.verificationCases,refunds:this.refundCases,audit:this.auditLogs,orders:this.pendingOrders}[key]).set(d.content);
+      },
+      error: () => {if(version!==q.version)return;q.busy.set(false);this.notice.set('列表读取失败，保留当前数据，请点击对应列表的刷新重试。');},
+    });
   }
+  turnQueue(key:keyof typeof this.queues,delta:number):void {
+    const q=this.queues[key],target=q.page()+delta;
+    if(q.busy() || target<0 || target>=q.pages())return;
+    q.page.set(target);this.loadQueue(key);
+  }
+  filterQueue(key:keyof typeof this.queues,value:string):void {this.queues[key].filter.set(value);this.queues[key].page.set(0);this.loadQueue(key);}
+  loadAccounts(): void {this.loadQueue('accounts');}
 
   setLock(account: AccountView, lock: boolean): void {
     const note = lock ? window.prompt('锁定原因（将写入审计日志）：') ?? '' : '解除锁定';
@@ -123,20 +156,9 @@ export class AdminDashboardComponent implements OnInit {
       });
   }
 
-  loadVerifications(): void {
-    this.http.get<{ content: VerificationCase[] }>(`${API.admin.verificationCases}?page=0&size=20`)
-      .subscribe({ next: (d) => this.verificationCases.set(d.content) });
-  }
-
-  loadRefunds(): void {
-    this.http.get<{ content: RefundCase[] }>(`${API.admin.refundCases}?page=0&size=20`)
-      .subscribe({ next: (d) => this.refundCases.set(d.content) });
-  }
-
-  loadAuditLogs(): void {
-    this.http.get<{ content: AuditLog[] }>(`${API.admin.auditLogs}?page=0&size=20`)
-      .subscribe({ next: (d) => this.auditLogs.set(d.content) });
-  }
+  loadVerifications(): void {this.loadQueue('verifications');}
+  loadRefunds(): void {this.loadQueue('refunds');}
+  loadAuditLogs(): void {this.loadQueue('audit');}
 
   decideVerification(caseId: string, approve: boolean): void {
     const note = approve ? '材料齐全，核验通过' : window.prompt('驳回必须附上明确原因（对导师可见）：') ?? '';
@@ -195,12 +217,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   // ── 订单与收款（模式 B）──
-  loadPendingOrders(): void {
-    this.http.get<any>(`${API.adminOrders.pending}?page=0&size=20`).subscribe({
-      next: (d) => this.pendingOrders.set(d?.content ?? []),
-      error: () => this.orderMsg.set({ type: 'error', text: '待支付订单加载失败。' }),
-    });
-  }
+  loadPendingOrders(): void {this.loadQueue('orders');}
 
   askConfirm(o: any): void {
     this.confirmTarget.set(o);

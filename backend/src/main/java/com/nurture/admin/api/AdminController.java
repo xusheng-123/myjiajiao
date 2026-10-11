@@ -38,6 +38,10 @@ import java.util.UUID;
 @SecurityRequirement(name = "bearerJWT")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
+    private static PageRequest page(int page,int size,String field) {
+        if(page<0 || page>10000 || size<1 || size>100)throw new IllegalArgumentException("分页参数超出范围");
+        return PageRequest.of(page,size,org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,field,"id"));
+    }
 
     private final AdminApplicationService adminService;
     private final VerificationApplicationService verificationService;
@@ -91,7 +95,7 @@ public class AdminController {
             @RequestParam(required = false) String actionType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return adminService.auditLogViews(actionType, PageRequest.of(page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "occurredAt")));
+        return adminService.auditLogViews(actionType, page(page,size,"occurredAt"));
     }
 
     // ------------------------------------------------------------ 资质审核
@@ -104,7 +108,7 @@ public class AdminController {
             @RequestParam(defaultValue = "20") int size) {
         VerificationCase.VerificationStatus parsed = status == null ? null
                 : VerificationCase.VerificationStatus.valueOf(status);
-        return verificationService.listView(parsed, PageRequest.of(page, size));
+        return verificationService.listView(parsed, page(page,size,"createdAt"));
     }
 
     @PostMapping("/verification-cases/{caseId}:decide")
@@ -132,9 +136,10 @@ public class AdminController {
     @GetMapping("/refund-cases")
     @Operation(summary = "差错退款案例列表")
     public Page<com.nurture.refund.app.RefundApplicationService.RefundCaseView> refundCases(
+            @RequestParam(required=false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return refundService.listAllViews(PageRequest.of(page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")));
+        return refundService.listAllViews(status,page(page,size,"createdAt"));
     }
 
     @PostMapping("/refund-cases/{caseId}/arbitration:preview")
@@ -161,9 +166,10 @@ public class AdminController {
     @GetMapping("/accounts")
     @Operation(summary = "全站账户列表（内容与账户管理）")
     public Page<com.nurture.identity.app.IdentityApplicationService.AccountAdminView> accounts(
+            @RequestParam(required=false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return adminService.listAccounts(PageRequest.of(page, size));
+        return adminService.listAccounts(status,page(page,size,"createdAt"));
     }
 
     @PostMapping("/accounts/{accountId}:lock")
@@ -218,6 +224,6 @@ public class AdminController {
     public org.springframework.data.domain.Page<java.util.Map<String, Object>> pendingPaymentOrders(
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size) {
-        return adminService.pendingPaymentOrders(org.springframework.data.domain.PageRequest.of(page, Math.min(size, 50)));
+        return adminService.pendingPaymentOrders(page(page,size,"createdAt"));
     }
 }

@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { API_BASE } from './endpoints';
 import { TeacherSummary } from '../../shared/models/teacher.model';
 
@@ -9,6 +9,7 @@ import { TeacherSummary } from '../../shared/models/teacher.model';
  * （subject / gradeBand / maxPricePerHourCents / styleTag / keyword / includeUnverified）。
  */
 export interface TeacherQuery {
+  sort?: string;
   /** 自由关键词：科目/学段/院校包含匹配 */
   keyword?: string;
   /** 学科，如 数学 */
@@ -30,6 +31,12 @@ export interface TeacherQuery {
 @Injectable()
 export abstract class TeachersApi {
   abstract search(query: TeacherQuery): Observable<TeacherSummary[]>;
+  searchPage(query:TeacherQuery,page:number,size=20):Observable<{content:TeacherSummary[];totalPages:number;totalElements:number}>{
+    return this.search(query).pipe(map(rows=>{
+      const sorted=[...rows];switch(query.sort){case 'price-asc':sorted.sort((a,b)=>a.pricePerHourCents-b.pricePerHourCents);break;case 'price-desc':sorted.sort((a,b)=>b.pricePerHourCents-a.pricePerHourCents);break;case 'rating-desc':sorted.sort((a,b)=>(b.averageRating??0)-(a.averageRating??0));break;case 'reviews-desc':sorted.sort((a,b)=>b.reviewCount-a.reviewCount);break;}
+      return {content:sorted.slice(page*size,(page+1)*size),totalPages:Math.ceil(rows.length/size),totalElements:rows.length};
+    }));
+  }
 }
 
 /** 检索实现：正式 HTTP 通道（对应后端 matching 契约）。 */
@@ -38,6 +45,12 @@ export class HttpTeachersApiService extends TeachersApi {
   private readonly http = inject(HttpClient);
 
   override search(query: TeacherQuery): Observable<TeacherSummary[]> {
+    return this.http.get<TeacherSummary[]>(`${API_BASE}/matching/public/teachers`, { params:this.params(query) });
+  }
+  override searchPage(query:TeacherQuery,page:number,size=20):Observable<{content:TeacherSummary[];totalPages:number;totalElements:number}>{
+    return this.http.get<{content:TeacherSummary[];totalPages:number;totalElements:number}>(`${API_BASE}/matching/public/teachers-page`,{params:this.params(query).set('page',page).set('size',size).set('sort',query.sort??'recommended')});
+  }
+  private params(query:TeacherQuery):HttpParams {
     let params = new HttpParams();
     if (query.keyword) params = params.set('keyword', query.keyword);
     if (query.subject) params = params.set('subject', query.subject);
@@ -46,6 +59,6 @@ export class HttpTeachersApiService extends TeachersApi {
       params = params.set('maxPricePerHourCents', String(query.maxPricePerHourCents));
     }
     if (query.styleTag) params = params.set('styleTag', query.styleTag);
-    return this.http.get<TeacherSummary[]>(`${API_BASE}/matching/public/teachers`, { params });
+    return params;
   }
 }

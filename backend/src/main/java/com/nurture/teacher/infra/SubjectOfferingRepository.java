@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface SubjectOfferingRepository extends JpaRepository<SubjectOffering, UUID> {
+    List<SubjectOffering> findByTeacherIdOrderByCreatedAtDesc(UUID teacher);
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from SubjectOffering o where o.id=:id") java.util.Optional<SubjectOffering> locked(UUID id);
 
     List<SubjectOffering> findByTeacherIdAndActiveTrue(UUID teacherId);
 
@@ -33,4 +36,6 @@ public interface SubjectOfferingRepository extends JpaRepository<SubjectOffering
             LIMIT 200
             """, nativeQuery = true)
     List<SubjectOffering> searchBySimilarSubject(@Param("subject") String subject);
+    @Query(value="SELECT o.* FROM subject_offerings o WHERE o.active=true AND (CAST(:subject AS text) IS NULL OR o.subject ILIKE '%' || CAST(:subject AS text) || '%' OR similarity(o.subject,CAST(:subject AS text))>0.2) ORDER BY o.subject,o.grade_band,o.teacher_id,o.id",nativeQuery=true)
+    List<SubjectOffering> searchAllActive(@Param("subject") String subject);
 }

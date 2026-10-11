@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AccountRepository extends JpaRepository<Account, UUID> {
+    org.springframework.data.domain.Page<Account> findByStatus(com.nurture.identity.domain.AccountStatus status,org.springframework.data.domain.Pageable page);
 
     Optional<Account> findByPhone(String phone);
 

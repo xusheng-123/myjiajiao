@@ -60,7 +60,7 @@ public class SecurityConfig {
                                 : new String[]{})
                         .permitAll()
                         // 其余一律鉴权
-                        .requestMatchers(HttpMethod.GET, "/api/v1/matching/public/teachers", "/api/v1/matching/public/teachers/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/matching/public/teachers", "/api/v1/matching/public/teachers/*", "/api/v1/matching/public/teachers-page").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

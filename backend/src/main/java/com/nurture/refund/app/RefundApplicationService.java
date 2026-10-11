@@ -188,6 +188,10 @@ public class RefundApplicationService {
     public org.springframework.data.domain.Page<RefundCaseView> listAllViews(org.springframework.data.domain.Pageable pageable) {
         return refundRepository.findAll(pageable).map(RefundCaseView::from);
     }
+    @Transactional(readOnly=true)
+    public org.springframework.data.domain.Page<RefundCaseView> listAllViews(String status,org.springframework.data.domain.Pageable pageable) {
+        return status==null || status.isBlank()?listAllViews(pageable):refundRepository.findByStatus(RefundCase.RefundStatus.valueOf(status),pageable).map(RefundCaseView::from);
+    }
 
     @Transactional
     public RefundCaseView executeArbitrationView(java.util.UUID caseId, boolean approve,

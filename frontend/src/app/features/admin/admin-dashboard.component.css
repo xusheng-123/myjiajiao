@@ -179,3 +179,5 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+.table-scroll{overflow-x:auto;max-width:100%}.table-scroll table{min-width:520px}.case-item{flex-wrap:wrap}.case-actions{flex-wrap:wrap}

@@ -226,6 +226,10 @@ public class IdentityApplicationService implements ApiTokenVerifier, AccountStat
     public org.springframework.data.domain.Page<AccountAdminView> adminAccounts(org.springframework.data.domain.Pageable pageable) {
         return accountRepository.findAll(pageable).map(this::toAdminView);
     }
+    @Transactional(readOnly=true)
+    public org.springframework.data.domain.Page<AccountAdminView> adminAccounts(String status,org.springframework.data.domain.Pageable pageable) {
+        return status==null || status.isBlank()?adminAccounts(pageable):accountRepository.findByStatus(com.nurture.identity.domain.AccountStatus.valueOf(status),pageable).map(this::toAdminView);
+    }
 
     @Transactional(readOnly = true)
     public java.util.Optional<AccountAdminView> adminAccountById(UUID accountId) {

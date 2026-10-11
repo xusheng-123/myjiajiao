@@ -101,6 +101,8 @@ public class AdminApplicationService {
     public Page<IdentityApplicationService.AccountAdminView> listAccounts(Pageable pageable) {
         return identityService.adminAccounts(pageable);
     }
+    @Transactional(readOnly=true)
+    public Page<IdentityApplicationService.AccountAdminView> listAccounts(String status,Pageable pageable){return identityService.adminAccounts(status,pageable);}
 
     /** 违规干预：锁定/解锁账户（PRD 1.2 内容与账户管理）。 */
     @Transactional

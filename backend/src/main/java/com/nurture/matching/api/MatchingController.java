@@ -54,6 +54,12 @@ public class MatchingController {
     public MatchingApplicationService.TeacherDetail publicDetail(@PathVariable UUID teacherId) {
         return matchingService.publicTeacherDetail(teacherId);
     }
+    @GetMapping("/public/teachers-page")
+    public Object publicPage(@RequestParam(required=false) String subject,@RequestParam(required=false) String gradeBand,
+            @RequestParam(required=false) Long maxPricePerHourCents,@RequestParam(required=false) String styleTag,@RequestParam(required=false) String keyword,
+            @RequestParam(defaultValue="recommended") String sort,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {
+        return matchingService.publicPage(subject,gradeBand,maxPricePerHourCents,styleTag,keyword,sort,page,size);
+    }
 
     public record DemandView(UUID demandId, String subject, String gradeBand, String note,
                              Long budgetMaxCents, String preferredTime, String status) {

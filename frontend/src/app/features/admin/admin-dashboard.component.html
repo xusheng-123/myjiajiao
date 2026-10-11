@@ -5,6 +5,7 @@
       <p class="dash-subtitle">笃定运转，静水深处。</p>
     </div>
   </header>
+  <nav aria-label="客服服务"><a routerLink="/support">客服与申诉</a></nav>
 
   @if (notice()) {
     <p class="form-status" role="status"><span aria-hidden="true">ℹ</span> {{ notice() }}</p>
@@ -46,8 +47,9 @@
   <!-- 教师资质审核流转 -->
   <section class="nur-card nur-enter" style="--stagger-index: 2" aria-labelledby="verify-title">
     <h2 id="verify-title" class="nur-serif">教师资质审核流转</h2>
+    <nur-queue-pager label="资质审核" [page]="queues.verifications.page()" [pages]="queues.verifications.pages()" [total]="queues.verifications.total()" [busy]="queues.verifications.busy()" [filter]="queues.verifications.filter()" [options]="statusOptions.verifications" (turn)="turnQueue('verifications',$event)" (filterChange)="filterQueue('verifications',$event)" (reload)="loadQueue('verifications')" />
     @if (verificationCases().length === 0) {
-      <p class="quiet-note">暂无待处理的资质审核案例。</p>
+      <p class="quiet-note">当前筛选没有资质审核案例。</p>
     } @else {
       <ul class="case-list">
         @for (c of verificationCases(); track c.caseId) {
@@ -73,6 +75,7 @@
   <!-- 差错退款仲裁（两阶段） -->
   <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="refund-title">
     <h2 id="refund-title" class="nur-serif">差错退款仲裁 · 两阶段确认</h2>
+    <nur-queue-pager label="退款" [page]="queues.refunds.page()" [pages]="queues.refunds.pages()" [total]="queues.refunds.total()" [busy]="queues.refunds.busy()" [filter]="queues.refunds.filter()" [options]="statusOptions.refunds" (turn)="turnQueue('refunds',$event)" (filterChange)="filterQueue('refunds',$event)" (reload)="loadQueue('refunds')" />
     @if (refundCases().length === 0) {
       <p class="quiet-note">暂无退款案例。</p>
     } @else {
@@ -111,8 +114,9 @@
   <!-- 账户管理 -->
   <section class="nur-card nur-enter" style="--stagger-index: 4" aria-labelledby="account-title">
     <h2 id="account-title" class="nur-serif">账户管理</h2>
+    <nur-queue-pager label="账户" [page]="queues.accounts.page()" [pages]="queues.accounts.pages()" [total]="queues.accounts.total()" [busy]="queues.accounts.busy()" [filter]="queues.accounts.filter()" [options]="statusOptions.accounts" (turn)="turnQueue('accounts',$event)" (filterChange)="filterQueue('accounts',$event)" (reload)="loadQueue('accounts')" />
     <p class="quiet-note">违规干预入口：锁定/解锁账户，全部动作写入不可篡改审计日志。</p>
-    <table class="audit-table">
+    <div class="table-scroll"><table class="audit-table">
       <thead>
         <tr>
           <th scope="col">账户</th>
@@ -141,14 +145,16 @@
           </tr>
         }
       </tbody>
-    </table>
+    </table></div>
   </section>
 
   <!-- 全站审计日志 -->
   <section class="nur-card nur-enter" style="--stagger-index: 5" aria-labelledby="audit-title">
     <h2 id="audit-title" class="nur-serif">全站审计日志检视</h2>
+    <nur-queue-pager label="审计" [page]="queues.audit.page()" [pages]="queues.audit.pages()" [total]="queues.audit.total()" [busy]="queues.audit.busy()" [filter]="queues.audit.filter()" (turn)="turnQueue('audit',$event)" (filterChange)="filterQueue('audit',$event)" (reload)="loadQueue('audit')" />
+    <label>动作类型 <input aria-label="审计动作类型" maxlength="128" [value]="queues.audit.filter()" (change)="filterQueue('audit',$any($event.target).value)" placeholder="如 OFFERING_RELIST" /></label>
     <p class="quiet-note">审计日志由数据库触发器防篡改，任何 UPDATE / DELETE 都会被拒绝。</p>
-    <table class="audit-table">
+    <div class="table-scroll"><table class="audit-table">
       <thead>
         <tr>
           <th scope="col">时间</th>
@@ -167,13 +173,14 @@
           </tr>
         }
       </tbody>
-    </table>
+    </table></div>
   </section>
 
 
   <!-- 订单与收款（模式 B：线下收款确认） -->
   <section class="nur-card nur-enter" aria-labelledby="orders-title">
     <h2 id="orders-title" class="nur-serif">订单与收款</h2>
+    <nur-queue-pager label="待支付订单" [page]="queues.orders.page()" [pages]="queues.orders.pages()" [total]="queues.orders.total()" [busy]="queues.orders.busy()" [filter]="queues.orders.filter()" (turn)="turnQueue('orders',$event)" (filterChange)="filterQueue('orders',$event)" (reload)="loadQueue('orders')" />
     <p class="quiet-note">仅当线下款项实际到账后才可确认；确认后订单转为已支付，课酬自动进入结算。</p>
     @if (orderMsg(); as m) {
       <p class="form-status" role="status" [attr.data-type]="m.type">{{ m.text }}</p>

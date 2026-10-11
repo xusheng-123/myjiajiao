@@ -58,6 +58,7 @@ public class SubjectOffering extends AggregateRoot {
     public void deactivate() {
         this.active = false;
     }
+    public void activate(){this.active=true;}
 
     public UUID getTeacherId() {
         return teacherId;

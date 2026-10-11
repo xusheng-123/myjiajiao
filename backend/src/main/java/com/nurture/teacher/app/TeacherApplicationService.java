@@ -19,11 +19,13 @@ public class TeacherApplicationService {
 
     private final TeacherProfileRepository teacherProfileRepository;
     private final SubjectOfferingRepository offeringRepository;
+    private final com.nurture.shared.audit.AuditService audit;
 
     public TeacherApplicationService(TeacherProfileRepository teacherProfileRepository,
-                                     SubjectOfferingRepository offeringRepository) {
+                                     SubjectOfferingRepository offeringRepository,com.nurture.shared.audit.AuditService audit) {
         this.teacherProfileRepository = teacherProfileRepository;
         this.offeringRepository = offeringRepository;
+        this.audit=audit;
     }
 
     @Transactional
@@ -159,12 +161,24 @@ public class TeacherApplicationService {
     public void deactivateSubject(UUID accountId, UUID offeringId) {
         ownedOffering(accountId, offeringId).deactivate();
     }
+    @Transactional
+    public SubjectOffering activateSubject(UUID accountId,UUID offeringId) {
+        var offering=ownedOffering(accountId,offeringId);
+        if(offering.isActive())return offering;
+        var other=offeringRepository.findByTeacherIdAndSubjectAndGradeBandAndActiveTrue(offering.getTeacherId(),offering.getSubject(),offering.getGradeBand());
+        if(other.isPresent())throw new IllegalStateException("该科目与学段已有在售条目，请先处理现有条目");
+        offering.activate();offeringRepository.flush();audit.record("OFFERING_RELIST","SUCCESS",java.util.Map.of("offeringId",offeringId),"恢复销售，历史订单快照保持");return offering;
+    }
 
     @Transactional(readOnly = true)
     public List<SubjectOffering> offeringsOf(UUID accountId) {
         TeacherProfile profile = ensureProfile(accountId);
         return offeringRepository.findByTeacherIdAndActiveTrue(profile.getId());
     }
+    @Transactional(readOnly=true)
+    public List<SubjectOffering> offeringsOf(UUID accountId,boolean includeInactive){return includeInactive?offeringRepository.findByTeacherIdOrderByCreatedAtDesc(ensureProfile(accountId).getId()):offeringsOf(accountId);}
+    @Transactional(readOnly=true)
+    public List<OfferingView> searchAllActiveOfferings(String subject){return offeringRepository.searchAllActive(subject).stream().map(o->new OfferingView(o.getId(),o.getTeacherId(),o.getSubject(),o.getGradeBand(),o.getPricePerHourCents(),o.isActive())).toList();}
 
     @Transactional(readOnly = true)
     public TeacherProfile byAccountId(UUID accountId) {
@@ -179,7 +193,7 @@ public class TeacherApplicationService {
 
     private SubjectOffering ownedOffering(UUID accountId, UUID offeringId) {
         TeacherProfile profile = ensureProfile(accountId);
-        SubjectOffering offering = offeringRepository.findById(offeringId)
+        SubjectOffering offering = offeringRepository.locked(offeringId)
                 .orElseThrow(() -> new IllegalArgumentException("开课条目不存在"));
         if (!offering.getTeacherId().equals(profile.getId())) {
             throw new org.springframework.security.access.AccessDeniedException("仅开课导师可变更该条目");
