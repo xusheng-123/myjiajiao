@@ -1,29 +1,52 @@
-/* 学生控制台 — 每个视口只突出一个核心主任务 */
-
 :host {
   display: block;
   min-height: 100vh;
   background: var(--bg-page);
+  color: var(--text-main);
 }
 
 .dashboard-shell {
-  max-width: 760px;
+  max-width: 860px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-4) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 .dash-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
-  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.dash-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  color: var(--color-gold-text);
+  font-family: var(--font-serif);
+  margin-bottom: var(--space-1);
+}
+
+.eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-gold);
 }
 
 .dash-greeting {
   margin: 0;
-  font-size: 1.5rem;
-  letter-spacing: 0.08em;
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  color: var(--text-title);
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 
 .dash-subtitle {
@@ -32,49 +55,125 @@
   font-size: 0.95rem;
 }
 
-.btn-ghost-sm {
-  min-height: var(--touch-target);
-  padding: 0 var(--space-5);
-  border: 1.5px solid var(--border-subtle);
-  border-radius: var(--radius-pill);
-  background: var(--bg-card);
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  transition: border-color var(--duration-enter) var(--ease-nurture);
+.header-action-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.btn-ghost-sm:hover {
+/* 导航区 */
+.workbench-nav-card {
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.nav-section-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.nav-group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-title);
+  white-space: nowrap;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.nav-chip {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--bg-page);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all var(--duration-enter) var(--ease-nurture);
+}
+
+.nav-chip:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+  box-shadow: var(--shadow-subtle);
 }
 
-/* ---------- 专注卡片 ---------- */
+.nav-chip--highlight {
+  background: var(--color-primary-soft);
+  border-color: rgba(30, 77, 62, 0.2);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.nav-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--line);
+}
+
+@media (max-width: 768px) {
+  .nav-divider { display: none; }
+  .workbench-nav-card { flex-direction: column; align-items: flex-start; }
+}
+
+/* 专注卡片 */
 .focus-card {
-  padding: var(--space-7) var(--space-6);
+  padding: var(--space-6);
+  border-left: 4px solid var(--color-primary);
 }
 
-.focus-card h2 {
-  margin: 0 0 var(--space-2);
-  font-size: 1.6rem;
-  color: var(--text-main);
+.focus-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.focus-pill {
+  font-size: 0.78rem;
+  color: var(--color-gold-text);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.lesson-title {
+  margin: 4px 0 0;
+  font-size: 1.5rem;
+  color: var(--text-title);
 }
 
 .lesson-meta {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   color: var(--text-muted);
+  font-size: 0.95rem;
 }
 
 .task-chunks {
   border: none;
   padding: 0;
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-3);
 }
 
 .task-progress {
-  color: var(--color-secondary);
+  color: var(--color-gold-text);
   font-weight: 600;
+  font-size: 0.92rem;
   padding: 0;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .task-chunk {
@@ -85,173 +184,66 @@
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   cursor: pointer;
-  transition: background-color var(--duration-enter) var(--ease-nurture);
 }
 
-.task-chunk:hover {
-  background: var(--color-primary-bg);
-}
-
-.task-chunk input[type='checkbox'] {
-  width: 22px;
-  height: 22px;
-  min-height: 22px;
-  accent-color: var(--color-primary);
-}
-
-.task-title {
-  flex: 1;
-}
-
-.task-state {
-  color: var(--color-primary);
-}
+.task-chunk:hover { background: var(--color-primary-soft); }
+.task-chunk input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--color-primary); }
+.task-title { flex: 1; font-size: 0.92rem; }
+.task-state { color: var(--color-primary); font-weight: 600; }
 
 .encouragement {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-4);
   color: var(--text-muted);
   font-size: 0.9rem;
 }
 
 .btn-enter-class {
   width: 100%;
-  min-height: 52px;
-  border: none;
-  border-radius: var(--radius-control);
-  background: var(--color-primary);
-  color: #fff;
+  min-height: 50px;
   font-size: 1.05rem;
-  letter-spacing: 0.15em;
-  transition: background-color var(--duration-enter) var(--ease-nurture);
+  letter-spacing: 0.12em;
 }
 
-.btn-enter-class:hover {
-  background: var(--color-primary-hover);
-}
-
-/* ---------- 次要信息（专注模式收起） ---------- */
-.secondary-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-  margin-top: var(--space-5);
-}
-
-.find-teacher-line {
-  margin: 0 0 var(--space-5);
-  color: var(--text-muted);
-  font-size: 0.92rem;
-}
-
-.find-teacher-line a {
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.schedule-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.schedule-list li {
+/* 通用头部与辅助 */
+.card-head {
   display: flex;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-control);
-  font-size: 0.9rem;
+  margin-bottom: var(--space-4);
 }
 
-.schedule-subject {
+.card-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  color: var(--text-title);
   font-weight: 600;
 }
 
-.schedule-time {
+.card-desc, .quiet-note, .pager-info, .count-badge {
+  font-size: 0.85rem;
   color: var(--text-muted);
-  white-space: nowrap;
 }
 
-.secondary-card {
-  padding: var(--space-5);
-}
+.card-desc { margin: 2px 0 0; }
+.quiet-box { padding: var(--space-6); text-align: center; }
+.empty-box { padding: var(--space-6) 0; text-align: center; }
 
-.secondary-card h2,
-.secondary-card h3 {
-  margin: 0 0 var(--space-2);
-  font-size: 1.05rem;
-}
+/* 监护申请 */
+.notice-binding-card { border-left: 4px solid var(--color-gold); }
 
-.secondary-card textarea {
-  width: 100%;
-  margin-bottom: var(--space-3);
-}
-
-.quiet-note {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.8;
-}
-
-.preference-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 2;
-}
-
-@media (max-width: 640px) {
-  .secondary-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ---------- 改期（D11） ---------- */
-.reschedule-entry {
-  flex-shrink: 0;
-}
-
-.schedule-list li {
+.binding-item-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
-}
-
-.reschedule-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px dashed var(--border-subtle);
-  border-radius: var(--radius-card);
-  background: var(--color-secondary-bg);
-}
-
-.reschedule-hint {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.slot-picker {
-  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
   flex-wrap: wrap;
-  gap: var(--space-2);
 }
 
-.reschedule-msg {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.7;
+.binding-text {
+  margin: 0 0 2px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-title);
 }
-
-.reschedule-msg--success { color: var(--color-success); }
-.reschedule-msg--error { color: var(--color-danger); }
-.reschedule-msg--info { color: var(--text-muted); }

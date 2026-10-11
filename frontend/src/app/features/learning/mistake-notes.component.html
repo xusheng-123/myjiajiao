@@ -1,23 +1,336 @@
-<main class="plans-shell"><header><div><h1 class="nur-serif">错题本</h1><p>记录错误原因，安排复习，再确认是否掌握。</p></div><a [routerLink]="home()">返回工作台</a></header>
-  @if(auth.role()==='TEACHER'){<label>选择学生<select [value]="student()" (change)="select($any($event.target).value)" [disabled]="busy()"><option value="" disabled>请选择学生</option>@for(s of students();track s.studentId){<option [value]="s.studentId">{{s.displayName}}</option>}</select></label>}
-  @if(notice()){<p role="status" class="read-note">{{notice()}}</p>}
-  @if(auth.role()==='PARENT'){<p>你可以查看有效绑定孩子的错题与复习情况。</p>}
-  @if(editable() && (auth.role()!=='TEACHER'||student())){<section class="nur-card plan-editor"><h2>{{editing()?'修改错题':'记录错题'}}</h2><form (ngSubmit)="save()">
-    <label>科目<input id="mistake-subject" name="subject" maxlength="32" required [ngModel]="subject()" (ngModelChange)="subject.set($event)"></label>
-    <label>标题<input id="mistake-title" name="title" maxlength="100" required [ngModel]="title()" (ngModelChange)="title.set($event)"></label>
-    <label>题目与解答记录<textarea id="mistake-question" name="question" maxlength="4000" required [ngModel]="question()" (ngModelChange)="question.set($event)"></textarea></label>
-    <label>错误原因<textarea id="mistake-reason" name="reason" maxlength="2000" required [ngModel]="reason()" (ngModelChange)="reason.set($event)"></textarea></label>
-    <label>知识点标签<input id="mistake-tags" name="tags" maxlength="300" [ngModel]="tags()" (ngModelChange)="tags.set($event)" placeholder="如：一次函数、单位换算"></label>
-    <label>复习日期（可选）<input name="review" type="date" [ngModel]="review()" (ngModelChange)="review.set($event)"></label>
-    @if(editing()){<label>复习状态<select name="status" [ngModel]="status()" (ngModelChange)="status.set($event)"><option value="UNMASTERED">待巩固</option><option value="REVIEWING">复习中</option><option value="MASTERED">已掌握（本人确认）</option></select></label>}
-    <div class="actions"><button type="submit" class="primary" [disabled]="busy()||!subject().trim()||!title().trim()||!question().trim()||!reason().trim()">{{editing()?'保存错题':'记录错题'}}</button>@if(editing()){<button type="button" (click)="reset()">取消编辑</button>}</div>
-  </form></section>}
-  <section class="nur-card"><h2>分类复习</h2><form (ngSubmit)="filter()"><label>科目筛选<input name="filterSubject" maxlength="32" [ngModel]="filterSubject()" (ngModelChange)="filterSubject.set($event)"></label><label>知识点筛选<input name="filterTag" maxlength="100" [ngModel]="filterTag()" (ngModelChange)="filterTag.set($event)"></label><label>复习状态<select name="filterStatus" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)"><option value="">全部</option><option value="UNMASTERED">待巩固</option><option value="REVIEWING">复习中</option><option value="MASTERED">已掌握</option></select></label><label>复习日期不晚于<input name="due" type="date" [ngModel]="due()" (ngModelChange)="due.set($event)"></label><button type="submit" [disabled]="loading()||busy()">筛选错题</button></form></section>
-  @if(loading()){<p role="status">正在加载…</p>}@else if(!notes().length){<p>当前没有符合条件的错题。</p>}
-  @for(n of notes();track n.noteId){<article class="nur-card"><h2>{{n.title}}</h2><p>{{n.subject}} · {{label(n.status)}} · {{n.reviewDate?'复习日期：'+n.reviewDate:'未设复习日期'}}</p><p class="goal-text">{{n.questionText}}</p><p class="goal-text">错误原因：{{n.errorReason}}</p><p>知识点：{{n.knowledgeTags||'未设置'}}</p>
-    @if(n.taskId){<p>复习任务：{{label(n.taskStatus||'PENDING')}}；任务完成后仍需本人确认掌握。</p><a [routerLink]="['/learning/materials']" [queryParams]="{studentId:n.studentId}">查看教学资料与作业</a>}
-    <div class="actions">@if(n.canEdit){<button type="button" (click)="edit(n)" [disabled]="busy()">修改错题</button><button type="button" (click)="remove(n)" [disabled]="busy()">移除错题</button>}@if(auth.role()==='TEACHER'&&!n.taskId){<button type="button" (click)="convert(n)" [disabled]="busy()">布置复习任务</button>}</div>
-    @if(converting()?.noteId===n.noteId){<form (ngSubmit)="publish()"><label>关联课程<select name="lesson" [ngModel]="lesson()" (ngModelChange)="lesson.set($event)">@for(l of lessons();track l.bookingId){<option [value]="l.bookingId">{{l.subject}} · {{l.startAt|date:'M月d日 HH:mm'}}</option>}</select></label>@if(!lessons().length){<p>需要有已确认或已完成课程，才能发布任务。</p>}<div class="actions"><button type="submit" class="primary" [disabled]="busy()||!lesson()">发布复习任务</button><button type="button" (click)="converting.set(null)">取消</button></div></form>}
-  </article>}
-  @if(pages()>1){<nav class="actions" aria-label="错题分页"><button type="button" (click)="turn(-1)" [disabled]="loading()||page()===0">上一页</button><span>{{page()+1}}/{{pages()}}</span><button type="button" (click)="turn(1)" [disabled]="loading()||page()+1>=pages()">下一页</button></nav>}
+<main class="mistakes-shell">
+  <header class="mistakes-header">
+    <div class="header-main">
+      <a class="back-link" [routerLink]="home()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>返回工作台</span>
+      </a>
+      <div class="title-group">
+        <span class="nur-kicker">MISTAKE LOG</span>
+        <h1 class="nur-serif page-title">错题本</h1>
+        <p class="page-desc">深度归因错因、规划复习周期，经实际作答与自主核验再确认真正掌握。</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      @if (auth.role() === 'TEACHER') {
+        <div class="role-selector-card nur-card">
+          <label for="mistakes-student-select" class="selector-label">授课学生</label>
+          <select id="mistakes-student-select" class="selector-control" [value]="student()" (change)="select($any($event.target).value)" [disabled]="busy()">
+            <option value="" disabled>请选择学生</option>
+            @for (s of students(); track s.studentId) {
+              <option [value]="s.studentId">{{ s.displayName }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      @if (editable() && (auth.role() !== 'TEACHER' || student())) {
+        <button
+          type="button"
+          class="nur-btn nur-btn--primary"
+          (click)="toggleForm()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>{{ showForm() || editing() ? '收起录入面板' : '记录新错题' }}</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (notice()) {
+    <div class="notice-bar" role="status" aria-live="polite">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>{{ notice() }}</span>
+    </div>
+  }
+
+  @if (auth.role() === 'PARENT') {
+    <div class="info-banner" role="note">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>你正在查阅有效绑定孩子的错题记录与复习推进情况。</span>
+    </div>
+  }
+
+  <!-- 可展开的错题录入 / 修改面板 -->
+  @if (editable() && (auth.role() !== 'TEACHER' || student()) && (showForm() || editing())) {
+    <section class="nur-card form-drawer-section" aria-labelledby="mistake-form-title">
+      <div class="section-head">
+        <div class="head-title-wrap">
+          <span class="section-badge">{{ editing() ? '修改模式' : '速记录入' }}</span>
+          <h2 id="mistake-form-title" class="nur-serif section-title">{{ editing() ? '修改错题记录' : '记录新错题' }}</h2>
+        </div>
+        <button type="button" class="btn-text-tool" (click)="toggleForm()">收起</button>
+      </div>
+
+      <form (ngSubmit)="save()" class="mistake-form">
+        <div class="form-row-2">
+          <div class="form-field">
+            <label for="mistake-subject">学科分类</label>
+            <input
+              id="mistake-subject"
+              name="subject"
+              maxlength="32"
+              required
+              placeholder="如：初中数学"
+              [ngModel]="subject()"
+              (ngModelChange)="subject.set($event)" />
+          </div>
+          <div class="form-field">
+            <label for="mistake-title">错题摘要标题</label>
+            <input
+              id="mistake-title"
+              name="title"
+              maxlength="100"
+              required
+              placeholder="如：二次函数顶点式最值求法易错题"
+              [ngModel]="title()"
+              (ngModelChange)="title.set($event)" />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="mistake-question">题目与原始解答记录</label>
+          <textarea
+            id="mistake-question"
+            name="question"
+            maxlength="4000"
+            required
+            rows="3"
+            placeholder="抄录完整题干条件、设问以及初次作答的错误推导步骤..."
+            [ngModel]="question()"
+            (ngModelChange)="question.set($event)"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label for="mistake-reason">错误原因深度剖析</label>
+          <textarea
+            id="mistake-reason"
+            name="reason"
+            maxlength="2000"
+            required
+            rows="2"
+            placeholder="归因分析：审题疏漏、公式记错、计算失误、缺乏解题模型..."
+            [ngModel]="reason()"
+            (ngModelChange)="reason.set($event)"></textarea>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-field">
+            <label for="mistake-tags">核心知识点标签</label>
+            <input
+              id="mistake-tags"
+              name="tags"
+              maxlength="300"
+              placeholder="如：二次函数、配方法、自变量取值范围（空格或顿号分隔）"
+              [ngModel]="tags()"
+              (ngModelChange)="tags.set($event)" />
+          </div>
+          <div class="form-field">
+            <label for="mistake-review">复习规划日期（可选）</label>
+            <input
+              id="mistake-review"
+              name="review"
+              type="date"
+              [ngModel]="review()"
+              (ngModelChange)="review.set($event)" />
+          </div>
+        </div>
+
+        @if (editing()) {
+          <div class="form-field">
+            <label for="mistake-status-select">复习掌握状态</label>
+            <select id="mistake-status-select" name="status" [ngModel]="status()" (ngModelChange)="status.set($event)">
+              <option value="UNMASTERED">待巩固</option>
+              <option value="REVIEWING">复习中</option>
+              <option value="MASTERED">已掌握（本人核验确认）</option>
+            </select>
+          </div>
+        }
+
+        <div class="form-actions-row">
+          @if (editing()) {
+            <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="reset()">放弃修改</button>
+          }
+          <button
+            type="submit"
+            class="nur-btn nur-btn--primary nur-btn--sm"
+            [disabled]="busy() || !subject().trim() || !title().trim() || !question().trim() || !reason().trim()">
+            {{ editing() ? '保存修改' : '确认记录' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <!-- 多维筛选与分类过滤卡片 -->
+  <section class="nur-card filter-card">
+    <div class="filter-head">
+      <span class="filter-title">多维分类检索</span>
+      <span class="filter-desc">精准筛选待复习错题</span>
+    </div>
+    <form (ngSubmit)="filter()" class="filter-form">
+      <div class="filter-fields-grid">
+        <div class="filter-field">
+          <label for="filter-subject-input">科目</label>
+          <input
+            id="filter-subject-input"
+            name="filterSubject"
+            maxlength="32"
+            placeholder="全部科目"
+            [ngModel]="filterSubject()"
+            (ngModelChange)="filterSubject.set($event)" />
+        </div>
+        <div class="filter-field">
+          <label for="filter-tag-input">知识点标签</label>
+          <input
+            id="filter-tag-input"
+            name="filterTag"
+            maxlength="100"
+            placeholder="输入标签关键字"
+            [ngModel]="filterTag()"
+            (ngModelChange)="filterTag.set($event)" />
+        </div>
+        <div class="filter-field">
+          <label for="filter-status-select">掌握状态</label>
+          <select id="filter-status-select" name="filterStatus" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
+            <option value="">全部状态</option>
+            <option value="UNMASTERED">待巩固</option>
+            <option value="REVIEWING">复习中</option>
+            <option value="MASTERED">已掌握</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="filter-due-input">复习截止至</label>
+          <input
+            id="filter-due-input"
+            name="due"
+            type="date"
+            [ngModel]="due()"
+            (ngModelChange)="due.set($event)" />
+        </div>
+      </div>
+      <div class="filter-actions-row">
+        <button type="submit" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="loading() || busy()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>执行筛选</span>
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- 错题卡片流 -->
+  <section class="mistakes-stream-section">
+    @if (loading()) {
+      <p class="empty-hint" role="status">正在读取错题本…</p>
+    } @else if (!notes().length) {
+      <div class="empty-state nur-card">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <h3 class="empty-title">当前没有符合条件的错题</h3>
+        <p class="empty-hint">可在上方展开面板记录错题，或调整筛选条件查阅其他科目。</p>
+      </div>
+    }
+
+    <div class="notes-grid">
+      @for (n of notes(); track n.noteId) {
+        <article class="nur-card mistake-item-card">
+          <div class="card-top-bar">
+            <div class="tags-cluster">
+              <span class="subject-badge">{{ n.subject }}</span>
+              <span class="status-pill status-{{ n.status.toLowerCase() }}">{{ label(n.status) }}</span>
+            </div>
+            <time class="review-date-tag">
+              {{ n.reviewDate ? ('复习日：' + n.reviewDate) : '未设复习日' }}
+            </time>
+          </div>
+
+          <h2 class="mistake-title nur-serif">{{ n.title }}</h2>
+
+          <!-- 题干与解答卡 -->
+          <div class="question-record-box">
+            <span class="box-label">题目与解答：</span>
+            <p class="box-content">{{ n.questionText }}</p>
+          </div>
+
+          <!-- 错因深度剖析 -->
+          <div class="reason-record-box">
+            <span class="box-label reason-label">错因分析：</span>
+            <p class="box-content">{{ n.errorReason }}</p>
+          </div>
+
+          <!-- 知识点标签行 -->
+          <div class="knowledge-tags-row">
+            <span class="kp-icon-tag">知识点：</span>
+            <span class="kp-text">{{ n.knowledgeTags || '未设置具体标签' }}</span>
+          </div>
+
+          <!-- 关联课后复习任务 -->
+          @if (n.taskId) {
+            <div class="linked-task-banner">
+              <div class="task-info-line">
+                <span class="task-status-tag">复习任务：{{ label(n.taskStatus || 'PENDING') }}</span>
+                <span class="task-hint-text">任务完成后仍需学生自主核验掌握</span>
+              </div>
+              <a class="task-link" [routerLink]="['/learning/materials']" [queryParams]="{ studentId: n.studentId }">
+                <span>前往查看作业与批改</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+            </div>
+          }
+
+          <!-- 操作按钮栏 -->
+          <div class="card-footer-toolbar">
+            <div class="actions-left">
+              @if (n.canEdit) {
+                <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="edit(n)" [disabled]="busy()">
+                  修改错题
+                </button>
+                <button type="button" class="btn-text-danger-sm" (click)="remove(n)" [disabled]="busy()">
+                  移除
+                </button>
+              }
+            </div>
+            <div class="actions-right">
+              @if (auth.role() === 'TEACHER' && !n.taskId) {
+                <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" (click)="convert(n)" [disabled]="busy()">
+                  一键布置复习任务
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- 教师转换为任务的内联表单 -->
+          @if (converting()?.noteId === n.noteId) {
+            <form (ngSubmit)="publish()" class="convert-task-form">
+              <h4 class="convert-title">转化为针对性课后复习任务</h4>
+              <div class="form-field">
+                <label for="convert-lesson-select">关联课程</label>
+                <select id="convert-lesson-select" name="lesson" [ngModel]="lesson()" (ngModelChange)="lesson.set($event)">
+                  @for (l of lessons(); track l.bookingId) {
+                    <option [value]="l.bookingId">{{ l.subject }} · {{ l.startAt | date:'M月d日 HH:mm' }}</option>
+                  }
+                </select>
+              </div>
+              @if (!lessons().length) {
+                <p class="hint-text">需要有已确认或已完成课程，才能发布关联任务。</p>
+              }
+              <div class="form-actions-row">
+                <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="converting.set(null)">取消</button>
+                <button type="submit" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="busy() || !lesson()">
+                  确认发布复习任务
+                </button>
+              </div>
+            </form>
+          }
+        </article>
+      }
+    </div>
+
+    @if (pages() > 1) {
+      <nav class="pager-nav" aria-label="错题分页">
+        <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="turn(-1)" [disabled]="loading() || page() === 0">上一页</button>
+        <span class="pager-info">{{ page() + 1 }} / {{ pages() }}</span>
+        <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="turn(1)" [disabled]="loading() || page() + 1 >= pages()">下一页</button>
+      </nav>
+    }
+  </section>
 </main>

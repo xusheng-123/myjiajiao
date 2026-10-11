@@ -1,326 +1,90 @@
 <div class="match-shell">
   <header class="match-header">
-    <div>
-      <h1 class="nur-serif">找老师</h1>
-      <p class="match-subtitle">两条路都通向同一位合适的老师：直接筛选，或者把需求告诉我们。</p>
+    <div class="match-title-col">
+      <h1 class="match-title nur-serif">找老师 · 需求匹配与分步预约</h1>
+      <p class="match-subtitle">填写学习目标，系统为你精选同频导师；从挑选师资到预约锁定，四步透明完成。</p>
     </div>
-    <a routerLink="/student/dashboard" class="back-link">← 返回首页</a>
+    <a routerLink="/student/dashboard" class="back-link">
+      <span aria-hidden="true">←</span> 返回学生工作台
+    </a>
   </header>
 
-  <!-- 三入口切换：搜索/筛选（默认） + 告诉平台我的需求 + 我的收藏（G10） -->
-  <div class="entry-switch" role="group" aria-label="选择找老师方式">
-    <button type="button" class="entry-pill" [class.entry-pill--active]="entryMode() === 'search'" (click)="showEntry('search')">
-      ① 搜索 / 筛选
-    </button>
-    <button type="button" class="entry-pill" [class.entry-pill--active]="entryMode() === 'demand'" (click)="showEntry('demand')">
-      ② 告诉平台我的需求
-    </button>
-    <button type="button" class="entry-pill" [class.entry-pill--active]="entryMode() === 'favorites'" (click)="showEntry('favorites')">
-      ③ 我的收藏
-    </button>
-  </div>
-
   @if (favNotice()) {
-    <p class="form-status" role="status">
+    <div class="match-notice" role="status">
       <span aria-hidden="true">ℹ</span> {{ favNotice() }}
-      @if (!auth.isLoggedIn()) {
-        <a routerLink="/auth?role=student" class="fav-login-link">去登录</a>
-      }
-    </p>
+    </div>
   }
 
-  @if (entryMode() === 'search') {
-    <!-- ---------- 入口一：搜索 / 筛选 ---------- -->
-    <section class="search-bar nur-card" aria-label="搜索与筛选">
-      <input
-        type="text"
-        placeholder="科目，如：数学"
-        aria-label="科目"
-        [value]="subjectInput()"
-        (input)="subjectInput.set(subjectField.value)"
-        (keyup.enter)="search()"
-        #subjectField
-      />
-      <input
-        type="text"
-        placeholder="学段（可选），如：高中"
-        aria-label="学段"
-        [value]="gradeBandInput()"
-        (input)="gradeBandInput.set(gradeField.value)"
-        #gradeField
-      />
-      <input
-        type="number"
-        min="0"
-        placeholder="单价上限（元/小时）"
-        aria-label="单价上限"
-        [value]="maxPriceInput()"
-        (input)="maxPriceInput.set(priceField.value)"
-        #priceField
-      />
-      <button type="button" class="btn-search" [disabled]="!canSearch() || loading()" (click)="search()">
-        {{ loading() ? '搜索中…' : '搜索' }}
-      </button>
-      <button type="button" class="btn-clear" (click)="clearFilters()">查看全部</button>
-    </section>
+  <!-- 步骤条 -->
+  <nur-match-stepper
+    [currentStep]="step()"
+    [maxReachedStep]="maxReachedStep()"
+    (stepChange)="goToStep($event)"
+  />
 
-    <!-- 最近可约时间筛选（G10）：仅过滤当前真实检索结果，切换不重新请求 -->
-    <div class="time-filter" role="group" aria-label="按最近可约时间筛选">
-      <button type="button" class="time-chip" [class.time-chip--active]="timeFilter() === 'any'" [attr.aria-pressed]="timeFilter() === 'any'" (click)="setTimeFilter('any')">不限时间</button>
-      <button type="button" class="time-chip" [class.time-chip--active]="timeFilter() === 'today'" [attr.aria-pressed]="timeFilter() === 'today'" (click)="setTimeFilter('today')">今日可约</button>
-      <button type="button" class="time-chip" [class.time-chip--active]="timeFilter() === '3d'" [attr.aria-pressed]="timeFilter() === '3d'" (click)="setTimeFilter('3d')">3 天内可约</button>
-      <button type="button" class="time-chip" [class.time-chip--active]="timeFilter() === '7d'" [attr.aria-pressed]="timeFilter() === '7d'" (click)="setTimeFilter('7d')">7 天内可约</button>
-      @if (timeFilter() !== 'any' && searched() && !loading()) {
-        <span class="time-filter-note" role="status">按可约时间筛出 {{ filteredCandidates().length }}/{{ candidates().length }} 位老师（基于当前检索结果；预约以导师档期实际确认为准）</span>
-      }
-    </div>
-
-    <!-- 结果区：区分 加载中 / 空 / 时间筛空 / 结果 -->
-    @if (selectedTeacherId()) { <p>正在查看选定导师的课程。<button type="button" class="btn-ghost" (click)="clearFilters()">查看全部导师</button></p> }
-    <nur-teacher-compare [teachers]="compared()" (remove)="removeCompare($event)" />
-    @if (loading()) {
-      <p class="state-note" role="status">正在为你挑选合适的老师…</p>
-    } @else if (searched() && candidates().length === 0) {
-      <section class="state-card nur-card">
-        <p class="state-note">没有找到符合条件的老师。可以放宽价格或学段，</p>
-        <p class="state-note">或者切换到「告诉平台我的需求」，让合适的老师来找你。</p>
-        <button type="button" class="btn-ghost" (click)="showEntry('demand')">发布我的需求</button>
-      </section>
-    } @else if (searched() && candidates().length > 0 && filteredCandidates().length === 0) {
-      <section class="state-card nur-card">
-        <p class="state-note">当前时间范围内暂无可约教师。可以放宽时间范围，</p>
-        <p class="state-note">或切换回「不限时间」查看全部检索结果。</p>
-        <button type="button" class="btn-ghost" (click)="setTimeFilter('any')">不限时间</button>
-      </section>
-    } @else if (searched()) {
-      <ul class="candidate-list">
-        @for (t of filteredCandidates(); track t.teacherId + t.subject + t.gradeBand) {
-          <li class="candidate-card nur-card nur-card--interactive">
-            <div class="candidate-main">
-              <div class="candidate-title-row">
-                <h2 class="nur-serif">{{ t.displayName }} · {{ t.subject }}</h2>
-                @if (t.verificationApproved) {
-                  <span class="badge badge--verified"><span aria-hidden="true">✔</span> 已认证</span>
-                } @else {
-                  <span class="badge"><span aria-hidden="true">◔</span> 审核中</span>
-                }
-                @if (t.averageRating !== null) {
-                  <span class="badge badge--rating"><span aria-hidden="true">★</span> {{ t.averageRating }}（{{ t.reviewCount }} 条评价）</span>
-                }
-              </div>
-              <p class="candidate-meta">
-                {{ t.gradeBand ?? '学段不限' }} · ¥{{ yuan(t.pricePerHourCents) }}/小时
-                @if (t.nextOpenSlotAt) {
-                  · 最近可约 {{ t.nextOpenSlotAt | date: 'M月d日 HH:mm' }}
-                } @else {
-                  · 近期暂无可约时段
-                }
-              </p>
-              <p class="candidate-reason">
-                <span aria-hidden="true">✦</span> {{ t.reasons[0] }}
-              </p>
-              @if (t.reasons.length > 1) {
-                <p class="candidate-reason candidate-reason--more">
-                  <span aria-hidden="true">✦</span> {{ t.reasons[1] }}
-                </p>
-              }
-            </div>
-            <div class="candidate-actions">
-              <button
-                type="button"
-                class="btn-fav"
-                [class.btn-fav--active]="isFavorite(t.teacherId)"
-                [disabled]="favBusyIds().has(t.teacherId)"
-                [attr.aria-pressed]="isFavorite(t.teacherId)"
-                [attr.aria-label]="(isFavorite(t.teacherId) ? '取消收藏老师（' : '收藏老师（') + t.subject + '）'"
-                (click)="toggleFavorite(t)"
-              >
-                {{ isFavorite(t.teacherId) ? '♥ 已收藏' : '♡ 收藏' }}
-              </button>
-              <button type="button" class="btn-primary-sm" (click)="startWizard(t)">预约试听</button>
-              <button type="button" class="btn-ghost" (click)="toggleCompare(t)" [attr.aria-pressed]="isCompared(t.teacherId)">{{ isCompared(t.teacherId) ? '移除对比' : '加入对比' }}</button>
-              <button type="button" class="btn-ghost" (click)="consult(t)" [disabled]="consultBusy()">课前咨询</button>
-              <button type="button" class="btn-ghost" (click)="startWizard(t, 'FORMAL')">预约正式课 / 续课</button>
-            </div>
-          </li>
-        }
-      </ul>
+  <!-- 步骤容器 -->
+  <div class="step-container">
+    @if (step() === 1) {
+      <nur-match-demand-step
+        [draft]="demandDraft()"
+        (draftChange)="demandDraft.set($event)"
+        [demandSuccess]="demandSuccess()"
+        [demandPublishing]="demandPublishing()"
+        [myDemands]="myDemands()"
+        (proceed)="onProceedFromDemand()"
+        (publish)="onPublishDemand()"
+      />
     }
-  } @else if (entryMode() === 'favorites') {
-    <!-- ---------- 入口三：我的收藏（G10） ---------- -->
-    <section class="favorites-panel nur-card" aria-labelledby="fav-title">
-      <h2 id="fav-title" class="nur-serif">我的收藏</h2>
-      @if (favLoading()) {
-        <p class="state-note" role="status">正在读取收藏…</p>
-      } @else if (favError()) {
-        <p class="state-note">收藏列表读取失败，<button type="button" class="btn-ghost" (click)="openFavorites()">重试</button></p>
-      } @else if (favoritesList().length === 0) {
-        <p class="state-note">还没有收藏的老师。在「搜索 / 筛选」结果里点「♡ 收藏」，合适的老师就会出现在这里。</p>
-        <button type="button" class="btn-ghost" (click)="showEntry('search')">去找老师</button>
-      } @else {
-        <ul class="fav-list">
-          @for (f of favoritesList(); track f.teacherId) {
-            <li class="fav-item">
-              <div class="fav-main">
-                @if (f.retrievable) {
-                  <p class="fav-title">{{ f.displayName }} · {{ f.subject }}<span class="fav-meta"> · {{ f.gradeBand ?? '学段不限' }} · ¥{{ yuan(f.pricePerHourCents ?? 0) }}/小时</span></p>
-                  <p class="fav-meta">
-                    @if (f.averageRating !== null) {
-                      ★ {{ f.averageRating }} ·
-                    }
-                    @if (f.nextOpenSlotAt) {
-                      最近可约 {{ f.nextOpenSlotAt | date: 'M月d日 HH:mm' }}（以档期实际确认为准）
-                    } @else {
-                      近期暂无可约时段
-                    }
-                  </p>
-                } @else {
-                  <p class="fav-title">{{ f.displayName }}</p>
-                  <p class="fav-meta">当前未出现在检索结果中（可能资质审核未通过或课程已停止销售），暂时无法预约。</p>
-                }
-              </div>
-              <div class="fav-actions">
-                <button
-                  type="button"
-                  class="btn-ghost"
-                  [disabled]="favBusyIds().has(f.teacherId)"
-                  (click)="unfavorite(f)"
-                >
-                  {{ favBusyIds().has(f.teacherId) ? '处理中…' : '取消收藏' }}
-                </button>
-              </div>
-            </li>
-          }
-        </ul>
-      }
-    </section>
-  } @else {
-    <!-- ---------- 入口二：告诉平台我的需求 ---------- -->
-    <section class="demand-panel nur-card" aria-labelledby="demand-title">
-      <h2 id="demand-title" class="nur-serif">告诉平台我的需求</h2>
-      <p class="state-note">不用先做问卷，简单几句就好。合适的状态出现时，我们会把它带给你。</p>
 
-      @if (demandDone()) {
-        <p class="form-status form-status--success" role="status">
-          <span aria-hidden="true">✔</span> 需求已发布。导师会看到你的需求池条目；也可以随时在下方关闭它。
-        </p>
-      }
+    @if (step() === 2) {
+      <nur-match-recommend-step
+        [candidates]="candidates()"
+        [filteredCandidates]="filteredCandidates()"
+        [loading]="loading()"
+        [timeFilter]="timeFilter()"
+        [favoriteIds]="favoriteIds()"
+        [favBusyIds]="favBusyIds()"
+        [consultBusy]="consultBusy()"
+        [compared]="compared()"
+        [demandSubject]="demandDraft().subject"
+        (selectTeacher)="onSelectTeacher($event)"
+        (toggleFavorite)="toggleFavorite($event)"
+        (consult)="consult($event)"
+        (toggleCompare)="toggleCompare($event)"
+        (removeCompare)="removeCompare($event)"
+        (timeFilterChange)="setTimeFilter($event)"
+        (backToDemand)="step.set(1)"
+      />
+    }
 
-      <div class="demand-form">
-        <label>
-          需要的科目
-          <input type="text" placeholder="如：物理" [value]="demandSubject()" (input)="demandSubject.set(ds.value)" #ds />
-        </label>
-        <label>
-          学段（可选）
-          <input type="text" placeholder="如：初三" [value]="demandGrade()" (input)="demandGrade.set(dg.value)" #dg />
-        </label>
-        <label>
-          预算上限（元/小时，可选）
-          <input type="number" min="0" placeholder="如：200" [value]="demandBudget()" (input)="demandBudget.set(db.value)" #db />
-        </label>
-        <label>
-          方便的时间（可选）
-          <input type="text" placeholder="如：周三晚上或周末下午" [value]="demandTime()" (input)="demandTime.set(dt.value)" #dt />
-        </label>
-        <label>
-          想解决的问题（可选）
-          <textarea rows="3" placeholder="例如：函数图像题总是没思路，希望有人带着从基础梳理…" [value]="demandNote()" (input)="demandNote.set(dn.value)" #dn></textarea>
-        </label>
-        <button type="button" class="btn-primary" [disabled]="!demandSubject().trim()" (click)="submitDemand()">
-          发布需求
-        </button>
-      </div>
+    @if (step() === 3 && wizardTeacher(); as t) {
+      <nur-match-slots-step
+        [teacher]="t"
+        [bookingType]="bookingType()"
+        [slots]="wizardSlots()"
+        [selectedSlot]="selectedSlot()"
+        [trialAvailable]="trialAvailable()"
+        [trialReason]="trialReason()"
+        [slotInvalid]="slotInvalid()"
+        (pickSlot)="onPickSlot($event)"
+        (switchType)="onSwitchBookingType($event)"
+        (toConfirmStep)="onToConfirmStep()"
+        (backToRecommend)="step.set(2)"
+      />
+    }
 
-      @if (myDemands().length > 0) {
-        <h3 class="section-sub">我的需求</h3>
-        <ul class="demand-list">
-          @for (d of myDemands(); track d.demandId) {
-            <li class="demand-item">
-              <span>{{ d.subject }} · {{ d.status === 'OPEN' ? '开放中' : d.status === 'MATCHED' ? '已撮合' : '已关闭' }}</span>
-            </li>
-          }
-        </ul>
-      }
-    </section>
-  }
-
-  <!-- ---------- 预约分步向导（覆盖层） ---------- -->
-  @if (wizardTeacher(); as t) {
-    <div class="wizard-backdrop" (click)="closeWizard()">
-      <div class="wizard-panel nur-card" role="dialog" aria-modal="true" aria-labelledby="wizard-title" (click)="$event.stopPropagation()">
-        <h2 id="wizard-title" class="nur-serif">{{ bookingType() === 'TRIAL' ? '预约试听' : '预约正式课' }} · {{ t.subject }}</h2>
-
-        <!-- 步骤指示：当前步骤 / 总步数 / 下一步 -->
-        <ol class="wizard-steps" aria-label="预约步骤">
-          <li [class.wizard-step--active]="wizardStep() === 1" [class.wizard-step--done]="wizardStep() > 1">
-            <span aria-hidden="true">{{ wizardStep() > 1 ? '✔' : '1' }}</span> 选择时间
-          </li>
-          <li [class.wizard-step--active]="wizardStep() === 2">
-            <span aria-hidden="true">2</span> 确认信息
-          </li>
-        </ol>
-
-        @if (wizardSuccess()) {
-          <p class="form-status form-status--success" role="status">
-            <span aria-hidden="true">✔</span> {{ wizardNotice() }}
-          </p>
-          <button type="button" class="btn-primary" (click)="closeWizard()">好的，回到列表</button>
-        } @else if (wizardStep() === 1) {
-          <p class="state-note">选择一个可约时间（{{ wizardSlots().length }} 个可用）。时间冲突会就地提示并标记失效。</p>
-          @if (wizardSlots().length === 0) {
-            <p class="state-note">该老师近期暂未发布可约时段，可以稍后再来，或改用「发布需求」。</p>
-          } @else {
-            <ul class="slot-grid">
-              @for (s of wizardSlots(); track s.slotId) {
-                <li>
-                  <button
-                    type="button"
-                    class="slot-btn"
-                    [class.slot-btn--selected]="selectedSlot()?.slotId === s.slotId"
-                    (click)="pickSlot(s)"
-                  >
-                    {{ s.startAt | date: 'M月d日 HH:mm' }} – {{ s.endAt | date: 'HH:mm' }}
-                  </button>
-                </li>
-              }
-            </ul>
-          }
-          @if (slotInvalid()) {
-            <p class="form-status form-status--error" role="alert">
-              <span aria-hidden="true">⚠</span> {{ slotInvalid() }}
-            </p>
-          }
-          @if (bookingType() === 'TRIAL') {
-            <p class="state-note" aria-live="polite">{{ trialReason() }}</p>
-            @if (trialAvailable() === false) {
-              <button type="button" class="btn-ghost" (click)="startWizard(t, 'FORMAL')">改约正式课</button>
-              <a routerLink="/student">前往课程表</a>
-            }
-          }
-          <div class="wizard-actions">
-            <button type="button" class="btn-ghost" (click)="closeWizard()">取消</button>
-            <button type="button" class="btn-primary" [disabled]="!selectedSlot() || (bookingType() === 'TRIAL' && trialAvailable() !== true)" (click)="toConfirmStep()">
-              下一步：确认信息 →
-            </button>
-          </div>
-        } @else {
-          <!-- 步骤 2：完整保留前文上下文 -->
-          <dl class="confirm-list">
-            <div><dt>科目</dt><dd>{{ t.subject }}</dd></div>
-            <div><dt>类型</dt><dd>{{ bookingType() === 'TRIAL' ? '免费试听' : '正式课（待教师确认）' }}</dd></div>
-            <div><dt>时间</dt><dd>{{ selectedSlot()?.startAt | date: 'M月d日 HH:mm' }} – {{ selectedSlot()?.endAt | date: 'HH:mm' }}</dd></div>
-            <div><dt>单价参考</dt><dd>¥{{ yuan(t.pricePerHourCents) }}/小时{{ bookingType() === 'TRIAL' ? '（试听不收费）' : '（下单金额以服务端为准）' }}</dd></div>
-          </dl>
-          <p class="state-note">{{ bookingType() === 'TRIAL' ? '同一学生对同一老师限一次免费试听，提交后自动确认。计划开课时间前取消或驳回可重新预约；已开始上课或计划开课时间已过则视为已使用。' : '提交后等待教师确认，确认后再下单付款。本次提交不扣款。' }}</p>
-          <div class="wizard-actions">
-            <button type="button" class="btn-ghost" (click)="backToSlots()">← 上一步</button>
-            <button type="button" class="btn-primary" [disabled]="submitting()" (click)="submitBooking()">
-              {{ submitting() ? '提交中…' : '确认预约' }}
-            </button>
-          </div>
-        }
-      </div>
-    </div>
-  }
+    @if (step() === 4 && wizardTeacher(); as t) {
+      <nur-match-confirm-step
+        [teacher]="t"
+        [bookingType]="bookingType()"
+        [selectedSlot]="selectedSlot()"
+        [submitting]="submitting()"
+        [wizardSuccess]="wizardSuccess()"
+        [wizardNotice]="wizardNotice()"
+        (submitBooking)="submitBooking()"
+        (backToSlots)="step.set(3)"
+        (finish)="onResetWizard()"
+      />
+    }
+  </div>
 </div>

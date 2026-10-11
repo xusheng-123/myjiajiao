@@ -1,11 +1,13 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../../core/auth/auth.service';
 import { API } from '../../core/api/endpoints';
 import { NoticeCenterComponent } from '../../shared/components/notice-center.component';
 import { CalendarExportComponent } from '../../shared/components/calendar-export.component';
+
 interface TaskView {
   taskId: string;
   title: string;
@@ -41,41 +43,158 @@ interface MyOrder {
   paidAt: string | null;
 }
 
-/**
- * 学生控制台 — ADHD 友好硬性规范：
- * 每个视口只突出一个核心主任务（迫近课程 + 进入课堂）；
- * 任务切块 3~4 个原子微任务，支持无序勾选与跳过；
- * 进度提示使用正向反馈文案，严禁惩罚性倒计时与羞辱性文案。
- */
+export interface BookingItem {
+  bookingId: string;
+  studentId: string;
+  teacherId: string;
+  slotId: string;
+  subject: string;
+  type: string;
+  status: string;
+  priceCents: number;
+  cancelReason: string | null;
+  createdAt: string;
+}
+
+export interface BookingPage {
+  content: BookingItem[];
+  totalPages: number;
+  totalElements: number;
+  number: number;
+}
+
+export interface CancelPreviewResult {
+  cascadeImpact: {
+    bookingId?: string;
+    cancelReason?: string;
+    willReleaseSlot?: boolean;
+    refundAmountCents?: number;
+    refundDescription?: string;
+    affectedLessons?: number;
+    orderStatus?: string;
+  };
+  confirmationToken: string;
+  confirmationTokenExpiresAt: string;
+  notice: string;
+}
+
+export interface StudentProfileData {
+  accountId: string;
+  studentNo: string;
+  gradeLevel: string | null;
+  learningStyle: string | null;
+  focusPreference: string | null;
+  preferredSubjects: string[];
+}
+
+export interface LearningProfileData {
+  studentId?: string;
+  goal: string | null;
+  stage: string | null;
+  targetSubjects: string | null;
+}
+
 @Component({
   selector: 'nur-student-dashboard',
   standalone: true,
-  imports: [DatePipe, RouterLink, NoticeCenterComponent, CalendarExportComponent],
+  imports: [
+    DatePipe,
+    RouterLink,
+    FormsModule,
+    NoticeCenterComponent,
+    CalendarExportComponent,
+  ],
   templateUrl: './student-dashboard.component.html',
-  styleUrl: './student-dashboard.component.css',
+  styleUrls: ['./student-dashboard.component.css', './student-dashboard-bookings.css'],
 })
 export class StudentDashboardComponent implements OnInit {
   private readonly http = inject(HttpClient);
   readonly auth = inject(AuthService);
 
   readonly displayName = this.auth.displayName;
-  readonly focusMode = signal(true); // 专注模式默认开启：收起历史图表、积分与推荐卡片
+  readonly focusMode = signal(true); // 专注模式默认开启：收起历史图表、次要卡片
   readonly overview = signal<FocusOverview | null>(null);
   readonly loaded = signal(false);
   readonly asking = signal(false);
 
   readonly completedCount = computed(() =>
-    this.overview()?.preparationTasks.filter((t) => t.completed).length ?? 0);
-
+    this.overview()?.preparationTasks.filter((t) => t.completed).length ?? 0
+  );
   readonly totalCount = computed(() => this.overview()?.preparationTasks.length ?? 0);
-
   readonly progressText = computed(() => `${this.completedCount()}/${this.totalCount()} 已完成`);
 
-  /** 我的课程表（PRD 1.2 课程与课后反馈：课程表视图）。 */
-  readonly schedule = signal<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>([]);
+  /** 我的课程表视图 */
+  readonly schedule = signal<{
+    bookingId: string;
+    subject: string;
+    status: string;
+    type: string;
+    startAt: string | null;
+    teacherId: string | null;
+  }[]>([]);
+  private readonly upcomingLessons = signal<{
+    bookingId: string;
+    subject: string;
+    status: string;
+    type: string;
+    startAt: string | null;
+    teacherId: string | null;
+  }[]>([]);
+  private readonly historyLessons = signal<{
+    bookingId: string;
+    subject: string;
+    status: string;
+    type: string;
+    startAt: string | null;
+    teacherId: string | null;
+  }[]>([]);
 
-  private readonly upcomingLessons = signal<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>([]);
-  private readonly historyLessons = signal<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>([]);
+  // ---------- A3 缺口补齐：我的预约列表 ----------
+  readonly myBookings = signal<BookingItem[]>([]);
+  readonly bookingsPage = signal(0);
+  readonly bookingsTotalPages = signal(0);
+  readonly bookingsTotalElements = signal(0);
+  readonly bookingsLoading = signal(false);
+  readonly bookingsFilter = signal<'ALL' | 'REQUESTED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'>('ALL');
+
+  readonly filteredBookings = computed(() => {
+    const list = this.myBookings();
+    const filter = this.bookingsFilter();
+    if (filter === 'ALL') return list;
+    return list.filter((b) => b.status === filter);
+  });
+
+  // ---------- A1 缺口补齐：两阶段取消预约 ----------
+  readonly cancelBookingId = signal<string | null>(null);
+  readonly cancelReason = signal('');
+  readonly cancelStage = signal<'FORM' | 'PREVIEW'>('FORM');
+  readonly cancelPreviewData = signal<CancelPreviewResult | null>(null);
+  readonly cancelBusy = signal(false);
+  readonly cancelMsg = signal<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
+
+  // ---------- B2 缺口补齐：学生个人资料卡 ----------
+  readonly studentProfile = signal<StudentProfileData | null>(null);
+  readonly profileLoading = signal(false);
+  readonly profileSaving = signal(false);
+  readonly profileEditing = signal(false);
+  readonly profileMsg = signal<{ type: 'success' | 'error'; text: string } | null>(null);
+  readonly copiedStudentNo = signal(false);
+  // 表单字段
+  readonly editGradeLevel = signal('');
+  readonly editLearningStyle = signal('');
+  readonly editFocusPreference = signal('');
+  readonly editPreferredSubjects = signal<string[]>([]);
+
+  // ---------- B1 缺口补齐：学习目标画像卡 ----------
+  readonly learningProfile = signal<LearningProfileData | null>(null);
+  readonly learningProfileLoading = signal(false);
+  readonly learningProfileSaving = signal(false);
+  readonly learningProfileEditing = signal(false);
+  readonly learningProfileMsg = signal<{ type: 'success' | 'error'; text: string } | null>(null);
+  // 表单字段
+  readonly editGoal = signal('');
+  readonly editStage = signal('');
+  readonly editTargetSubjects = signal('');
 
   // ---------- 改期（D11 前端入口） ----------
   readonly rescheduleBookingId = signal<string | null>(null);
@@ -104,15 +223,32 @@ export class StudentDashboardComponent implements OnInit {
   readonly bindingBusy = signal(false);
   readonly bindingMsg = signal<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
 
-  // ---------- 课程下单（G7）：金额与状态一律以服务端为准 ----------
+  // ---------- 课程下单（G7） ----------
   private readonly myOrders = signal<Map<string, MyOrder>>(new Map());
   readonly orderBusy = signal(false);
   readonly orderMsg = signal<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
 
-  readonly legacyWallet=signal<{present:boolean;balanceCents:number|null;currency:string|null;transactions:{content:{txnId:string;type:string;amountCents:number;balanceAfterCents:number;memo:string;createdAt:string}[];totalPages:number;totalElements:number}}|null>(null);
-  readonly legacyPage=signal(0);readonly legacyLoading=signal(false);readonly legacyError=signal(false);
-  loadLegacyWallet(page=this.legacyPage()):void{this.legacyLoading.set(true);this.legacyError.set(false);this.http.get<any>('/api/v1/student/me/legacy-wallet',{params:{page,size:20}}).subscribe({next:w=>{this.legacyWallet.set(w);this.legacyPage.set(page);this.legacyLoading.set(false);},error:()=>{this.legacyLoading.set(false);this.legacyError.set(true);}});}
-  turnLegacyWallet(delta:number):void{if(this.legacyLoading() || this.legacyPage()+delta<0 || this.legacyPage()+delta>=(this.legacyWallet()?.transactions.totalPages??0))return;this.loadLegacyWallet(this.legacyPage()+delta);}
+  // ---------- 历史学生付款钱包（只读） ----------
+  readonly legacyWallet = signal<{
+    present: boolean;
+    balanceCents: number | null;
+    currency: string | null;
+    transactions: {
+      content: {
+        txnId: string;
+        type: string;
+        amountCents: number;
+        balanceAfterCents: number;
+        memo: string;
+        createdAt: string;
+      }[];
+      totalPages: number;
+      totalElements: number;
+    };
+  } | null>(null);
+  readonly legacyPage = signal(0);
+  readonly legacyLoading = signal(false);
+  readonly legacyError = signal(false);
 
   constructor() {
     this.load();
@@ -120,24 +256,47 @@ export class StudentDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadLegacyWallet();
+    this.loadScheduleData();
+    this.loadPendingBindings();
+    this.loadMyOrders();
+    this.loadMyBookings(0);
+    this.loadStudentProfile();
+    this.loadLearningProfile();
+  }
+
+  loadScheduleData(): void {
     this.http
-      .get<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>(API.student.upcomingLessons)
-      .subscribe({ next: (data) => { this.upcomingLessons.set(data ?? []); this.refreshSchedule(); } });
-    // 历史课程（已完成/已结课）：课程表「评价」入口的数据源
+      .get<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>(
+        API.student.upcomingLessons
+      )
+      .subscribe({
+        next: (data) => {
+          this.upcomingLessons.set(data ?? []);
+          this.refreshSchedule();
+        },
+      });
+
     this.http
-      .get<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>(API.student.lessonHistory)
-      .subscribe({ next: (data) => { this.historyLessons.set(data ?? []); this.refreshSchedule(); } });
-    // 我已发出的评价：刷新后仍能正确显示「✓ 已评价」，避免对同一课程重复提交
+      .get<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>(
+        API.student.lessonHistory
+      )
+      .subscribe({
+        next: (data) => {
+          this.historyLessons.set(data ?? []);
+          this.refreshSchedule();
+        },
+      });
+
     this.http
       .get<{ bookingId: string; direction: string }[]>(API.review.given)
-      .subscribe({ next: (data) => {
-        const mine = (data ?? []).filter((r) => r.direction === 'STUDENT_TO_TEACHER').map((r) => r.bookingId);
-        this.reviewedBookings.set(new Set(mine));
-      } });
-    // 监护绑定申请（G3）
-    this.loadPendingBindings();
-    // Course ownership includes orders paid by an active guardian.
-    this.loadMyOrders();
+      .subscribe({
+        next: (data) => {
+          const mine = (data ?? [])
+            .filter((r) => r.direction === 'STUDENT_TO_TEACHER')
+            .map((r) => r.bookingId);
+          this.reviewedBookings.set(new Set(mine));
+        },
+      });
   }
 
   loadMyOrders(): void {
@@ -170,17 +329,17 @@ export class StudentDashboardComponent implements OnInit {
     });
   }
 
-  /** 确认监护绑定：结果以服务端响应为准，成功后重新拉取待确认列表。 */
   confirmBinding(): void {
-    if (this.bindingBusy()) {
-      return;
-    }
+    if (this.bindingBusy()) return;
     this.bindingBusy.set(true);
     this.bindingMsg.set(null);
     this.http.post<{ status: string }>(API.student.confirmBinding, {}).subscribe({
       next: () => {
         this.bindingBusy.set(false);
-        this.bindingMsg.set({ type: 'success', text: '已确认绑定：对方现在可以为你的课程代付下单，并查看你的学习周报。' });
+        this.bindingMsg.set({
+          type: 'success',
+          text: '已确认绑定：对方现在可以为你的课程代付下单，并查看你的学习周报。',
+        });
         this.loadPendingBindings();
       },
       error: (err) => {
@@ -192,8 +351,9 @@ export class StudentDashboardComponent implements OnInit {
   }
 
   private refreshSchedule(): void {
-    const merged = [...this.upcomingLessons(), ...this.historyLessons()]
-      .sort((a, b) => (b.startAt ?? '').localeCompare(a.startAt ?? ''));
+    const merged = [...this.upcomingLessons(), ...this.historyLessons()].sort((a, b) =>
+      (b.startAt ?? '').localeCompare(a.startAt ?? '')
+    );
     this.schedule.set(merged);
   }
 
@@ -205,7 +365,6 @@ export class StudentDashboardComponent implements OnInit {
       },
       error: () => {
         this.loaded.set(true);
-        // 网络异常就地容错：展示温和提示与原地重试，不弹模态框
       },
     });
   }
@@ -214,13 +373,243 @@ export class StudentDashboardComponent implements OnInit {
     this.focusMode.update((v) => !v);
   }
 
-  /** 无序勾选微任务（Task Chunking）。 */
   toggleTask(task: TaskView): void {
     this.http
       .post<{ completed: boolean }>(`/api/v1/classroom/preparation-tasks/${task.taskId}:complete`, {})
       .subscribe({
         next: (res) => {
           task.completed = res.completed;
+        },
+      });
+  }
+
+  // ==========================================
+  // A3 缺口补齐：我的预约列表实现
+  // ==========================================
+  loadMyBookings(page = 0): void {
+    this.bookingsLoading.set(true);
+    this.http
+      .get<BookingPage>(`${API.booking.mine}?page=${page}&size=10`)
+      .subscribe({
+        next: (res) => {
+          this.myBookings.set(res?.content ?? []);
+          this.bookingsPage.set(res?.number ?? page);
+          this.bookingsTotalPages.set(res?.totalPages ?? 0);
+          this.bookingsTotalElements.set(res?.totalElements ?? 0);
+          this.bookingsLoading.set(false);
+        },
+        error: () => {
+          this.myBookings.set([]);
+          this.bookingsLoading.set(false);
+        },
+      });
+  }
+
+  turnBookingsPage(delta: number): void {
+    const next = this.bookingsPage() + delta;
+    if (next < 0 || next >= this.bookingsTotalPages() || this.bookingsLoading()) return;
+    this.loadMyBookings(next);
+  }
+
+  // ==========================================
+  // A1 缺口补齐：两阶段取消预约
+  // ==========================================
+  openCancel(bookingId: string): void {
+    this.cancelBookingId.set(bookingId);
+    this.cancelReason.set('');
+    this.cancelStage.set('FORM');
+    this.cancelPreviewData.set(null);
+    this.cancelMsg.set(null);
+  }
+
+  dismissCancel(): void {
+    this.cancelBookingId.set(null);
+    this.cancelReason.set('');
+    this.cancelStage.set('FORM');
+    this.cancelPreviewData.set(null);
+    this.cancelMsg.set(null);
+    this.cancelBusy.set(false);
+  }
+
+  previewCancel(): void {
+    const bId = this.cancelBookingId();
+    const reason = this.cancelReason().trim();
+    if (!bId || !reason || this.cancelBusy()) return;
+
+    this.cancelBusy.set(true);
+    this.cancelMsg.set(null);
+
+    this.http
+      .post<CancelPreviewResult>(API.booking.cancelPreview(bId), { reason })
+      .subscribe({
+        next: (preview) => {
+          this.cancelBusy.set(false);
+          this.cancelPreviewData.set(preview);
+          this.cancelStage.set('PREVIEW');
+        },
+        error: (err) => {
+          this.cancelBusy.set(false);
+          const detail = err?.error?.detail ?? err?.error?.message ?? '取消预览失败，请稍后重试。';
+          this.cancelMsg.set({ type: 'error', text: detail });
+        },
+      });
+  }
+
+  executeCancel(): void {
+    const bId = this.cancelBookingId();
+    const preview = this.cancelPreviewData();
+    const reason = this.cancelReason().trim();
+    if (!bId || !preview?.confirmationToken || this.cancelBusy()) return;
+
+    this.cancelBusy.set(true);
+    this.cancelMsg.set(null);
+
+    this.http
+      .post(API.booking.cancelExecute(bId), {
+        reason,
+        confirmationToken: preview.confirmationToken,
+      })
+      .subscribe({
+        next: () => {
+          this.cancelBusy.set(false);
+          this.cancelMsg.set({ type: 'success', text: '预约已成功取消，档期已释放。' });
+          setTimeout(() => {
+            this.dismissCancel();
+            this.loadMyBookings(this.bookingsPage());
+            this.loadScheduleData();
+            this.load();
+          }, 1500);
+        },
+        error: (err) => {
+          this.cancelBusy.set(false);
+          const detail = err?.error?.detail ?? err?.error?.message ?? '确认取消未成功，请稍后重试。';
+          this.cancelMsg.set({ type: 'error', text: detail });
+        },
+      });
+  }
+
+  // ==========================================
+  // B2 缺口补齐：学生个人资料卡
+  // ==========================================
+  loadStudentProfile(): void {
+    this.profileLoading.set(true);
+    this.http.get<StudentProfileData>(API.student.profile).subscribe({
+      next: (data) => {
+        this.studentProfile.set(data);
+        this.profileLoading.set(false);
+      },
+      error: () => this.profileLoading.set(false),
+    });
+  }
+
+  startEditProfile(): void {
+    const p = this.studentProfile();
+    this.editGradeLevel.set(p?.gradeLevel ?? '');
+    this.editLearningStyle.set(p?.learningStyle ?? '');
+    this.editFocusPreference.set(p?.focusPreference ?? '');
+    this.editPreferredSubjects.set(p?.preferredSubjects ? [...p.preferredSubjects] : []);
+    this.profileEditing.set(true);
+    this.profileMsg.set(null);
+  }
+
+  cancelEditProfile(): void {
+    this.profileEditing.set(false);
+    this.profileMsg.set(null);
+  }
+
+  togglePreferredSubject(sub: string): void {
+    const cur = this.editPreferredSubjects();
+    if (cur.includes(sub)) {
+      this.editPreferredSubjects.set(cur.filter((s) => s !== sub));
+    } else {
+      this.editPreferredSubjects.set([...cur, sub]);
+    }
+  }
+
+  saveStudentProfile(): void {
+    if (this.profileSaving()) return;
+    this.profileSaving.set(true);
+    this.profileMsg.set(null);
+
+    this.http
+      .put<StudentProfileData>(API.student.profile, {
+        gradeLevel: this.editGradeLevel().trim() || null,
+        learningStyle: this.editLearningStyle().trim() || null,
+        focusPreference: this.editFocusPreference().trim() || null,
+        preferredSubjects: this.editPreferredSubjects(),
+      })
+      .subscribe({
+        next: (updated) => {
+          this.studentProfile.set(updated);
+          this.profileSaving.set(false);
+          this.profileEditing.set(false);
+          this.profileMsg.set({ type: 'success', text: '个人资料与学习偏好已更新。' });
+        },
+        error: (err) => {
+          this.profileSaving.set(false);
+          const detail = err?.error?.detail ?? err?.error?.message ?? '保存失败，请稍后重试。';
+          this.profileMsg.set({ type: 'error', text: detail });
+        },
+      });
+  }
+
+  copyStudentNo(no: string): void {
+    if (!no) return;
+    navigator.clipboard?.writeText(no);
+    this.copiedStudentNo.set(true);
+    setTimeout(() => this.copiedStudentNo.set(false), 2000);
+  }
+
+  // ==========================================
+  // B1 缺口补齐：学习目标画像卡
+  // ==========================================
+  loadLearningProfile(): void {
+    this.learningProfileLoading.set(true);
+    this.http.get<LearningProfileData>(API.learning.profile).subscribe({
+      next: (data) => {
+        this.learningProfile.set(data);
+        this.learningProfileLoading.set(false);
+      },
+      error: () => this.learningProfileLoading.set(false),
+    });
+  }
+
+  startEditLearningProfile(): void {
+    const lp = this.learningProfile();
+    this.editGoal.set(lp?.goal ?? '');
+    this.editStage.set(lp?.stage ?? '');
+    this.editTargetSubjects.set(lp?.targetSubjects ?? '');
+    this.learningProfileEditing.set(true);
+    this.learningProfileMsg.set(null);
+  }
+
+  cancelEditLearningProfile(): void {
+    this.learningProfileEditing.set(false);
+    this.learningProfileMsg.set(null);
+  }
+
+  saveLearningProfile(): void {
+    if (this.learningProfileSaving()) return;
+    this.learningProfileSaving.set(true);
+    this.learningProfileMsg.set(null);
+
+    this.http
+      .put<LearningProfileData>(API.learning.profile, {
+        goal: this.editGoal().trim() || null,
+        stage: this.editStage().trim() || null,
+        targetSubjects: this.editTargetSubjects().trim() || null,
+      })
+      .subscribe({
+        next: (updated) => {
+          this.learningProfile.set(updated);
+          this.learningProfileSaving.set(false);
+          this.learningProfileEditing.set(false);
+          this.learningProfileMsg.set({ type: 'success', text: '学习目标与阶段画像已保存。' });
+        },
+        error: (err) => {
+          this.learningProfileSaving.set(false);
+          const detail = err?.error?.detail ?? err?.error?.message ?? '保存失败，请稍后重试。';
+          this.learningProfileMsg.set({ type: 'error', text: detail });
         },
       });
   }
@@ -242,7 +631,10 @@ export class StudentDashboardComponent implements OnInit {
           this.openSlots.set(slots ?? []);
           this.slotsLoading.set(false);
           if (!slots?.length) {
-            this.rescheduleMessage.set({ type: 'info', text: '导师当前没有可约的开放时间，稍后再来看看或与导师沟通。' });
+            this.rescheduleMessage.set({
+              type: 'info',
+              text: '导师当前没有可约的开放时间，稍后再来看看或与导师沟通。',
+            });
           }
         },
         error: () => {
@@ -264,22 +656,21 @@ export class StudentDashboardComponent implements OnInit {
       return;
     }
     this.rescheduleBusy.set(true);
-    this.http
-      .post(API.booking.reschedule(bookingId), { newSlotId })
-      .subscribe({
-        next: () => {
-          this.rescheduleMessage.set({ type: 'success', text: '改期成功，课程表已更新。' });
-          this.rescheduleBookingId.set(null);
-          this.pickedSlotId.set(null);
-          this.ngOnInit();          // 课程表同步刷新
-          this.load();              // 专注概览同步刷新
-        },
-        error: (err) => {
-          this.rescheduleBusy.set(false);
-          const detail = err?.error?.detail ?? '改期未成功，所选时间可能刚被占用，请重新选择时间。';
-          this.rescheduleMessage.set({ type: 'error', text: detail });
-        },
-      });
+    this.http.post(API.booking.reschedule(bookingId), { newSlotId }).subscribe({
+      next: () => {
+        this.rescheduleMessage.set({ type: 'success', text: '改期成功，课程表已更新。' });
+        this.rescheduleBookingId.set(null);
+        this.pickedSlotId.set(null);
+        this.loadScheduleData();
+        this.loadMyBookings(this.bookingsPage());
+        this.load();
+      },
+      error: (err) => {
+        this.rescheduleBusy.set(false);
+        const detail = err?.error?.detail ?? '改期未成功，所选时间可能刚被占用，请重新选择时间。';
+        this.rescheduleMessage.set({ type: 'error', text: detail });
+      },
+    });
   }
 
   cancelReschedule(): void {
@@ -290,13 +681,14 @@ export class StudentDashboardComponent implements OnInit {
 
   askTeacher(question: string): void {
     const lesson = this.overview()?.nextLesson;
-    if (!lesson || !question.trim()) {
-      return;
-    }
+    if (!lesson || !question.trim()) return;
     this.asking.set(true);
     this.http
       .post(API.student.questions, { teacherId: lesson.teacherId, question: question.trim() })
-      .subscribe({ next: () => this.asking.set(false), error: () => this.asking.set(false) });
+      .subscribe({
+        next: () => this.asking.set(false),
+        error: () => this.asking.set(false),
+      });
   }
 
   retry(): void {
@@ -317,16 +709,14 @@ export class StudentDashboardComponent implements OnInit {
     this.reviewMsg.set(null);
   }
 
-  /** 标签最多选 3 个，再点已选项为取消。 */
   toggleReviewTag(tag: string): void {
     this.reviewTags.update((tags) =>
-      tags.includes(tag) ? tags.filter((t) => t !== tag) : tags.length >= 3 ? tags : [...tags, tag]);
+      tags.includes(tag) ? tags.filter((t) => t !== tag) : tags.length >= 3 ? tags : [...tags, tag]
+    );
   }
 
   submitReview(bookingId: string): void {
-    if (this.reviewBusy()) {
-      return;
-    }
+    if (this.reviewBusy()) return;
     this.reviewBusy.set(true);
     this.reviewMsg.set(null);
     const comment = this.reviewComment().trim();
@@ -351,33 +741,42 @@ export class StudentDashboardComponent implements OnInit {
       });
   }
 
-  /** 进入课堂：取回会议链接，校验协议白名单后新窗口打开；弹窗被拦截时降级为可点击链接。 */
   enterClassroom(): void {
     const lesson = this.overview()?.nextLesson;
-    if (!lesson || this.classroomBusy()) {
-      return;
-    }
+    if (!lesson || this.classroomBusy()) return;
     this.classroomBusy.set(true);
     this.classroomMsg.set(null);
     this.classroomLink.set(null);
     this.http
-      .post<{ meetingUrl: string; provider: string; sessionStatus: string }>(API.classroom.join(lesson.bookingId), {})
+      .post<{ meetingUrl: string; provider: string; sessionStatus: string }>(
+        API.classroom.join(lesson.bookingId),
+        {}
+      )
       .subscribe({
         next: (res) => {
           this.classroomBusy.set(false);
           const url = res?.meetingUrl ?? '';
           if (!url) {
-            this.classroomMsg.set({ type: 'info', text: '课堂尚未就绪：导师还未录入会议链接，可与导师确认后再来。' });
+            this.classroomMsg.set({
+              type: 'info',
+              text: '课堂尚未就绪：导师还未录入会议链接，可与导师确认后再来。',
+            });
             return;
           }
           if (!/^https?:\/\//i.test(url)) {
-            this.classroomMsg.set({ type: 'error', text: '会议链接格式异常，已阻止打开，请联系导师重新录入。' });
+            this.classroomMsg.set({
+              type: 'error',
+              text: '会议链接格式异常，已阻止打开，请联系导师重新录入。',
+            });
             return;
           }
           const win = window.open(url, '_blank', 'noopener');
           if (!win) {
             this.classroomLink.set(url);
-            this.classroomMsg.set({ type: 'info', text: '浏览器拦截了新窗口，请点击下方链接进入课堂。' });
+            this.classroomMsg.set({
+              type: 'info',
+              text: '浏览器拦截了新窗口，请点击下方链接进入课堂。',
+            });
           }
         },
         error: (err) => {
@@ -386,5 +785,34 @@ export class StudentDashboardComponent implements OnInit {
           this.classroomMsg.set({ type: 'error', text: detail });
         },
       });
+  }
+
+  loadLegacyWallet(page = this.legacyPage()): void {
+    this.legacyLoading.set(true);
+    this.legacyError.set(false);
+    this.http
+      .get<any>('/api/v1/student/me/legacy-wallet', { params: { page, size: 20 } })
+      .subscribe({
+        next: (w) => {
+          this.legacyWallet.set(w);
+          this.legacyPage.set(page);
+          this.legacyLoading.set(false);
+        },
+        error: () => {
+          this.legacyLoading.set(false);
+          this.legacyError.set(true);
+        },
+      });
+  }
+
+  turnLegacyWallet(delta: number): void {
+    if (
+      this.legacyLoading() ||
+      this.legacyPage() + delta < 0 ||
+      this.legacyPage() + delta >= (this.legacyWallet()?.transactions.totalPages ?? 0)
+    ) {
+      return;
+    }
+    this.loadLegacyWallet(this.legacyPage() + delta);
   }
 }

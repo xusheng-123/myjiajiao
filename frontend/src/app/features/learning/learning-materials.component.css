@@ -1,0 +1,67 @@
+:host{display:block;min-height:100vh;background:var(--bg-page);color:var(--text-main)}
+.materials-shell{max-width:1080px;margin:0 auto;padding:24px 16px 48px}
+.materials-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:20px}
+.header-main,.title-group{display:flex;flex-direction:column;gap:8px}
+.back-link{display:inline-flex;align-items:center;gap:8px;color:var(--color-primary);font-size:.9rem;font-weight:500;text-decoration:none}
+.page-title,.section-title,.task-title,.question-card-title,.empty-title{margin:0;color:var(--text-title);font-weight:600}
+.page-title{font-size:clamp(1.5rem,3vw,2rem)}
+.page-desc,.quota-desc,.section-tip,.empty-hint,.file-size,.section-count,.pager-info{color:var(--text-muted);font-size:.88rem;margin:0}
+.role-selector-card{display:flex;align-items:center;gap:12px;padding:12px 18px}
+.selector-label{font-size:.9rem;font-weight:600;color:var(--color-primary);white-space:nowrap}
+.selector-control{min-height:36px;border:1px solid var(--line);border-radius:var(--radius-control);padding:4px 10px;background:var(--bg-card);font:inherit}
+.info-banner,.notice-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;margin-bottom:16px;border-radius:var(--radius-control);font-size:.92rem}
+.info-banner{background:var(--bg-mist);color:var(--text-main)}
+.notice-bar{background:var(--color-primary-soft);color:var(--color-primary)}
+.quota-banner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding:16px 20px;margin-bottom:20px}
+.quota-left{display:flex;flex-direction:column;gap:4px}
+.quota-title{font-size:.95rem;font-weight:600;color:var(--text-title)}
+.business-tabs{display:flex;gap:12px;margin-bottom:24px;border-bottom:1.5px solid var(--line)}
+.tab-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;background:transparent;color:var(--text-muted);font-size:1rem;font-weight:500;border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer}
+.tab-btn:hover,.tab-btn--active{color:var(--color-primary)}
+.tab-btn--active{border-bottom-color:var(--color-primary);font-weight:600}
+.tab-badge{min-width:20px;height:20px;padding:0 6px;font-size:.75rem;font-weight:600;border-radius:999px;background:var(--color-primary-soft);color:var(--color-primary);display:inline-flex;align-items:center;justify-content:center}
+.tab-btn--active .tab-badge{background:var(--color-primary);color:#fff}
+.tab-content-panel{display:flex;flex-direction:column;gap:20px}
+.upload-section,.files-list-section,.task-full-card,.question-full-card,.empty-state{padding:20px}
+.upload-section{display:flex;flex-direction:column;gap:14px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.section-badge{font-size:.78rem;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--color-gold-bg);color:var(--color-gold-text)}
+.section-title{font-size:1.25rem}
+.upload-form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.form-field{display:flex;flex-direction:column;gap:6px}
+.form-field label{font-size:.88rem;font-weight:600}
+.files-flow{display:flex;flex-direction:column;gap:10px}
+.file-item-card{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 16px;background:var(--bg-page);border:1px solid var(--line);border-radius:var(--radius-control)}
+.file-item-left{display:flex;align-items:center;gap:12px;color:var(--color-primary)}
+.file-meta{display:flex;flex-direction:column;gap:2px}
+.file-name{font-size:.92rem;color:var(--text-title)}
+.file-item-actions{display:flex;align-items:center;gap:8px}
+.btn-text-danger-sm{background:none;border:none;color:var(--color-danger);font-size:.82rem;cursor:pointer;padding:4px 8px}
+.tasks-overview-section,.questions-overview-section{display:flex;flex-direction:column;gap:20px}
+.tasks-cards-list,.questions-cards-list{display:flex;flex-direction:column;gap:16px}
+.task-full-card,.question-full-card{display:flex;flex-direction:column;gap:14px}
+.task-head,.question-card-head{display:flex;align-items:center;gap:10px}
+.task-title-wrap{display:flex;align-items:center;gap:10px}
+.task-title,.question-card-title{font-size:1.2rem}
+.status-pill{font-size:.78rem;font-weight:600;padding:3px 10px;border-radius:999px}
+.status-pending{background:var(--color-gold-bg);color:var(--color-gold-text)}
+.status-submitted{background:var(--color-primary-soft);color:var(--color-primary)}
+.status-completed,.status-answered{background:var(--color-success-bg);color:var(--color-success)}
+.status-closed{background:var(--bg-mist);color:var(--text-muted)}
+.task-desc-box,.question-body-box{padding:12px 14px;background:var(--bg-page);border-radius:var(--radius-control);border:1px solid var(--line)}
+.desc-tag,.work-tag{font-size:.85rem;font-weight:600;color:var(--color-primary)}
+.desc-text,.work-text{margin:4px 0 0;font-size:.92rem;line-height:1.6;white-space:pre-wrap}
+.task-work-box,.question-answer-box{padding:12px 14px;background:var(--bg-page);border-radius:var(--radius-control);border:1px solid var(--line)}
+.feedback-box{background:var(--color-primary-soft)}
+.task-actions-box,.question-action-box{padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.task-form,.answer-form{display:flex;flex-direction:column;gap:12px;padding:14px;background:var(--bg-page);border-radius:var(--radius-control)}
+.form-actions-row{display:flex;justify-content:flex-end;gap:10px}
+.pager-nav{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:14px}
+.empty-state{display:flex;flex-direction:column;align-items:center;padding:48px 16px;text-align:center}
+.empty-icon{width:44px;height:44px;stroke:var(--text-placeholder);margin-bottom:12px}
+@media(max-width:768px){
+  .materials-shell{padding:16px 12px 24px}
+  .upload-form-grid{grid-template-columns:1fr}
+  .business-tabs{overflow-x:auto}
+  .upload-section,.files-list-section,.task-full-card,.question-full-card{padding:14px}
+}

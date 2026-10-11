@@ -1,32 +1,308 @@
 <main class="refund-shell">
-  <header><h1 class="nur-serif">退款与处理进度</h1><a [routerLink]="home()">返回控制台</a><button type="button" (click)="refresh()" [disabled]="busy()">刷新</button></header>
-  <p>可为本人课程或本人付款的已支付订单申请退款。当前支持全额退款，需运营审核；款项退回付款人的平台钱包。</p>
-  @if (notice()) { <p role="status">{{ notice() }}</p> }
-  <section class="nur-card">
-    <h2 class="nur-serif">课程订单</h2>
-    @if (!loaded()) { <p role="status">正在加载…</p> }
-    @else if (!orders().length) { <p>暂无课程订单。</p> }
-    <ul>
-      @for (o of orders(); track o.orderId) {
-        <li><span>{{ o.orderNo }} · ¥{{ yuan(o.amountCents) }} · {{ status(o.status) }}</span>
-          @if (o.status === 'PAID') { <button type="button" (click)="select(o)" [disabled]="busy()">申请退款</button> }
-        </li>
+  <!-- 页面头部 -->
+  <header class="page-head">
+    <div class="head-title-col">
+      <h1 class="page-title nur-serif">退款与处理进度</h1>
+      <p class="page-desc">
+        可为本人课程或本人付款的已支付订单申请全额退款。款项经审核后原路退回付款人的平台钱包。
+      </p>
+    </div>
+    <div class="head-actions">
+      <a [routerLink]="home()" class="nur-btn nur-btn--ghost nur-btn--sm">
+        ← 返回工作台
+      </a>
+      <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="refresh()" [disabled]="busy()">
+        刷新数据
+      </button>
+    </div>
+  </header>
+
+  @if (notice()) {
+    <div class="notice-banner" role="status">
+      <span aria-hidden="true">ℹ</span> {{ notice() }}
+    </div>
+  }
+
+  <!-- 第一部分：课程订单与退款发起 -->
+  <section class="nur-card section-card" aria-label="课程订单">
+    <div class="card-head">
+      <h2 class="card-title nur-serif">课程订单</h2>
+      <span class="card-subtitle">仅已支付（PAID）订单可发起退款申请</span>
+    </div>
+
+    @if (!loaded()) {
+      <div class="state-placeholder" role="status">
+        <p>正在加载订单数据…</p>
+      </div>
+    } @else if (orders().length === 0) {
+      <div class="state-placeholder">
+        <p>暂无符合退款条件的课程订单。</p>
+      </div>
+    } @else {
+      <div class="orders-table-wrapper">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th scope="col">订单编号</th>
+              <th scope="col">实付金额</th>
+              <th scope="col">订单状态</th>
+              <th scope="col" class="th-action">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of orders(); track o.orderId) {
+              <tr>
+                <td class="td-orderno">{{ o.orderNo }}</td>
+                <td class="td-amount">¥{{ yuan(o.amountCents) }}</td>
+                <td>
+                  <span class="order-status-badge" [class.order-status-badge--paid]="o.status === 'PAID'">
+                    {{ statusText(o.status) }}
+                  </span>
+                </td>
+                <td class="td-action">
+                  @if (o.status === 'PAID') {
+                    <button
+                      type="button"
+                      class="nur-btn nur-btn--primary nur-btn--sm"
+                      (click)="openApplyModal(o)"
+                      [disabled]="busy()"
+                    >
+                      申请退款
+                    </button>
+                  } @else {
+                    <span class="text-disabled">不可申请</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (orderPages() > 1) {
+        <nav class="pager" aria-label="订单分页">
+          <button
+            type="button"
+            class="nur-btn nur-btn--ghost nur-btn--sm"
+            [disabled]="orderPage() === 0 || busy()"
+            (click)="move('orders', -1)"
+          >
+            上一页
+          </button>
+          <span class="pager-info">第 {{ orderPage() + 1 }} / {{ orderPages() }} 页</span>
+          <button
+            type="button"
+            class="nur-btn nur-btn--ghost nur-btn--sm"
+            [disabled]="orderPage() + 1 >= orderPages() || busy()"
+            (click)="move('orders', 1)"
+          >
+            下一页
+          </button>
+        </nav>
       }
-    </ul>
-    <div class="pager"><button type="button" [disabled]="orderPage() === 0 || busy()" (click)="move('orders', -1)">上一页</button><span>第 {{ orderPage() + 1 }} 页</span><button type="button" [disabled]="orderPage() + 1 >= orderPages() || busy()" (click)="move('orders', 1)">下一页</button></div>
-    @if (selected(); as o) {
-      <form (submit)="$event.preventDefault(); submit()">
-        <h3>确认申请 {{ o.orderNo }} 的全额退款</h3><p>申请金额 ¥{{ yuan(o.amountCents) }}。提交申请后等待审核，提交本身不会自动退款或取消课程。</p>
-        <label for="refund-reason">退款原因（必填，最多 512 字）</label>
-        <textarea id="refund-reason" rows="3" maxlength="512" required [value]="reason()" [disabled]="busy()" (input)="reason.set($any($event.target).value)"></textarea>
-        <button type="submit" [disabled]="busy() || !reason().trim()">{{ busy() ? '提交中…' : '确认提交申请' }}</button>
-        <button type="button" (click)="selected.set(null)" [disabled]="busy()">返回</button>
-      </form>
     }
   </section>
-  <section class="nur-card"><h2 class="nur-serif">我的退款申请</h2>
-    @if (!cases().length) { <p>暂无申请记录。</p> }
-    <ul>@for (c of cases(); track c.caseId) { <li><div><p>订单 {{ c.orderId.slice(0, 8) }} · ¥{{ yuan(c.computedAmountCents) }} · {{ status(c.status) }}</p><p>原因：{{ c.reason }}</p>@if (c.decisionNote) { <p>处理说明：{{ c.decisionNote }}</p> }</div></li> }</ul>
-    <div class="pager"><button type="button" [disabled]="casePage() === 0 || busy()" (click)="move('cases', -1)">上一页</button><span>第 {{ casePage() + 1 }} 页</span><button type="button" [disabled]="casePage() + 1 >= casePages() || busy()" (click)="move('cases', 1)">下一页</button></div>
+
+  <!-- 第二部分：退款进度与时间轴 -->
+  <section class="nur-card section-card" aria-label="我的退款申请">
+    <div class="card-head">
+      <h2 class="card-title nur-serif">退款申请处理进度</h2>
+      <span class="card-subtitle">实时追踪审核进度、退款状态与运营批注</span>
+    </div>
+
+    @if (cases().length === 0) {
+      <div class="state-placeholder">
+        <p>暂无退款申请记录。如需退款，可在上方订单列表中点击「申请退款」。</p>
+      </div>
+    } @else {
+      <div class="cases-list">
+        @for (c of cases(); track c.caseId) {
+          <article class="case-card">
+            <!-- 工单卡头 -->
+            <header class="case-head">
+              <div class="case-id-col">
+                <span class="case-order-num">关联订单：{{ c.orderId.slice(0, 13) }}…</span>
+                <span class="case-amount">退款金额：¥{{ yuan(c.computedAmountCents) }}</span>
+              </div>
+              <span
+                class="case-status-badge"
+                [class.case-status-badge--success]="c.status === 'APPROVED' || c.status === 'EXECUTED'"
+                [class.case-status-badge--danger]="c.status === 'REJECTED'"
+              >
+                {{ statusText(c.status) }}
+              </span>
+            </header>
+
+            <!-- 退款理由 -->
+            <div class="case-reason-block">
+              <span class="reason-label">申请理由：</span>
+              <span class="reason-text">{{ c.reason }}</span>
+            </div>
+
+            <!-- 状态流转时间轴 (Timeline) -->
+            <div class="timeline" aria-label="处理流转进度">
+              @for (node of getTimelineNodes(c); track node.title) {
+                <div class="timeline-step" [class]="'timeline-step--' + node.status">
+                  <div class="timeline-dot" aria-hidden="true">
+                    @if (node.status === 'done' || node.status === 'success') {
+                      ✓
+                    } @else if (node.status === 'rejected') {
+                      ✕
+                    } @else if (node.status === 'active') {
+                      ◔
+                    } @else {
+                      ○
+                    }
+                  </div>
+                  <div class="timeline-content">
+                    <span class="timeline-node-title">{{ node.title }}</span>
+                    <span class="timeline-node-desc">{{ node.desc }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- 运营批注说明 -->
+            @if (c.decisionNote) {
+              <div class="decision-note-box">
+                <span class="decision-note-tag">运营审核批注</span>
+                <p class="decision-note-text">{{ c.decisionNote }}</p>
+              </div>
+            }
+          </article>
+        }
+      </div>
+
+      @if (casePages() > 1) {
+        <nav class="pager" aria-label="退款记录分页">
+          <button
+            type="button"
+            class="nur-btn nur-btn--ghost nur-btn--sm"
+            [disabled]="casePage() === 0 || busy()"
+            (click)="move('cases', -1)"
+          >
+            上一页
+          </button>
+          <span class="pager-info">第 {{ casePage() + 1 }} / {{ casePages() }} 页</span>
+          <button
+            type="button"
+            class="nur-btn nur-btn--ghost nur-btn--sm"
+            [disabled]="casePage() + 1 >= casePages() || busy()"
+            (click)="move('cases', 1)"
+          >
+            下一页
+          </button>
+        </nav>
+      }
+    }
   </section>
+
+  <!-- 申请退款模态弹层 (两步向导：理由录入 → 确认信息) -->
+  @if (selected(); as o) {
+    <div class="modal-backdrop" (click)="closeApplyModal()">
+      <div class="modal-card nur-card" role="dialog" aria-modal="true" aria-labelledby="modal-title" (click)="$event.stopPropagation()">
+        <!-- 弹窗标题与步骤指示 -->
+        <header class="modal-head">
+          <div>
+            <h2 id="modal-title" class="modal-title nur-serif">申请退款 · 订单 {{ o.orderNo }}</h2>
+            <p class="modal-sub">全额退款金额：¥{{ yuan(o.amountCents) }}</p>
+          </div>
+          <button type="button" class="btn-close" (click)="closeApplyModal()" aria-label="关闭">✕</button>
+        </header>
+
+        <div class="modal-stepper" aria-label="申请步骤">
+          <span class="modal-step-tag" [class.modal-step-tag--active]="modalStep() === 1">1. 填写退款理由</span>
+          <span class="step-arrow" aria-hidden="true">→</span>
+          <span class="modal-step-tag" [class.modal-step-tag--active]="modalStep() === 2">2. 确认并提交</span>
+        </div>
+
+        @if (modalStep() === 1) {
+          <!-- 步骤一：录入理由 -->
+          <div class="modal-body">
+            <label class="modal-field-label" for="refund-reason-input">
+              退款原因（必填，最多 512 字）：
+            </label>
+
+            <!-- 快捷预设理由 -->
+            <div class="preset-chips" role="group" aria-label="常见退款原因">
+              @for (pr of presetReasons; track pr) {
+                <button
+                  type="button"
+                  class="nur-chip-btn"
+                  [attr.aria-pressed]="reason() === pr"
+                  (click)="setPresetReason(pr)"
+                >
+                  {{ pr }}
+                </button>
+              }
+            </div>
+
+            <textarea
+              id="refund-reason-input"
+              rows="4"
+              maxlength="512"
+              class="modal-textarea"
+              placeholder="请详细说明退款原因，以便运营人员核实处理…"
+              [value]="reason()"
+              [disabled]="busy()"
+              (input)="reason.set($any($event.target).value)"
+            ></textarea>
+
+            <span class="char-count">{{ reason().length }} / 512 字</span>
+          </div>
+
+          <footer class="modal-actions">
+            <button type="button" class="nur-btn nur-btn--ghost" (click)="closeApplyModal()" [disabled]="busy()">
+              取消
+            </button>
+            <button
+              type="button"
+              class="nur-btn nur-btn--primary"
+              [disabled]="!reason().trim() || busy()"
+              (click)="toConfirmStep()"
+            >
+              下一步：确认信息 →
+            </button>
+          </footer>
+        } @else {
+          <!-- 步骤二：确认提交 -->
+          <div class="modal-body">
+            <dl class="confirm-summary">
+              <div>
+                <dt>退款订单：</dt>
+                <dd>{{ o.orderNo }}</dd>
+              </div>
+              <div>
+                <dt>退款金额：</dt>
+                <dd class="confirm-money">¥{{ yuan(o.amountCents) }}（全额退回钱包）</dd>
+              </div>
+              <div>
+                <dt>退款理由：</dt>
+                <dd class="confirm-reason">{{ reason() }}</dd>
+              </div>
+            </dl>
+
+            <div class="modal-policy-notice">
+              <p><strong>退款须知：</strong></p>
+              <p>提交申请后将进入运营审核队列。提交退款不会自动取消已约定的课程安排；审核通过后款项将全额转入你的平台钱包。</p>
+            </div>
+          </div>
+
+          <footer class="modal-actions">
+            <button type="button" class="nur-btn nur-btn--ghost" (click)="backToReasonStep()" [disabled]="busy()">
+              ← 返回修改理由
+            </button>
+            <button
+              type="button"
+              class="nur-btn nur-btn--primary"
+              [disabled]="busy()"
+              (click)="submit()"
+            >
+              {{ busy() ? '正在提交…' : '确认提交申请' }}
+            </button>
+          </footer>
+        }
+      </div>
+    </div>
+  }
 </main>

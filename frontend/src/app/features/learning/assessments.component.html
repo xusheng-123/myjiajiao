@@ -1,0 +1,450 @@
+<main class="assess-shell">
+  <header class="assess-header">
+    <div class="assess-header-main">
+      <a class="back-link" [routerLink]="'/' + auth.role()?.toLowerCase() + '/dashboard'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>返回工作台</span>
+      </a>
+      <div class="assess-title-group">
+        <span class="nur-kicker">LEARNING ASSESSMENTS</span>
+        <h1 class="nur-serif page-title">阶段小测与学习报告</h1>
+        <p class="page-desc">由授课教师录入阶段小测，客观题真实作答计分；小结学习成效，沉淀成长轨迹。</p>
+      </div>
+    </div>
+
+    @if (auth.role() === 'TEACHER') {
+      <div class="role-selector-card nur-card">
+        <label for="assess-student-select" class="selector-label">当前受测学生</label>
+        <select id="assess-student-select" class="selector-control" [ngModel]="student" (ngModelChange)="selectStudent($event)">
+          @for (s of students(); track s.studentId) {
+            <option [value]="s.studentId">{{ s.displayName }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    @if (auth.role() === 'PARENT') {
+      <div class="role-selector-card nur-card">
+        <label for="assess-child-select" class="selector-label">选择孩子档案</label>
+        <select id="assess-child-select" class="selector-control" [ngModel]="child" (ngModelChange)="selectChild($event)">
+          @for (c of children(); track c.studentId) {
+            <option [value]="c.studentId">孩子 {{ c.studentNo ?? '已绑定' }}</option>
+          }
+        </select>
+      </div>
+    }
+  </header>
+
+  @if (notice()) {
+    <div class="notice-bar" role="status" aria-live="polite">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>{{ notice() }}</span>
+    </div>
+  }
+
+  <!-- 业务分栏 Tab 导航 -->
+  <nav class="assess-tabs" aria-label="功能分区">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'quizzes'"
+      (click)="activeTab.set('quizzes')">
+      <span>小测列表与作答</span>
+      <span class="tab-badge">{{ total() }}</span>
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'report'"
+      (click)="activeTab.set('report')">
+      <span>真实学习证据大盘</span>
+      @if (report(); as r) {
+        <span class="tab-badge">{{ r.scores.totalElements }}</span>
+      }
+    </button>
+  </nav>
+
+  @if (activeTab() === 'quizzes') {
+    <!-- 教师端：录入 / 编辑小测草稿 -->
+    @if (auth.role() === 'TEACHER' && student) {
+      <section class="nur-card editor-section" aria-labelledby="draft-editor-title">
+        <div class="section-head">
+          <div class="section-title-wrap">
+            <span class="section-badge">{{ editing ? '修改中' : '出题模式' }}</span>
+            <h2 id="draft-editor-title" class="nur-serif section-title">{{ editing ? '编辑小测草稿' : '录入阶段小测' }}</h2>
+          </div>
+          <p class="section-subtitle">客观题限单选题，最多支持 20 题。发布后题干与标准答案将锁定不可篡改。</p>
+        </div>
+
+        <form (ngSubmit)="saveDraft()" class="quiz-form">
+          <div class="form-grid-meta">
+            <div class="form-field">
+              <label for="assessment-lesson">关联课程</label>
+              <select id="assessment-lesson" name="lesson" [(ngModel)]="bookingId" [disabled]="!!editing">
+                @for (l of lessons(); track l.bookingId) {
+                  <option [value]="l.bookingId">{{ l.subject }} · {{ l.startAt | date:'MM-dd HH:mm' }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="assessment-subject">科目</label>
+              <input id="assessment-subject" name="subject" [(ngModel)]="subject" maxlength="60" required [disabled]="!!editing" placeholder="例如：初中数学" />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="assessment-title">小测标题</label>
+              <input id="assessment-title" name="title" [(ngModel)]="title" maxlength="120" required placeholder="例如：期中知识点阶段回顾" />
+            </div>
+
+            <div class="form-field full-width">
+              <label for="assessment-scope">考察范围说明</label>
+              <textarea id="assessment-scope" name="scope" [(ngModel)]="scope" maxlength="1000" required rows="2" placeholder="说明考察知识点、章节与作答要求"></textarea>
+            </div>
+          </div>
+
+          <!-- 沉浸式出题卡片：一题一卡 -->
+          <div class="questions-builder">
+            <h3 class="builder-heading">题目编排 ({{ questions.length }}/20 题)</h3>
+
+            @for (q of questions; track $index; let n = $index) {
+              <div class="builder-card nur-card">
+                <div class="builder-card-header">
+                  <span class="question-number-pill">第 {{ n + 1 }} 题</span>
+                  <button
+                    type="button"
+                    class="btn-text-danger"
+                    (click)="removeQuestion(n)"
+                    [disabled]="questions.length === 1">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <span>移除此题</span>
+                  </button>
+                </div>
+
+                <div class="form-field">
+                  <label [for]="'assessment-question-' + n">题干内容</label>
+                  <textarea
+                    [id]="'assessment-question-' + n"
+                    [name]="'prompt-' + n"
+                    [(ngModel)]="q.prompt"
+                    maxlength="1000"
+                    required
+                    rows="2"
+                    placeholder="输入题目描述..."></textarea>
+                </div>
+
+                <div class="choices-editor-grid">
+                  @for (option of q.choices; track $index; let j = $index) {
+                    <div class="choice-edit-item">
+                      <span class="choice-tag">选项 {{ j + 1 }}</span>
+                      <input
+                        [id]="'assessment-choice-' + n + '-' + j"
+                        [name]="'choice-' + n + '-' + j"
+                        [(ngModel)]="q.choices[j]"
+                        maxlength="300"
+                        required
+                        placeholder="选项文本" />
+                    </div>
+                  }
+                </div>
+
+                <div class="correct-answer-bar">
+                  <label [for]="'correct-select-' + n" class="correct-label">设定正确答案：</label>
+                  <select [id]="'correct-select-' + n" [name]="'correct-' + n" [(ngModel)]="q.correctIndex" class="correct-select">
+                    @for (option of q.choices; track $index; let j = $index) {
+                      <option [ngValue]="j">选项 {{ j + 1 }} {{ q.choices[j] ? '（' + q.choices[j] + '）' : '' }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="form-actions-footer">
+            <button
+              type="button"
+              class="nur-btn nur-btn--ghost"
+              (click)="addQuestion()"
+              [disabled]="questions.length >= 20">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              <span>增加题目（当前 {{ questions.length }}/20）</span>
+            </button>
+            <div class="submit-cluster">
+              @if (editing) {
+                <button type="button" class="nur-btn nur-btn--ghost" (click)="clearDraft()">放弃修改</button>
+              }
+              <button class="nur-btn nur-btn--primary" [disabled]="busy() || !bookingId">
+                <span>{{ busy() ? '正在保存…' : '保存草稿' }}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+    }
+
+    <!-- 小测列表区 -->
+    <section class="nur-card list-section">
+      <div class="list-section-header">
+        <h2 class="nur-serif section-title">小测列表</h2>
+        <nur-queue-pager
+          label="小测"
+          [page]="page()"
+          [pages]="pages()"
+          [total]="total()"
+          [busy]="loading()"
+          (turn)="turn($event)"
+          (reload)="load()" />
+      </div>
+
+      @if (!loading() && !quizzes().length) {
+        <div class="empty-state">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          <p class="empty-text">暂无可查看的小测</p>
+          <p class="empty-hint">草稿仅创建教师可见；发布后学生可在此沉浸作答。</p>
+        </div>
+      }
+
+      <div class="quizzes-grid">
+        @for (q of quizzes(); track q.assessmentId) {
+          <article class="quiz-item-card nur-card">
+            <div class="quiz-item-head">
+              <div class="quiz-badge-line">
+                <span class="quiz-status-pill" [class.status-draft]="q.status==='DRAFT'" [class.status-published]="q.status==='PUBLISHED'" [class.status-archived]="q.status==='ARCHIVED'">
+                  {{ status(q.status) }}
+                </span>
+                <span class="quiz-subject-tag">{{ q.subject }}</span>
+              </div>
+              <h3 class="quiz-title">{{ q.title }}</h3>
+              <p class="quiz-scope">{{ q.scope }}</p>
+            </div>
+
+            <!-- 教师操作工具栏 -->
+            @if (auth.role() === 'TEACHER' && q.status === 'DRAFT') {
+              <div class="teacher-actions-bar">
+                <div class="action-buttons">
+                  <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="edit(q)">编辑草稿</button>
+                  <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" (click)="action(q, 'publish')" [disabled]="busy()">发布小测</button>
+                </div>
+                <p class="status-tip">发布后题目与答案固定不可修改，学生仅可提交一次。</p>
+              </div>
+            }
+
+            @if (auth.role() === 'TEACHER' && q.status === 'PUBLISHED') {
+              <div class="teacher-actions-bar">
+                <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="action(q, 'archive')" [disabled]="busy()">归档小测</button>
+              </div>
+            }
+
+            <!-- 沉浸式答题 / 题干卡片区：一题一卡 -->
+            <div class="quiz-cards-flow">
+              @for (item of q.questions; track $index; let n = $index) {
+                <div class="immersive-question-card">
+                  <div class="question-bar">
+                    <span class="q-seq-badge">第 {{ n + 1 }} 题</span>
+                    <p class="q-prompt-text">{{ item.prompt }}</p>
+                  </div>
+
+                  <div class="options-click-group">
+                    @for (option of item.choices; track $index; let j = $index) {
+                      <label
+                        class="immersive-option-item"
+                        [class.option-selected]="answers[q.assessmentId]?.[n] === j"
+                        [class.option-answered]="q.attempt?.answers?.[n] === j"
+                        [class.option-correct]="item.correctIndex === j">
+                        @if (auth.role() === 'STUDENT' && q.status === 'PUBLISHED' && !q.attempt) {
+                          <input
+                            type="radio"
+                            class="visually-hidden"
+                            [name]="q.assessmentId + '-' + n"
+                            [checked]="answers[q.assessmentId]?.[n] === j"
+                            (change)="setAnswer(q, n, j)" />
+                        }
+                        <span class="option-marker">{{ choiceMarker(j) }}</span>
+                        <span class="option-content">{{ option }}</span>
+                        @if (item.correctIndex === j && (item.correctIndex !== null || q.attempt)) {
+                          <span class="correct-badge">标准答案</span>
+                        }
+                      </label>
+                    }
+                  </div>
+
+                  @if (item.correctIndex !== null) {
+                    <div class="question-explain-line">
+                      <span class="ans-label">正确答案：选项 {{ item.correctIndex + 1 }}</span>
+                      @if (q.attempt) {
+                        <span class="user-ans-label">· 学生作答：选项 {{ q.attempt.answers[n] + 1 }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- 学生作答提交按钮 -->
+            @if (auth.role() === 'STUDENT' && q.status === 'PUBLISHED' && !q.attempt) {
+              <div class="submit-action-box">
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--primary"
+                  [disabled]="busy() || !complete(q)"
+                  (click)="submit(q)">
+                  {{ busy() ? '正在提交…' : (complete(q) ? '确认提交作答并即时评分' : '请先完成所有题目选择') }}
+                </button>
+              </div>
+            }
+
+            <!-- 答题得分与评语展示 -->
+            @if (q.attempt; as a) {
+              <div class="attempt-result-box">
+                <div class="score-banner">
+                  <div class="score-figure">
+                    <span class="score-main">答对 {{ a.correctCount }} / {{ a.totalCount }} 题</span>
+                    <span class="score-rate">得分率 {{ ((a.correctCount / a.totalCount) * 100).toFixed(0) }}%</span>
+                  </div>
+                  <time class="score-time">{{ a.submittedAt | date:'yyyy-MM-dd HH:mm' }} 提交</time>
+                </div>
+
+                <div class="comment-block">
+                  <h4 class="comment-title">导师教学批注</h4>
+                  <p class="comment-text">{{ a.teacherComment || '教师尚未补充批注。' }}</p>
+
+                  @if (auth.role() === 'TEACHER') {
+                    <div class="teacher-comment-edit">
+                      <label [for]="'assessment-comment-' + q.assessmentId" class="comment-label">撰写 / 调整阶段批注</label>
+                      <textarea
+                        [id]="'assessment-comment-' + q.assessmentId"
+                        maxlength="4000"
+                        [value]="comments[q.assessmentId] ?? a.teacherComment ?? ''"
+                        (input)="comments[q.assessmentId] = $any($event.target).value"
+                        rows="2"
+                        placeholder="提供客观的阶段学习诊断与后续复习建议..."></textarea>
+                      <button
+                        type="button"
+                        class="nur-btn nur-btn--ghost nur-btn--sm"
+                        (click)="comment(q)"
+                        [disabled]="busy()">
+                        保存批注
+                      </button>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  @if (activeTab() === 'report') {
+    <!-- 真实学习证据大盘 -->
+    @if (report(); as r) {
+      <section class="nur-card report-dashboard-section">
+        <div class="report-header">
+          <div class="report-meta">
+            <span class="nur-kicker">VERIFIED EVIDENCE</span>
+            <h2 class="nur-serif section-title">真实学习证据大盘</h2>
+            <p class="report-notice">{{ r.notice }}</p>
+          </div>
+        </div>
+
+        <!-- 统计指标网格 -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">已完成学习任务</span>
+            <div class="kpi-value-row">
+              <span class="kpi-num">{{ r.tasksCompleted }}</span>
+              <span class="kpi-total">/ {{ r.tasksTotal }}</span>
+            </div>
+            <span class="kpi-desc">与授课计划关联的任务达成量</span>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-label">已完成课程</span>
+            <div class="kpi-value-row">
+              <span class="kpi-num">{{ r.lessonsCompleted }}</span>
+              <span class="kpi-unit">节</span>
+            </div>
+            <span class="kpi-desc">{{ auth.role() === 'TEACHER' ? '仅统计你的授课课程' : '全科目真实履约课时' }}</span>
+          </div>
+
+          <div class="kpi-card">
+            <span class="kpi-label">小测历史归档</span>
+            <div class="kpi-value-row">
+              <span class="kpi-num">{{ r.scores.totalElements }}</span>
+              <span class="kpi-unit">次</span>
+            </div>
+            <span class="kpi-desc">客观作答与阶段测评记录</span>
+          </div>
+        </div>
+
+        <!-- 成绩走势与小测记录 -->
+        <div class="report-block">
+          <div class="block-title-row">
+            <h3 class="block-title">小测成绩走势记录</h3>
+            <nur-queue-pager
+              label="成绩"
+              [page]="scorePage()"
+              [pages]="r.scores.totalPages"
+              [total]="r.scores.totalElements"
+              (turn)="turnScores($event)"
+              (reload)="loadReport()" />
+          </div>
+
+          @if (!r.scores.totalElements) {
+            <p class="empty-hint">暂无已提交的小测成绩记录。</p>
+          }
+
+          <div class="scores-list">
+            @for (s of r.scores.content; track s.assessmentId) {
+              <div class="trend-card">
+                <div class="trend-info">
+                  <div class="trend-heading">
+                    <strong class="trend-title">{{ s.title }}</strong>
+                    <span class="trend-subject">{{ s.subject }}</span>
+                  </div>
+                  <time class="trend-date">{{ s.submittedAt | date:'MM-dd HH:mm' }}</time>
+                </div>
+
+                <div class="trend-bar-wrapper">
+                  <div class="progress-track" role="progressbar" [attr.aria-valuenow]="s.correctCount" [attr.aria-valuemin]="0" [attr.aria-valuemax]="s.totalCount">
+                    <div
+                      class="progress-fill"
+                      [style.width.%]="s.totalCount ? (s.correctCount / s.totalCount * 100) : 0"></div>
+                  </div>
+                  <span class="trend-score-badge">答对 {{ s.correctCount }} / {{ s.totalCount }}</span>
+                </div>
+
+                @if (s.teacherComment) {
+                  <p class="trend-comment">批注：{{ s.teacherComment }}</p>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- 最近课堂记录要点 -->
+        <div class="report-block">
+          <h3 class="block-title">最近课堂记录要点（最新至多 10 节）</h3>
+          @if (!r.classroomNotes.length) {
+            <p class="empty-hint">暂无授课课堂记录要点。</p>
+          }
+          <div class="notes-grid">
+            @for (n of r.classroomNotes; track $index) {
+              <article class="note-card nur-card">
+                <div class="note-head">
+                  <span class="note-subj">{{ n['subject'] }}</span>
+                  <span class="note-kp">{{ n['knowledgePoints'] }}</span>
+                </div>
+                <div class="note-body">
+                  <p class="note-perf"><strong class="note-label">课堂表现：</strong>{{ n['performance'] }}</p>
+                  <p class="note-next"><strong class="note-label">下次建议：</strong>{{ n['nextSuggestion'] }}</p>
+                </div>
+              </article>
+            }
+          </div>
+        </div>
+      </section>
+    }
+  }
+</main>

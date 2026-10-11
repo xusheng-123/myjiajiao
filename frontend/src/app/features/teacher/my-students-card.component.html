@@ -1,0 +1,123 @@
+<section class="nur-card students-card nur-enter" aria-labelledby="students-title">
+  <div class="card-head">
+    <div>
+      <h2 id="students-title" class="card-title nur-serif">我的学生</h2>
+      <p class="card-subtitle">名下历史与在读学员 · 调阅学情画像与学习档案</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="loadStudents()" [disabled]="loading()">
+      {{ loading() ? '读取中…' : '刷新' }}
+    </button>
+  </div>
+
+  @if (loading() && students().length === 0) {
+    <p class="quiet-note" role="status">正在读取学员名单…</p>
+  } @else if (students().length === 0) {
+    <p class="quiet-note">暂无关联学员。产生试听课或正式课预约后，学员将自动汇入此名单。</p>
+  } @else {
+    <ul class="student-list">
+      @for (st of students(); track st.studentId) {
+        <li class="student-item" [class.student-item--active]="selectedStudent()?.studentId === st.studentId">
+          <div class="student-info">
+            <span class="student-avatar" aria-hidden="true">{{ st.displayName.slice(0, 1) }}</span>
+            <div>
+              <p class="student-name">{{ st.displayName }}</p>
+              <p class="student-id-muted">学号: {{ st.studentId.slice(0, 8) }}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="btn-ghost-sm"
+            [disabled]="archiveLoading() && selectedStudent()?.studentId === st.studentId"
+            (click)="viewArchive(st)"
+          >
+            {{ selectedStudent()?.studentId === st.studentId ? '已展开档案' : '查看学情档案' }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  <!-- 展开的学生档案面板 -->
+  @if (selectedStudent(); as student) {
+    <div class="archive-drawer" role="region" aria-label="学生档案">
+      <div class="archive-header">
+        <h3 class="archive-title nur-serif">「{{ student.displayName }}」的学习档案</h3>
+        <button type="button" class="btn-ghost-sm" (click)="closeArchive()">收起档案</button>
+      </div>
+
+      @if (archiveLoading()) {
+        <p class="quiet-note" role="status">正在读取学生档案…</p>
+      }
+
+      @if (archiveError()) {
+        <div class="archive-error" role="alert">
+          <p>{{ archiveError() }}</p>
+        </div>
+      }
+
+      @if (archiveData(); as arch) {
+        <!-- 学习画像 -->
+        <div class="profile-summary-grid">
+          <div class="profile-item">
+            <span class="profile-label">当前学段</span>
+            <span class="profile-value">{{ arch.profile.stage || '未填写' }}</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">目标科目</span>
+            <span class="profile-value">{{ arch.profile.targetSubjects || '未设置' }}</span>
+          </div>
+          <div class="profile-item">
+            <span class="profile-label">长期目标</span>
+            <span class="profile-value">{{ arch.profile.goal || '暂无目标描述' }}</span>
+          </div>
+        </div>
+
+        <!-- 学情数据统计 -->
+        <div class="stats-row">
+          <div class="stat-box">
+            <span class="stat-num nur-serif">{{ arch.stats.completedLessons }}</span>
+            <span class="stat-label">已完成课时</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num nur-serif">{{ arch.stats.totalLessons }}</span>
+            <span class="stat-label">历史总预约</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num nur-serif">{{ arch.stats.taskCompleted }} / {{ arch.stats.taskTotal }}</span>
+            <span class="stat-label">作业完成率</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num nur-serif">{{ arch.stats.lessonRecords }}</span>
+            <span class="stat-label">课堂记录数</span>
+          </div>
+        </div>
+
+        <!-- 历史课堂记录摘要 -->
+        @if (arch.lessonRecords.length > 0) {
+          <div class="archive-section">
+            <h4 class="section-title">最近课堂记录（前 {{ arch.lessonRecords.length }} 节）：</h4>
+            <div class="record-mini-list">
+              @for (rec of arch.lessonRecords.slice(0, 3); track rec.recordId) {
+                <div class="record-mini-item">
+                  <div class="rec-head">
+                    <strong>{{ rec.subject || '课程记录' }}</strong>
+                    <span class="quiet-note">{{ rec.createdAt.slice(0, 10) }}</span>
+                  </div>
+                  @if (rec.knowledgePoints) {
+                    <p class="rec-desc"><strong>知识点：</strong>{{ rec.knowledgePoints }}</p>
+                  }
+                  @if (rec.performance) {
+                    <p class="rec-desc"><strong>课堂表现：</strong>{{ rec.performance }}</p>
+                  }
+                  @if (rec.nextSuggestion) {
+                    <p class="rec-desc"><strong>下次建议：</strong>{{ rec.nextSuggestion }}</p>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      }
+    </div>
+  }
+</section>

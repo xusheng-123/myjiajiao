@@ -1,0 +1,156 @@
+<section class="nur-card subjects-card nur-enter" aria-labelledby="subjects-title">
+  <div class="card-head">
+    <div>
+      <h2 id="subjects-title" class="card-title nur-serif">课程与定价</h2>
+      <p class="card-subtitle">管理你的开课条目 · 调价后仅对新订单生效 · 支持停止销售与重新上架</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="loadSubjects()" [disabled]="!loaded()">
+      {{ !loaded() ? '加载中…' : '刷新' }}
+    </button>
+  </div>
+
+  @if (notice(); as msg) {
+    <div class="action-banner action-banner--{{ msg.type }}" role="status">
+      <span>{{ msg.text }}</span>
+      <button type="button" class="banner-close" (click)="notice.set(null)" aria-label="关闭提示">×</button>
+    </div>
+  }
+
+  @if (!loaded()) {
+    <p class="quiet-note" role="status">正在读取开课条目…</p>
+  } @else if (error()) {
+    <p class="quiet-note">开课条目读取失败，请点击刷新重试。</p>
+  } @else if (subjects().length === 0) {
+    <p class="quiet-note">还没有开课条目。在下方添加你的第一个科目与定价，学员才能在「找老师」中检索到你。</p>
+  } @else {
+    <ul class="subject-list">
+      @for (o of subjects(); track o.offeringId) {
+        <li class="subject-item" [class.subject-item--inactive]="!o.active">
+          <div class="subject-info">
+            <span class="subject-name">{{ o.subject }} · {{ o.gradeBand }}</span>
+            <span class="subject-price nur-serif">¥{{ yuan(o.pricePerHourCents) }}/小时</span>
+            <span class="status-pill" [attr.data-status]="o.active ? 'OPEN' : 'CLOSED'">
+              {{ o.active ? '在售' : '已下架' }}
+            </span>
+          </div>
+
+          <div class="subject-actions">
+            @if (o.active) {
+              <button
+                type="button"
+                class="btn-ghost-sm"
+                (click)="startReprice(o)"
+                [attr.aria-expanded]="repricingId() === o.offeringId"
+              >
+                调价
+              </button>
+              <button
+                type="button"
+                class="btn-ghost-sm btn-danger"
+                (click)="askDelist(o)"
+                [attr.aria-expanded]="delistingId() === o.offeringId"
+              >
+                下架
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="btn-ghost-sm"
+                [disabled]="relistBusyId() === o.offeringId"
+                (click)="relist(o)"
+              >
+                {{ relistBusyId() === o.offeringId ? '上架中…' : '重新上架' }}
+              </button>
+            }
+          </div>
+        </li>
+
+        @if (repricingId() === o.offeringId) {
+          <li class="nested-panel">
+            <p class="panel-hint">
+              当前价格：¥{{ yuan(o.pricePerHourCents) }}/小时。调整后仅影响之后的新订单，已生成订单金额不变。
+            </p>
+            <div class="reprice-row">
+              <input
+                type="text"
+                inputmode="decimal"
+                class="nur-input"
+                aria-label="新价格（元/小时）"
+                placeholder="新价格（元/小时，如 250 或 199.5）"
+                [value]="repriceInputYuan()"
+                (input)="onRepriceInput($any($event.target).value)"
+              />
+              <button
+                type="button"
+                class="nur-btn nur-btn--primary nur-btn--sm"
+                [disabled]="repriceBusy()"
+                (click)="confirmReprice(o)"
+              >
+                {{ repriceBusy() ? '正在保存…' : '确认调价' }}
+              </button>
+              <button type="button" class="btn-ghost-sm" [disabled]="repriceBusy()" (click)="cancelReprice()">
+                取消
+              </button>
+            </div>
+          </li>
+        }
+
+        @if (delistingId() === o.offeringId) {
+          <li class="nested-panel">
+            <p class="panel-hint">
+              确认下架「{{ o.subject }} · {{ o.gradeBand }}」？下架即停止销售：学员将无法再检索到或预约该条目；已生成订单不受影响。下架记录将保留，可随时重新上架。
+            </p>
+            <div class="panel-btn-row">
+              <button
+                type="button"
+                class="btn-danger-execute"
+                [disabled]="delistBusy()"
+                (click)="confirmDelist(o)"
+              >
+                {{ delistBusy() ? '正在下架…' : '确认下架（停止销售）' }}
+              </button>
+              <button type="button" class="btn-ghost-sm" [disabled]="delistBusy()" (click)="cancelDelist()">
+                取消
+              </button>
+            </div>
+          </li>
+        }
+      }
+    </ul>
+  }
+
+  <!-- 新增开课条目表单 -->
+  <form class="subject-add-form" (submit)="$event.preventDefault(); addSubject()" aria-label="新增开课条目">
+    <p class="section-label">新增开课条目（科目 + 学段 + 定价）：</p>
+    <div class="subject-add-row">
+      <input
+        type="text"
+        class="nur-input"
+        aria-label="科目"
+        placeholder="科目，如：数学"
+        [value]="newSubjectName()"
+        (input)="onNewSubjectField('name', $any($event.target).value)"
+      />
+      <input
+        type="text"
+        class="nur-input"
+        aria-label="学段"
+        placeholder="学段，如：初三"
+        [value]="newSubjectGradeBand()"
+        (input)="onNewSubjectField('gradeBand', $any($event.target).value)"
+      />
+      <input
+        type="text"
+        inputmode="decimal"
+        class="nur-input"
+        aria-label="定价（元/小时）"
+        placeholder="定价（元/小时）"
+        [value]="newSubjectPriceYuan()"
+        (input)="onNewSubjectField('price', $any($event.target).value)"
+      />
+      <button type="submit" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="addBusy()">
+        {{ addBusy() ? '正在添加…' : '新增条目' }}
+      </button>
+    </div>
+  </form>
+</section>

@@ -1,53 +1,61 @@
 /* ============================================================
- * 教师列表页（规范十七）— 通用原语在 styles/components.css，
- * 本文件只保留页面级布局与状态样式
+ * 导师公开检索页 — 方向 D（黛绿暖金）
+ * 版心与基础原语基于 styles/components.css
  * ============================================================ */
 
-/* ---------- 页首 ---------- */
+.tq-page {
+  padding-top: var(--header-height);
+  min-height: 100vh;
+  background: var(--bg-page);
+}
+
+/* ---------- 页首 Hero ---------- */
 .tq-hero {
-  padding: calc(var(--header-height) + var(--space-8)) 0 var(--space-6);
-  background: linear-gradient(180deg, var(--color-secondary-bg) 0%, var(--bg-page) 100%);
+  padding: var(--space-7) 0 var(--space-5);
+  background: linear-gradient(180deg, var(--bg-mist) 0%, var(--bg-page) 100%);
+  border-bottom: 1px solid var(--line);
 }
 
 .tq-title {
-  margin: 0 0 var(--space-4);
-  font-family: var(--font-brand);
-  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 3.6vw, 2.4rem);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: var(--text-main);
+  color: var(--text-title);
 }
 
 .tq-lead {
-  max-width: 620px;
+  max-width: 640px;
   margin: 0;
   color: var(--text-muted);
-  line-height: 2;
+  line-height: 1.8;
+  font-size: 0.98rem;
 }
 
-/* ---------- 搜索行 ---------- */
+/* ---------- 搜索与筛选区 ---------- */
 .tq-body {
-  padding-bottom: var(--space-9);
+  padding-bottom: calc(var(--space-9) + 48px);
 }
 
 .tq-searchrow {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-3);
   margin-top: var(--space-6);
 }
 
 .tq-search {
   position: relative;
-  flex: 1 1 320px;
+  flex: 1 1 280px;
 }
 
 .tq-search-icon {
   position: absolute;
   inset-inline-start: var(--space-4);
   top: 50%;
-  transform: translateY(-54%);
-  color: var(--color-secondary);
+  transform: translateY(-50%);
+  color: var(--color-primary);
   font-size: 1.15rem;
   pointer-events: none;
 }
@@ -55,39 +63,57 @@
 .tq-search-input {
   width: 100%;
   min-height: var(--touch-target);
-  padding: 0 var(--space-5) 0 calc(var(--space-6) + var(--space-4));
-  border: 1.5px solid var(--border-subtle);
+  padding: 0 var(--space-5) 0 calc(var(--space-6) + var(--space-3));
+  border: 1.5px solid var(--line);
   border-radius: var(--radius-pill);
   background: var(--bg-card);
   color: var(--text-main);
   font: inherit;
   letter-spacing: 0.04em;
-  transition: border-color var(--duration-enter) var(--ease-nurture),
-    box-shadow var(--duration-enter) var(--ease-nurture);
+  transition: border-color var(--duration-enter) var(--ease),
+              box-shadow var(--duration-enter) var(--ease);
 }
 
 .tq-search-input:hover {
-  border-color: var(--color-secondary);
+  border-color: rgba(30, 77, 62, 0.4);
 }
 
 .tq-search-input:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-bg);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
-.tq-advanced-toggle {
-  flex-shrink: 0;
+.tq-mobile-filter-btn {
+  display: none;
+  gap: var(--space-2);
 }
 
-/* ---------- 筛选组 ---------- */
+.tq-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.desktop-only {
+  display: inline-flex;
+}
+
+/* ---------- 筛选面板 ---------- */
 .tq-filters {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
   padding: var(--space-5);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--bg-card);
   box-shadow: var(--shadow-subtle);
@@ -109,7 +135,8 @@
   min-width: 3.5em;
   color: var(--text-muted);
   font-size: 0.9rem;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.15em;
+  font-weight: 500;
 }
 
 .tq-chips {
@@ -123,22 +150,12 @@
   flex-direction: column;
   gap: var(--space-4);
   padding-top: var(--space-4);
-  border-top: 1px dashed var(--border-subtle);
+  border-top: 1px dashed var(--line);
 }
 
-.tq-check {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--touch-target);
+.tq-filter-hint {
+  font-size: 0.85rem;
   color: var(--text-muted);
-  cursor: pointer;
-}
-
-.tq-check input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--color-primary);
 }
 
 .tq-sort {
@@ -148,20 +165,21 @@
 }
 
 .tq-sort-select {
-  min-height: calc(var(--touch-target) - 6px);
+  min-height: calc(var(--touch-target) - 8px);
   padding: 0 var(--space-3);
-  border: 1.5px solid var(--border-subtle);
+  border: 1.5px solid var(--line);
   border-radius: var(--radius-control);
   background: var(--bg-page);
-  color: var(--text-main);
+  color: var(--text-title);
   font: inherit;
   cursor: pointer;
+  transition: border-color var(--duration-enter) var(--ease);
 }
 
 .tq-sort-select:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-bg);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
 }
 
 /* ---------- 结果条 ---------- */
@@ -170,40 +188,55 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  margin: var(--space-6) 0 var(--space-5);
+  margin: var(--space-5) 0 var(--space-4);
 }
 
 .tq-count {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.95rem;
-  letter-spacing: 0.05em;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
 }
 
-/* ---------- 结果网格 ---------- */
+.tq-notice {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-control);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  font-size: 0.9rem;
+}
+
+/* ---------- 结果网格与对比项 ---------- */
 .tq-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--space-5);
 }
 
-@media (max-width: 960px) {
-  .tq-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.tq-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-@media (max-width: 640px) {
-  .tq-grid {
-    grid-template-columns: 1fr;
-  }
+.tq-compare-btn {
+  align-self: center;
+  width: 100%;
 }
 
-/* ---------- 四态：骨架 / 错误 / 空态 ---------- */
+.tq-compare-btn--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ---------- 骨架屏 / 错误 / 空态 ---------- */
 .tq-skeleton {
-  min-height: 260px;
+  min-height: 280px;
   padding: var(--space-5);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--bg-card);
 }
@@ -212,7 +245,7 @@
   height: 14px;
   margin-bottom: var(--space-4);
   border-radius: var(--radius-pill);
-  background: var(--color-secondary-bg);
+  background: var(--color-primary-soft);
   animation: tq-pulse 1.4s ease-in-out infinite;
 }
 
@@ -226,19 +259,14 @@
 }
 
 @keyframes tq-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.45;
-  }
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.35; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .tq-skeleton-row {
     animation: none;
-    opacity: 0.7;
+    opacity: 0.6;
   }
 }
 
@@ -248,23 +276,131 @@
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-8) var(--space-5);
-  border: 1px dashed var(--border-subtle);
+  border: 1px dashed var(--line);
   border-radius: var(--radius-card);
   background: var(--bg-card);
   text-align: center;
+  margin: var(--space-5) 0;
 }
 
 .tq-state-title {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: 1.2rem;
-  letter-spacing: 0.06em;
-  color: var(--text-main);
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  color: var(--text-title);
 }
 
 .tq-state-text {
-  max-width: 420px;
+  max-width: 440px;
   margin: 0;
   color: var(--text-muted);
-  line-height: 1.9;
+  line-height: 1.8;
+  font-size: 0.95rem;
 }
+
+/* ---------- 分页导航 ---------- */
+.tq-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-7);
+}
+
+.tq-page-num {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+/* ---------- 悬浮吸底对比抽屉 ---------- */
+.tq-compare-dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 30px rgba(30, 77, 62, 0.12);
+  transition: transform var(--duration-enter) var(--ease);
+}
+
+.tq-dock-inner {
+  padding-block: var(--space-3);
+}
+
+.tq-dock-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.tq-dock-title {
+  font-size: 0.95rem;
+  color: var(--text-title);
+}
+
+.tq-dock-title strong {
+  color: var(--color-primary);
+  font-size: 1.05rem;
+}
+
+.tq-dock-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.tq-dock-content {
+  max-height: 55vh;
+  overflow-y: auto;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--line);
+}
+
+/* ---------- 响应式断点（严守 768px / 1024px） ---------- */
+@media (max-width: 767.98px) {
+  .tq-mobile-filter-btn {
+    display: inline-flex;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .tq-filters {
+    display: none;
+  }
+
+  .tq-filters--open {
+    display: flex;
+  }
+
+  .tq-dock-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .tq-dock-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (min-width: 768px) {
+  .tq-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .tq-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+

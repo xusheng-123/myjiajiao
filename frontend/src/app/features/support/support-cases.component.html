@@ -1,0 +1,379 @@
+<main class="support-shell">
+  <header class="support-header">
+    <div class="header-main">
+      <a class="back-link" [routerLink]="'/' + role().toLowerCase() + '/dashboard'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>返回工作台</span>
+      </a>
+      <div class="title-group">
+        <span class="nur-kicker">SUPPORT & APPEALS</span>
+        <h1 class="nur-serif page-title">客服与申诉</h1>
+        <p class="page-desc">描述预约、支付或教学履约问题；支持关联课程、补充私有凭证，与运营沟通并全程留存处理轨迹。</p>
+      </div>
+    </div>
+
+    @if (!admin()) {
+      <div class="header-actions">
+        <button
+          type="button"
+          class="nur-btn nur-btn--primary"
+          (click)="openCreate()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>提交新工单</span>
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (notice()) {
+    <div class="notice-bar" role="status" aria-live="polite">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>{{ notice() }}</span>
+    </div>
+  }
+
+  <!-- Master-Detail 容器 -->
+  <div class="master-detail-layout" [class.show-detail-mobile]="mobileView() === 'detail'">
+    <!-- 左侧 Master: 工单列表与筛选 -->
+    <aside class="master-pane nur-card" aria-label="工单列表">
+      <div class="pane-header">
+        <div class="pane-title-row">
+          <h2 class="nur-serif pane-title">{{ admin() ? '运营处理队列' : '我的工单列表' }}</h2>
+          <span class="count-badge">{{ total() }}</span>
+        </div>
+
+        <nur-queue-pager
+          label="工单"
+          [page]="page()"
+          [pages]="pages()"
+          [total]="total()"
+          [busy]="loading()"
+          [filter]="filter"
+          [options]="statuses"
+          (filterChange)="filterChanged($event)"
+          (turn)="turn($event)"
+          (reload)="load()" />
+      </div>
+
+      @if (!loading() && !cases().length) {
+        <div class="empty-state">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <p class="empty-text">当前筛选没有工单</p>
+          <p class="empty-hint">点击上方「提交新工单」可发起新的服务咨询或仲裁申诉。</p>
+        </div>
+      }
+
+      <div class="case-list-flow">
+        @for (c of cases(); track c.caseId) {
+          <button
+            type="button"
+            class="case-item"
+            [class.case-item--active]="selected()?.caseId === c.caseId && !showCreate()"
+            (click)="open(c.caseId)"
+            [attr.aria-pressed]="selected()?.caseId === c.caseId && !showCreate()">
+            <div class="case-item-top">
+              <span class="status-pill status-{{ c.status.toLowerCase() }}">{{ label(c.status) }}</span>
+              <span class="category-tag">{{ label(c.category) }}</span>
+            </div>
+            <strong class="case-item-title">{{ c.title }}</strong>
+            <div class="case-item-footer">
+              <span class="owner-name">{{ c.ownerName }}</span>
+              <time class="time-stamp">{{ c.updatedAt | date:'MM-dd HH:mm' }}</time>
+            </div>
+          </button>
+        }
+      </div>
+    </aside>
+
+    <!-- 右侧 Detail: 工单详情或新建工单 -->
+    <section class="detail-pane nur-card" id="support-detail" aria-label="工单详情与沟通">
+      <!-- 移动端顶部返回栏 -->
+      <div class="mobile-back-bar">
+        <button type="button" class="btn-back-list" (click)="backToList()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>返回工单列表</span>
+        </button>
+      </div>
+
+      <!-- 表单态：提交新工单 -->
+      @if (showCreate() && !admin()) {
+        <div class="create-case-view">
+          <div class="detail-header">
+            <span class="section-badge">发起工单</span>
+            <h2 class="nur-serif detail-title">提交新问题与申诉</h2>
+            <p class="detail-subtitle">请详细描述遇到的异常情况，我们会第一时间核实并跟进回复。</p>
+          </div>
+
+          <form (ngSubmit)="create()" class="create-form">
+            <div class="form-field">
+              <label for="support-category">问题类别</label>
+              <select id="support-category" name="category" [(ngModel)]="category">
+                @for (o of categories; track o.value) {
+                  <option [value]="o.value">{{ o.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div id="support-course-picker" class="course-picker-block">
+              <div class="form-field">
+                <label for="support-course">关联课程（可选）</label>
+                <select
+                  id="support-course"
+                  name="course"
+                  [ngModel]="chosenCourse()?.bookingId ?? ''"
+                  (ngModelChange)="chooseCourse($event)"
+                  [disabled]="courseLoading() || busy()">
+                  <option value="">不关联课程</option>
+                  @if (chosenOffPage(); as b) {
+                    <option [value]="b.bookingId">已选 · {{ courseText(b) }}</option>
+                  }
+                  @for (b of courses(); track b.bookingId) {
+                    <option [value]="b.bookingId">{{ courseText(b) }}</option>
+                  }
+                </select>
+              </div>
+
+              <nur-queue-pager
+                label="课程"
+                [page]="coursePage()"
+                [pages]="coursePages()"
+                [total]="courseTotal()"
+                [busy]="courseLoading()"
+                [filter]="courseFilter"
+                [options]="courseStatuses"
+                (filterChange)="courseFilterChanged($event)"
+                (turn)="turnCourses($event)"
+                (reload)="loadCourses()" />
+
+              @if (courseError()) {
+                <p class="error-text" role="alert">{{ courseError() }}</p>
+              } @else if (!courseLoading() && !courses().length) {
+                <p class="hint-text">当前筛选没有可关联课程。家长需要学生确认监护绑定；也可不关联课程直接提交。</p>
+              }
+              <p class="hint-text">仅列出本人或有效监护学生的课程。翻页和筛选会保留已选课程，提交时再次核验权限。</p>
+            </div>
+
+            <div class="form-field">
+              <label for="support-title">工单标题</label>
+              <input
+                id="support-title"
+                name="title"
+                [(ngModel)]="title"
+                maxlength="120"
+                required
+                placeholder="简要说明遇到的问题或诉求" />
+            </div>
+
+            <div class="form-field">
+              <label for="support-description">问题详细描述</label>
+              <textarea
+                id="support-description"
+                name="description"
+                [(ngModel)]="description"
+                maxlength="4000"
+                required
+                rows="5"
+                placeholder="可填写课程日期、订单号与期望的处理方式；请勿填写密码或敏感支付凭据。"></textarea>
+            </div>
+
+            <div class="form-actions-bar">
+              <button
+                type="button"
+                class="nur-btn nur-btn--ghost"
+                (click)="cancelCreate()">
+                取消
+              </button>
+              <button
+                class="nur-btn nur-btn--primary"
+                [disabled]="busy() || !title.trim() || !description.trim()">
+                {{ busy() ? '正在提交…' : '提交工单' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+
+      <!-- 详情态：查看工单详情与沟通流 -->
+      @else {
+        @if (selected(); as c) {
+        <div class="case-detail-view">
+          <div class="detail-header">
+            <div class="detail-meta-line">
+              <span class="status-pill status-{{ c.status.toLowerCase() }}">{{ label(c.status) }}</span>
+              <span class="category-tag">{{ label(c.category) }}</span>
+              <span class="owner-pill">{{ c.ownerName }}</span>
+              <time class="meta-time">{{ c.createdAt | date:'yyyy-MM-dd HH:mm' }} 发起</time>
+            </div>
+            <h2 class="nur-serif detail-title">{{ c.title }}</h2>
+          </div>
+
+          <div class="desc-box">
+            <p class="desc-content">{{ c.description }}</p>
+          </div>
+
+          <!-- 关联课程卡片 -->
+          @if (c.course; as b) {
+            <div class="linked-course-card">
+              <h3 class="sub-heading">关联课程信息</h3>
+              <p id="support-linked-course" class="linked-course-body">
+                {{ courseText(b) }}<br />
+                <span class="booking-id-tag">课程预约编号：{{ b.bookingId }}</span>
+              </p>
+            </div>
+          } @else if (c.bookingId) {
+            <div class="linked-course-card">
+              <p class="hint-text">已关联课程（{{ c.bookingId }}），当前登录身份暂无完整课程详情访问权限。</p>
+            </div>
+          }
+
+          <!-- 私有证据区域 -->
+          <div class="evidence-section">
+            <div class="sub-heading-row">
+              <h3 class="sub-heading">私有凭证与证据 ({{ files().length }} 份)</h3>
+              <nur-storage-quota endpoint="/api/v1/support/cases/quota" [revision]="quotaRevision()" />
+            </div>
+            <p class="hint-text">支持 PDF、PNG、JPEG，单份 ≤10MB，每工单至多 10 份；个人证据空间 100MB。仅本人及运营可见，移除后保留文件与容量供留痕审计。</p>
+
+            <div class="evidence-list">
+              @for (f of files(); track f.fileId) {
+                <div class="evidence-file-item">
+                  <div class="file-info">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M13 2v7h7"/></svg>
+                    <span class="file-name">{{ f.filename }}</span>
+                    <span class="file-size">{{ (f.sizeBytes / 1024).toFixed(1) }} KB</span>
+                  </div>
+                  <div class="file-actions">
+                    <button type="button" class="btn-file-action" (click)="download(f)" [disabled]="busy()">下载</button>
+                    @if (f.canDelete) {
+                      <button type="button" class="btn-file-danger" (click)="remove(f)" [disabled]="busy()">移除</button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (c.status !== 'CLOSED') {
+              <div class="upload-box">
+                <label class="upload-label">
+                  <span class="upload-btn-text">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                    <span>上传补充证据</span>
+                  </span>
+                  <input type="file" class="visually-hidden" accept=".pdf,.png,.jpg,.jpeg" (change)="upload($event)" [disabled]="busy()" />
+                </label>
+              </div>
+            }
+          </div>
+
+          <!-- 沟通流与处理记录 -->
+          <div class="timeline-section">
+            <div class="sub-heading-row">
+              <h3 class="sub-heading">沟通流与处理记录</h3>
+              <nur-queue-pager
+                label="沟通记录"
+                [page]="replyPage()"
+                [pages]="replyPages()"
+                [total]="replyTotal()"
+                [busy]="historyLoading()"
+                (turn)="turnHistory($event)"
+                (reload)="history()" />
+            </div>
+
+            <div class="timeline-stream">
+              @for (r of replies(); track r.replyId) {
+                <article class="timeline-card" [class.timeline-admin]="r.authorRole === 'ADMIN'" [class.timeline-status]="r.kind === 'STATUS'">
+                  <div class="timeline-head">
+                    <span class="author-tag">{{ r.authorRole === 'ADMIN' ? '平台运营' : r.authorName }}</span>
+                    @if (r.kind === 'STATUS') {
+                      <span class="status-change-tag">状态调整</span>
+                    }
+                    <time class="timeline-time">{{ r.createdAt | date:'MM-dd HH:mm' }}</time>
+                  </div>
+                  <p class="timeline-body">{{ r.body }}</p>
+                </article>
+              }
+              @if (!replies().length && !historyLoading()) {
+                <p class="hint-text">暂无更多沟通回复。</p>
+              }
+            </div>
+          </div>
+
+          <!-- 底部交互：回复与状态流转 -->
+          @if (c.status !== 'CLOSED') {
+            <div class="detail-actions-block">
+              <!-- 回复表单 -->
+              <form (ngSubmit)="reply()" class="reply-form">
+                <div class="form-field">
+                  <label for="support-reply">补充回复与说明</label>
+                  <textarea
+                    id="support-reply"
+                    name="reply"
+                    [(ngModel)]="replyBody"
+                    maxlength="4000"
+                    required
+                    rows="3"
+                    placeholder="输入回复内容，协同推进问题处理..."></textarea>
+                </div>
+                <div class="reply-actions-row">
+                  <button class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="busy() || !replyBody.trim()">
+                    {{ busy() ? '发送中…' : '发送回复' }}
+                  </button>
+                </div>
+              </form>
+
+              <!-- 状态流转推进 -->
+              <form (ngSubmit)="changeStatus()" class="status-transition-form">
+                <h4 class="form-sub-title">{{ admin() ? '更新处理状态' : '确认处理结果' }}</h4>
+                <div class="transition-grid">
+                  <div class="form-field">
+                    <label for="support-target-status">目标状态</label>
+                    <select id="support-target-status" name="status" [(ngModel)]="targetStatus">
+                      @for (o of transitions(c); track o.value) {
+                        <option [value]="o.value">{{ o.label }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-field full-width">
+                    <label for="support-status-note">流转说明与批注</label>
+                    <textarea
+                      id="support-status-note"
+                      name="note"
+                      [(ngModel)]="statusNote"
+                      maxlength="2000"
+                      required
+                      rows="2"
+                      placeholder="记录流转原因或处理结论备查..."></textarea>
+                  </div>
+                </div>
+                <p class="status-warn-tip">工单关闭后将锁定沟通流与证据上传。涉及退款请走订单退款申请通道，工单状态流转不直接变更订单与资金。</p>
+                <div class="reply-actions-row">
+                  <button class="nur-btn nur-btn--ghost nur-btn--sm" [disabled]="busy() || !statusNote.trim()">
+                    确认变更状态
+                  </button>
+                </div>
+              </form>
+            </div>
+          } @else {
+            <div class="closed-notice-card">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>此工单已办结关闭，全部沟通与证据留存归档。如遇新问题请提交新工单。</span>
+            </div>
+          }
+        </div>
+        } @else {
+        <!-- 空选择态：提示用户选择工单 -->
+        <div class="detail-empty-view">
+          <svg class="large-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <h3 class="empty-title">从左侧列表选择工单</h3>
+          <p class="empty-desc">点击左侧任一工单查看详细描述、凭证附件与运营多轮沟通流。</p>
+          @if (!admin()) {
+            <button type="button" class="nur-btn nur-btn--primary" (click)="openCreate()">
+              提交新工单
+            </button>
+          }
+        </div>
+        }
+      }
+    </section>
+  </div>
+</main>

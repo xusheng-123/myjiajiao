@@ -1,0 +1,256 @@
+<nur-site-header />
+
+<main class="detail-page">
+  <div class="nur-container">
+    <!-- 面包屑导航 -->
+    <nav aria-label="面包屑" class="detail-breadcrumb">
+      <a routerLink="/teachers" class="back-link">
+        <span aria-hidden="true">←</span> 返回师资检索
+      </a>
+      <span class="crumb-separator" aria-hidden="true">/</span>
+      <span class="crumb-current">{{ detail()?.displayName ?? '导师详情' }}</span>
+    </nav>
+
+    @if (notice()) {
+      <div class="detail-alert" role="alert">
+        <p class="alert-message">{{ notice() }}</p>
+        <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" (click)="reload()">重新加载</button>
+      </div>
+    }
+
+    @if (detail(); as t) {
+      <div class="detail-content">
+        <!-- 导师核心资料卡 -->
+        <section class="nur-card profile-card" aria-label="导师基本信息">
+          <div class="profile-top">
+            <div class="profile-identity">
+              <span class="nur-avatar profile-avatar" aria-hidden="true">
+                {{ t.displayName.slice(0, 1) }}
+              </span>
+              <div class="profile-info">
+                <div class="profile-name-row">
+                  <h1 class="profile-name nur-serif">{{ t.displayName }}</h1>
+                  <span class="nur-cert nur-cert--ok">
+                    <span aria-hidden="true">✓</span> 已实名认证
+                  </span>
+                </div>
+                <p class="profile-school">
+                  {{ t.school || '高等院校' }} · {{ t.highestDegree || '学士' }} · {{ t.yearsOfTeaching }} 年教龄（导师填报）
+                </p>
+                <div class="profile-rating-badge">
+                  @if (t.averageRating !== null) {
+                    <span class="rating-star" aria-hidden="true">★</span>
+                    <strong class="rating-score">{{ t.averageRating }}</strong>
+                    <span class="rating-count">（{{ t.reviewCount }} 条真实评价）</span>
+                  } @else {
+                    <span class="rating-new">✿ 新入驻导师 · 教学资质完备</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- 转化主动作 -->
+            <div class="profile-actions">
+              @if (auth.isLoggedIn() && auth.role() !== Role.TEACHER) {
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--primary"
+                  (click)="consult()"
+                  [disabled]="busy()"
+                >
+                  {{ busy() ? '正在开启…' : '课前咨询' }}
+                </button>
+              } @else if (!auth.isLoggedIn()) {
+                <a routerLink="/auth" class="nur-btn nur-btn--primary">
+                  登录后咨询与预约
+                </a>
+              }
+            </div>
+          </div>
+
+          <!-- 风格标签 -->
+          @if (t.styleTags.length > 0) {
+            <div class="profile-tags-row">
+              <span class="tags-label">教学风格：</span>
+              <div class="tags-list">
+                @for (tag of t.styleTags; track tag) {
+                  <span class="nur-tag">{{ tag }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- 个人介绍 -->
+          <div class="profile-intro-block">
+            <h2 class="block-title nur-serif">导师寄语与背景介绍</h2>
+            <p class="intro-body">{{ t.intro || '该导师专注启发式个性化辅导，致力于帮助学员梳理知识脉络、突破学习难点。' }}</p>
+          </div>
+        </section>
+
+        <!-- 在售课程卡片 -->
+        <section class="nur-card section-card" aria-label="在售课程">
+          <div class="card-head">
+            <h2 class="section-title nur-serif">在售课程与课时定价</h2>
+            <span class="section-hint">按课时结算 · 资金平台存管 · 未上课随心退</span>
+          </div>
+
+          <div class="offerings-grid">
+            @for (o of t.offerings; track o.subject + o.gradeBand) {
+              <div class="offering-item">
+                <div class="offering-info">
+                  <h3 class="offering-name">{{ o.subject }}</h3>
+                  <span class="offering-band">{{ o.gradeBand }}</span>
+                  <div class="offering-price">
+                    <span class="price-symbol">¥</span>
+                    <strong class="price-amount">{{ yuan(o.pricePerHourCents) }}</strong>
+                    <span class="price-unit">/ 课时</span>
+                  </div>
+                </div>
+
+                <div class="offering-action">
+                  @if (auth.role() === Role.STUDENT) {
+                    <a
+                      class="nur-btn nur-btn--primary nur-btn--sm"
+                      routerLink="/student/match"
+                      [queryParams]="{ subject: o.subject, teacher: t.teacherId }"
+                    >
+                      选择时间并预约
+                    </a>
+                  } @else if (!auth.isLoggedIn()) {
+                    <a
+                      class="nur-btn nur-btn--ghost nur-btn--sm"
+                      routerLink="/auth"
+                      [queryParams]="{ role: 'student' }"
+                    >
+                      登录预约课程
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- 近期可约时段 -->
+        <section class="nur-card section-card" aria-label="可约档期">
+          <div class="card-head">
+            <h2 class="section-title nur-serif">近期可约档期</h2>
+            <span class="section-hint">已发布空闲时段 · 预约以服务端最终锁定时段为准</span>
+          </div>
+
+          @if (!t.openSlots || t.openSlots.length === 0) {
+            <div class="empty-slots">
+              <p class="empty-text">近期暂无可约时段，可点击上方「课前咨询」直接与导师约定上课时间。</p>
+            </div>
+          } @else {
+            <div class="slots-grid">
+              @for (s of t.openSlots; track s.slotId) {
+                <div class="slot-badge">
+                  <span class="slot-dot" aria-hidden="true">◔</span>
+                  <span class="slot-time">
+                    {{ s.startAt | date: 'M月d日 HH:mm' }} — {{ s.endAt | date: 'HH:mm' }}
+                  </span>
+                </div>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- C1 缺口补齐：学员真实评价列表 -->
+        <section class="nur-card section-card" aria-label="学员评价">
+          <div class="card-head">
+            <div>
+              <h2 class="section-title nur-serif">学员真实评价</h2>
+              <p class="section-desc">仅已完成课程履约的学员方可评价 · 真实透明</p>
+            </div>
+            <div class="review-summary-pill">
+              @if (t.averageRating !== null) {
+                <span>综合评分 <strong>{{ t.averageRating }}</strong> / 5.0</span>
+              } @else {
+                <span>暂无评分</span>
+              }
+            </div>
+          </div>
+
+          @if (reviewsLoading()) {
+            <p class="review-status" role="status">正在加载评价列表…</p>
+          } @else if (filteredReviews().length === 0) {
+            <div class="empty-reviews">
+              <p class="empty-text">暂无评价记录。第一位与导师完成课程的学员评价将显示在此处。</p>
+            </div>
+          } @else {
+            <div class="reviews-list">
+              @for (rev of pagedReviews(); track rev.reviewId) {
+                <article class="review-item">
+                  <header class="review-head">
+                    <div class="review-stars" [attr.aria-label]="'评分 ' + rev.rating + ' 分'">
+                      @for (star of [1, 2, 3, 4, 5]; track star) {
+                        <span class="star" [class.star--filled]="star <= rev.rating">★</span>
+                      }
+                      <span class="star-num">{{ rev.rating }}.0</span>
+                    </div>
+                    @if (rev.createdAt) {
+                      <time class="review-time">{{ rev.createdAt | date: 'yyyy-MM-dd' }}</time>
+                    }
+                  </header>
+
+                  @if (rev.tags && rev.tags.length > 0) {
+                    <div class="review-tags">
+                      @for (tag of rev.tags; track tag) {
+                        <span class="review-tag"># {{ tag }}</span>
+                      }
+                    </div>
+                  }
+
+                  <p class="review-comment">{{ rev.comment || '学员未填写详细文字评价，给出了星级好评。' }}</p>
+                </article>
+              }
+            </div>
+
+            <!-- 评价分页器 -->
+            @if (totalReviewPages() > 1) {
+              <nav aria-label="评价分页" class="review-pager">
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--ghost nur-btn--sm"
+                  [disabled]="reviewPage() === 0"
+                  (click)="prevReviewPage()"
+                >
+                  上一页
+                </button>
+                <span class="pager-text">第 {{ reviewPage() + 1 }} / {{ totalReviewPages() }} 页</span>
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--ghost nur-btn--sm"
+                  [disabled]="reviewPage() + 1 >= totalReviewPages()"
+                  (click)="nextReviewPage()"
+                >
+                  下一页
+                </button>
+              </nav>
+            }
+          }
+        </section>
+      </div>
+    } @else if (loading()) {
+      <!-- 骨架屏 -->
+      <div class="detail-skeleton" aria-hidden="true">
+        <div class="nur-card skeleton-card skeleton-profile">
+          <div class="skeleton-avatar"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton-line line-title"></div>
+            <div class="skeleton-line line-subtitle"></div>
+            <div class="skeleton-line line-text"></div>
+          </div>
+        </div>
+        <div class="nur-card skeleton-card">
+          <div class="skeleton-line line-title"></div>
+          <div class="skeleton-line line-text"></div>
+          <div class="skeleton-line line-text"></div>
+        </div>
+      </div>
+    }
+  </div>
+</main>
+
+<nur-site-footer />

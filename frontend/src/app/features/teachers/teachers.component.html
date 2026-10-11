@@ -1,209 +1,291 @@
-<section class="tq-hero">
-  <div class="nur-container">
-    <p class="nur-kicker">找老师</p>
-    <h1 class="tq-title">为孩子寻一位同频的良师</h1>
-    <p class="tq-lead">
-      按学科、学段、价位与教学风格安静筛选；每一位导师的认证状态、真实评价与最近可约时间都摆在明处。
-    </p>
-  </div>
-</section>
+<nur-site-header />
 
-<div class="nur-container tq-body">
-  <!-- 搜索 + 高级筛选开关 -->
-  <div class="tq-searchrow">
-    <div class="tq-search">
-      <span class="tq-search-icon" aria-hidden="true">⌕</span>
-      <input
-        type="search"
-        class="tq-search-input"
-        placeholder="搜索学科、院校或导师姓名"
-        aria-label="搜索学科、院校或导师姓名"
-        [ngModel]="keywordInput()"
-        (ngModelChange)="keywordInput.set($event)"
-      />
+<main class="tq-page">
+  <section class="tq-hero">
+    <div class="nur-container">
+      <p class="nur-kicker">师资精选</p>
+      <h1 class="tq-title">为孩子寻一位同频的良师</h1>
+      <p class="tq-lead">
+        按学科、学段、价位与教学风格安静筛选；每一位导师的认证状态、真实评价与最近可约时间都摆在明处。
+      </p>
     </div>
-    <button
-      type="button"
-      class="nur-btn nur-btn--ghost tq-advanced-toggle"
-      (click)="advancedOpen.set(!advancedOpen())"
-      [attr.aria-expanded]="advancedOpen()"
-      aria-controls="tq-advanced"
-    >
-      高级筛选 @if (advancedOpen()) { ▲ } @else { ▼ }
-    </button>
-  </div>
+  </section>
 
-  <!-- 高频维度：学科 / 学段 -->
-  <div class="tq-filters">
-    <div class="tq-filter-group" role="group" aria-label="按学科筛选">
-      <span class="tq-filter-label">学科</span>
-      <div class="tq-chips">
-        <button
-          type="button"
-          class="nur-chip-btn"
-          [attr.aria-pressed]="subject() === ''"
-          (click)="subject.set('')"
-        >
-          全部
-        </button>
-        @for (s of subjectOptions; track s) {
+  <div class="nur-container tq-body">
+    <!-- 搜索 + 移动端筛选展开按钮 + 高级筛选开关 -->
+    <div class="tq-searchrow">
+      <div class="tq-search">
+        <span class="tq-search-icon" aria-hidden="true">⌕</span>
+        <input
+          type="search"
+          class="tq-search-input"
+          placeholder="搜索学科、院校或导师姓名"
+          aria-label="搜索学科、院校或导师姓名"
+          [ngModel]="keywordInput()"
+          (ngModelChange)="keywordInput.set($event)"
+        />
+      </div>
+
+      <!-- 移动端筛选切换按钮（<768px 显示） -->
+      <button
+        type="button"
+        class="nur-btn nur-btn--ghost tq-mobile-filter-btn"
+        (click)="mobileFilterOpen.set(!mobileFilterOpen())"
+        [attr.aria-expanded]="mobileFilterOpen()"
+        aria-controls="tq-filter-panel"
+      >
+        <span>筛选</span>
+        @if (activeFilterCount() > 0) {
+          <span class="tq-badge">{{ activeFilterCount() }}</span>
+        }
+        <span aria-hidden="true">{{ mobileFilterOpen() ? '▲' : '▼' }}</span>
+      </button>
+
+      <!-- 桌面端高级筛选开关（>=768px 显示） -->
+      <button
+        type="button"
+        class="nur-btn nur-btn--ghost tq-advanced-toggle desktop-only"
+        (click)="advancedOpen.set(!advancedOpen())"
+        [attr.aria-expanded]="advancedOpen()"
+        aria-controls="tq-advanced"
+      >
+        高级筛选 @if (advancedOpen()) { ▲ } @else { ▼ }
+      </button>
+    </div>
+
+    <!-- 筛选面板：桌面端始终展示；移动端默认折叠，通过筛选按钮展开 -->
+    <div id="tq-filter-panel" class="tq-filters" [class.tq-filters--open]="mobileFilterOpen()">
+      <div class="tq-filter-group" role="group" aria-label="按学科筛选">
+        <span class="tq-filter-label">学科</span>
+        <div class="tq-chips">
           <button
             type="button"
             class="nur-chip-btn"
-            [attr.aria-pressed]="subject() === s"
-            (click)="toggleSubject(s)"
+            [attr.aria-pressed]="subject() === ''"
+            (click)="subject.set('')"
           >
-            {{ s }}
+            全部
           </button>
-        }
-      </div>
-    </div>
-
-    <div class="tq-filter-group" role="group" aria-label="按学段筛选">
-      <span class="tq-filter-label">学段</span>
-      <div class="tq-chips">
-        <button
-          type="button"
-          class="nur-chip-btn"
-          [attr.aria-pressed]="gradeBand() === ''"
-          (click)="gradeBand.set('')"
-        >
-          全部
-        </button>
-        @for (g of gradeBandOptions; track g) {
-          <button
-            type="button"
-            class="nur-chip-btn"
-            [attr.aria-pressed]="gradeBand() === g"
-            (click)="toggleGradeBand(g)"
-          >
-            {{ g }}
-          </button>
-        }
-      </div>
-    </div>
-
-    <!-- 高级维度：价格 / 教学风格 / 认证 / 排序（可展开） -->
-    @if (advancedOpen()) {
-      <div id="tq-advanced" class="tq-advanced">
-        <div class="tq-filter-group" role="group" aria-label="按课时价格筛选">
-          <span class="tq-filter-label">价格</span>
-          <div class="tq-chips">
-            @for (band of priceBands; track band.label) {
-              <button
-                type="button"
-                class="nur-chip-btn"
-                [attr.aria-pressed]="maxPrice() === band.value"
-                (click)="setPriceBand(band.value)"
-              >
-                {{ band.label }}
-              </button>
-            }
-          </div>
-        </div>
-
-        <div class="tq-filter-group" role="group" aria-label="按教学风格筛选">
-          <span class="tq-filter-label">风格</span>
-          <div class="tq-chips">
-            @for (tag of styleTagOptions; track tag) {
-              <button
-                type="button"
-                class="nur-chip-btn"
-                [attr.aria-pressed]="styleTag() === tag"
-                (click)="toggleStyleTag(tag)"
-              >
-                {{ tag }}
-              </button>
-            }
-          </div>
-        </div>
-
-        <div class="tq-filter-group tq-filter-group--inline">
-          <span>公开列表仅展示已认证、在售的导师。</span>
-          <label class="tq-sort">
-            <span class="tq-filter-label">排序</span>
-            <select
-              class="tq-sort-select"
-              aria-label="结果排序方式"
-              [ngModel]="sortKey()"
-              (ngModelChange)="sortKey.set($event)"
+          @for (s of subjectOptions; track s) {
+            <button
+              type="button"
+              class="nur-chip-btn"
+              [attr.aria-pressed]="subject() === s"
+              (click)="toggleSubject(s)"
             >
-              @for (opt of sortOptions; track opt.key) {
-                <option [value]="opt.key">{{ opt.label }}</option>
-              }
-            </select>
-          </label>
+              {{ s }}
+            </button>
+          }
         </div>
       </div>
+
+      <div class="tq-filter-group" role="group" aria-label="按学段筛选">
+        <span class="tq-filter-label">学段</span>
+        <div class="tq-chips">
+          <button
+            type="button"
+            class="nur-chip-btn"
+            [attr.aria-pressed]="gradeBand() === ''"
+            (click)="gradeBand.set('')"
+          >
+            全部
+          </button>
+          @for (g of gradeBandOptions; track g) {
+            <button
+              type="button"
+              class="nur-chip-btn"
+              [attr.aria-pressed]="gradeBand() === g"
+              (click)="toggleGradeBand(g)"
+            >
+              {{ g }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- 高级维度：价格 / 教学风格 / 认证 / 排序 -->
+      @if (advancedOpen() || mobileFilterOpen()) {
+        <div id="tq-advanced" class="tq-advanced">
+          <div class="tq-filter-group" role="group" aria-label="按课时价格筛选">
+            <span class="tq-filter-label">价格</span>
+            <div class="tq-chips">
+              @for (band of priceBands; track band.label) {
+                <button
+                  type="button"
+                  class="nur-chip-btn"
+                  [attr.aria-pressed]="maxPrice() === band.value"
+                  (click)="setPriceBand(band.value)"
+                >
+                  {{ band.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="tq-filter-group" role="group" aria-label="按教学风格筛选">
+            <span class="tq-filter-label">风格</span>
+            <div class="tq-chips">
+              @for (tag of styleTagOptions; track tag) {
+                <button
+                  type="button"
+                  class="nur-chip-btn"
+                  [attr.aria-pressed]="styleTag() === tag"
+                  (click)="toggleStyleTag(tag)"
+                >
+                  {{ tag }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="tq-filter-group tq-filter-group--inline">
+            <span class="tq-filter-hint">公开列表仅展示已认证、在售的导师。</span>
+            <label class="tq-sort">
+              <span class="tq-filter-label">排序</span>
+              <select
+                class="tq-sort-select"
+                aria-label="结果排序方式"
+                [ngModel]="sortKey()"
+                (ngModelChange)="sortKey.set($event)"
+              >
+                @for (opt of sortOptions; track opt.key) {
+                  <option [value]="opt.key">{{ opt.label }}</option>
+                }
+              </select>
+            </label>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- 结果栏：计数 + 清空条件 -->
+    <div class="tq-resultsbar">
+      <p class="tq-count" aria-live="polite">
+        @if (loading()) {
+          正在为你寻找合适的导师…
+        } @else {
+          共 {{ total() }} 个开课条目
+          @if (activeFilterCount() > 0) {
+            （已选 {{ activeFilterCount() }} 项条件）
+          }
+        }
+      </p>
+      <button
+        type="button"
+        class="nur-btn nur-btn--ghost nur-btn--sm"
+        [disabled]="activeFilterCount() === 0"
+        (click)="clearFilters()"
+      >
+        清空条件
+      </button>
+    </div>
+
+    @if (compareNotice()) {
+      <p class="tq-notice" role="status">{{ compareNotice() }}</p>
+    }
+
+    <!-- 四态：加载骨架 / 失败 / 空态 / 列表 -->
+    @if (loading()) {
+      <div class="tq-grid" aria-hidden="true">
+        @for (n of [1, 2, 3, 4, 5, 6]; track n) {
+          <div class="tq-skeleton">
+            <div class="tq-skeleton-row tq-skeleton--head"></div>
+            <div class="tq-skeleton-row"></div>
+            <div class="tq-skeleton-row tq-skeleton--short"></div>
+            <div class="tq-skeleton-row tq-skeleton--short"></div>
+          </div>
+        }
+      </div>
+    } @else if (error()) {
+      <div class="tq-state" role="alert">
+        <p class="tq-state-title">暂时没有取到导师列表</p>
+        <p class="tq-state-text">网络似乎不太顺畅，你选择的筛选条件都还在，稍后重试即可。</p>
+        <button type="button" class="nur-btn nur-btn--primary" (click)="retry()">重新加载</button>
+      </div>
+    } @else if (visibleTeachers().length === 0) {
+      <div class="tq-state">
+        <p class="tq-state-title">没有符合当前条件的导师</p>
+        <p class="tq-state-text">没有找到符合条件的导师。试着调整学科或放宽价格范围，也可以清空全部筛选条件。</p>
+        <button type="button" class="nur-btn nur-btn--primary" (click)="clearFilters()">清空全部条件</button>
+      </div>
+    } @else {
+      <div class="tq-grid">
+        @for (t of visibleTeachers(); track t.teacherId + t.subject + t.gradeBand) {
+          <div class="tq-item" nurReveal [style.--stagger-index]="$index % 3">
+            <nur-teacher-card [teacher]="t" />
+            <button
+              type="button"
+              class="nur-btn nur-btn--ghost nur-btn--sm tq-compare-btn"
+              [class.tq-compare-btn--active]="isCompared(t.teacherId)"
+              (click)="toggleCompare(t)"
+              [attr.aria-pressed]="isCompared(t.teacherId)"
+            >
+              {{ isCompared(t.teacherId) ? '✓ 已加入对比' : '+ 加入对比' }}
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- 分页导航 -->
+    @if (!error() && pages() > 0) {
+      <nav aria-label="教师检索分页" class="tq-pagination">
+        <button
+          type="button"
+          class="nur-btn nur-btn--ghost nur-btn--sm"
+          [disabled]="loading() || page() === 0"
+          (click)="turnPage(-1)"
+        >
+          上一页
+        </button>
+        <span class="tq-page-num" aria-live="polite">第 {{ page() + 1 }} / {{ pages() }} 页</span>
+        <button
+          type="button"
+          class="nur-btn nur-btn--ghost nur-btn--sm"
+          [disabled]="loading() || page() + 1 >= pages()"
+          (click)="turnPage(1)"
+        >
+          下一页
+        </button>
+      </nav>
     }
   </div>
 
-  <!-- 结果条：计数（live region）+ 清空条件 -->
-  <div class="tq-resultsbar">
-    <p class="tq-count" aria-live="polite">
-      @if (loading()) {
-        正在为你寻找合适的导师…
-      } @else {
-        共 {{ total() }} 个开课条目
-        @if (activeFilterCount() > 0) {
-          （已选 {{ activeFilterCount() }} 项条件）
-        }
-      }
-    </p>
-    <button
-      type="button"
-      class="nur-btn nur-btn--ghost nur-btn--sm"
-      [disabled]="activeFilterCount() === 0"
-      (click)="clearFilters()"
-    >
-      清空条件
-    </button>
-  </div>
+  <!-- 悬浮吸底对比抽屉（吸底悬浮化） -->
+  @if (compared().length > 0) {
+    <aside class="tq-compare-dock" aria-label="导师对比浮层">
+      <div class="nur-container tq-dock-inner">
+        <div class="tq-dock-bar">
+          <span class="tq-dock-title">
+            已选择 <strong>{{ compared().length }}</strong>/3 位导师进行对比
+          </span>
+          <div class="tq-dock-actions">
+            <button
+              type="button"
+              class="nur-btn nur-btn--primary nur-btn--sm"
+              (click)="compareDrawerOpen.set(!compareDrawerOpen())"
+            >
+              {{ compareDrawerOpen() ? '收起对比表 ▲' : '展开对比表 ▼' }}
+            </button>
+            <button
+              type="button"
+              class="nur-btn nur-btn--ghost nur-btn--sm"
+              (click)="compared.set([]); compareDrawerOpen.set(false)"
+            >
+              清空
+            </button>
+          </div>
+        </div>
 
-  <!-- 加载骨架 -->
-  @if (compareNotice()) { <p role="status">{{ compareNotice() }}</p> }
-  <nur-teacher-compare [teachers]="compared()" (remove)="removeCompare($event)" />
-  @if (loading()) {
-    <div class="tq-grid" aria-hidden="true">
-      @for (n of [1, 2, 3, 4, 5, 6]; track n) {
-        <div class="tq-skeleton">
-          <div class="tq-skeleton-row tq-skeleton--head"></div>
-          <div class="tq-skeleton-row"></div>
-          <div class="tq-skeleton-row tq-skeleton--short"></div>
-          <div class="tq-skeleton-row tq-skeleton--short"></div>
-        </div>
-      }
-    </div>
-  } @else if (error()) {
-    <!-- 请求失败：保留已选条件，可重试 -->
-    <div class="tq-state" role="alert">
-      <p class="tq-state-title">暂时没有取到导师列表</p>
-      <p class="tq-state-text">网络似乎不太顺畅，你选择的筛选条件都还在，稍后重试即可。</p>
-      <button type="button" class="nur-btn nur-btn--primary" (click)="retry()">重试</button>
-    </div>
-  } @else if (visibleTeachers().length === 0) {
-    <!-- 结果为空：给出下一步 -->
-    <div class="tq-state">
-      <p class="tq-state-title">没有符合当前条件的导师</p>
-      <p class="tq-state-text">试着放宽价格或清空部分条件，也可以去首页发布学习需求，让导师来找你。</p>
-      <button type="button" class="nur-btn nur-btn--primary" (click)="clearFilters()">清空全部条件</button>
-    </div>
-  } @else {
-    <!-- 结果网格 -->
-    <div class="tq-grid">
-      @for (t of visibleTeachers(); track t.teacherId + t.subject + t.gradeBand) {
-        <div class="tq-item" nurReveal [style.--stagger-index]="$index % 3">
-          <nur-teacher-card [teacher]="t" />
-          <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="toggleCompare(t)" [attr.aria-pressed]="isCompared(t.teacherId)">{{ isCompared(t.teacherId) ? '移除对比' : '加入对比' }}</button>
-        </div>
-      }
-    </div>
+        @if (compareDrawerOpen()) {
+          <div class="tq-dock-content">
+            <nur-teacher-compare [teachers]="compared()" (remove)="removeCompare($event)" />
+          </div>
+        }
+      </div>
+    </aside>
   }
-  @if (!error() && pages() > 0) {
-    <nav aria-label="教师检索分页" class="tq-resultsbar">
-      <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" [disabled]="loading() || page() === 0" (click)="turnPage(-1)">上一页</button>
-      <span aria-live="polite">第 {{ page()+1 }}/{{ pages() }} 页</span>
-      <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" [disabled]="loading() || page()+1 >= pages()" (click)="turnPage(1)">下一页</button>
-    </nav>
-  }
-</div>
+</main>
+
+<nur-site-footer />
+

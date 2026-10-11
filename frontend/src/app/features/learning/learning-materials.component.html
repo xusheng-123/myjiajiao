@@ -1,20 +1,331 @@
-<main class="plans-shell"><header><div><h1 class="nur-serif">教学资料与作业</h1><p>课件、作业和反馈，与实际课程一起保存。</p></div><a [routerLink]="home()">返回工作台</a></header>
-  @if(auth.role()==='TEACHER'){<label>选择学生<select [value]="student()" (change)="select($any($event.target).value)" [disabled]="busy()"><option value="" disabled>请选择学生</option>@for(s of students();track s.studentId){<option [value]="s.studentId">{{s.displayName}}</option>}</select></label>}
-  @if(notice()){<p role="status" class="read-note">{{notice()}}</p>}
-  @if(auth.role()==='PARENT'){<p>你可以查看有效绑定孩子的教学资料和作业；上传与维护由学生、归属教师完成。</p>}
-  @else{<nur-storage-quota endpoint="/api/v1/learning/files/quota" [revision]="quotaRevision()" /><p>每节课程、任务或答疑最多20个有效附件。</p>}
-  @if(auth.role()==='TEACHER'&&lessons().length){<section class="nur-card"><h2>上传课程资料</h2><label>关联课程<select [value]="lesson()" (change)="lesson.set($any($event.target).value)" [disabled]="busy()">@for(l of lessons();track l.bookingId){<option [value]="l.bookingId">{{l.subject}} · {{l.startAt|date:'M月d日 HH:mm'}}</option>}</select></label><label>选择课件文件<input type="file" accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx" [disabled]="busy()||!lesson()" (change)="upload($event)"></label><p>支持PDF、PNG、JPEG及无宏的DOCX/XLSX/PPTX。</p></section>}
-  <section class="nur-card"><h2>资料与附件</h2>@if(loading()){<p>正在加载…</p>}@else if(!files().length){<p>暂无资料与附件。</p>}
-    @for(f of files();track f.fileId){<div class="actions"><span>{{f.filename}} · {{size(f.sizeBytes)}}</span><button type="button" (click)="download(f)" [disabled]="busy()">下载</button>@if(f.canDelete){<button type="button" (click)="remove(f)" [disabled]="busy()">移除</button>}</div>}
-    @if(pages()>1){<nav class="actions" aria-label="资料分页"><button type="button" (click)="turn(-1)" [disabled]="loading()||page()===0">上一页资料</button><span>{{page()+1}}/{{pages()}}</span><button type="button" (click)="turn(1)" [disabled]="loading()||page()+1>=pages()">下一页资料</button></nav>}
-  </section>
-  <h2>课后任务</h2>@if(!tasks().length){<p>暂无课后任务。</p>}
-  @for(t of tasks();track t.taskId){<article class="nur-card"><h3>{{t.title}} · {{status(t.status)}}</h3><p class="goal-text">{{t.description}}</p>@if(t.submission){<p class="goal-text">作业内容：{{t.submission}}</p>}@if(t.feedback){<p class="goal-text">教师反馈：{{t.feedback}}</p>}
-    <nur-learning-attachments [taskId]="t.taskId" [status]="t.status" (changed)="quotaRevision.update(increment)" />
-    @if(t.canSubmit||t.canFeedback){<button type="button" (click)="begin(t)" [disabled]="busy()">{{t.canSubmit?'填写作业':'填写反馈'}}</button>@if(editor()===t.taskId){<form (ngSubmit)="save(t)"><label>{{t.canSubmit?'作业内容':'教师反馈'}}<textarea id="material-task-work" name="work" required [maxlength]="t.canSubmit?10000:4000" [ngModel]="work()" (ngModelChange)="work.set($event)"></textarea></label><button type="submit" class="primary" [disabled]="busy()||!work().trim()">{{t.canSubmit?'确认提交作业':'保存反馈并完成'}}</button></form>}}
-  </article>}
-  @if(taskPages()>1){<nav class="actions" aria-label="作业分页"><button type="button" (click)="turn(-1,true)" [disabled]="taskPage()===0">上一页作业</button><span>{{taskPage()+1}}/{{taskPages()}}</span><button type="button" (click)="turn(1,true)" [disabled]="taskPage()+1>=taskPages()">下一页作业</button></nav>}
-  <h2>课后答疑与附件</h2>@for(q of questions();track q.questionId){<article class="nur-card"><h3>{{q.title}}</h3><p>{{q.status==='CLOSED'?'已关闭':q.status==='ANSWERED'?'已回答':'待回答'}}</p><p class="goal-text">{{q.content}}</p>@if(q.answer){<p class="goal-text">教师回答：{{q.answer}}</p>}<nur-learning-attachments [questionId]="q.questionId" [status]="q.status" (changed)="quotaRevision.update(increment)" />
-    @if(q.canAnswer){<button type="button" (click)="editor.set(q.questionId);work.set('')" [disabled]="busy()">回答问题</button>@if(editor()===q.questionId){<form (ngSubmit)="answer(q)"><label>回答内容<textarea name="answer" maxlength="4000" required [ngModel]="work()" (ngModelChange)="work.set($event)"></textarea></label><button type="submit" [disabled]="busy()||!work().trim()">保存回答</button></form>}}
-  </article>}@if(questionPages()>1){<nav class="actions"><button type="button" (click)="turnQuestion(-1)" [disabled]="questionPage()===0">上一页答疑</button><span>{{questionPage()+1}}/{{questionPages()}}</span><button type="button" (click)="turnQuestion(1)" [disabled]="questionPage()+1>=questionPages()">下一页答疑</button></nav>}
+<main class="materials-shell">
+  <header class="materials-header">
+    <div class="header-main">
+      <a class="back-link" [routerLink]="home()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>返回工作台</span>
+      </a>
+      <div class="title-group">
+        <span class="nur-kicker">COURSE RESOURCES</span>
+        <h1 class="nur-serif page-title">教学资料与作业</h1>
+        <p class="page-desc">课程资料课件、课后作业批改与问答交流，分区归档沉淀。</p>
+      </div>
+    </div>
+
+    @if (auth.role() === 'TEACHER') {
+      <div class="role-selector-card nur-card">
+        <label for="materials-student-select" class="selector-label">选择授课学生</label>
+        <select id="materials-student-select" class="selector-control" [value]="student()" (change)="select($any($event.target).value)" [disabled]="busy()">
+          <option value="" disabled>请选择学生</option>
+          @for (s of students(); track s.studentId) {
+            <option [value]="s.studentId">{{ s.displayName }}</option>
+          }
+        </select>
+      </div>
+    }
+  </header>
+
+  @if (notice()) {
+    <div class="notice-bar" role="status" aria-live="polite">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>{{ notice() }}</span>
+    </div>
+  }
+
+  @if (auth.role() === 'PARENT') {
+    <div class="info-banner" role="note">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>你可以查看有效绑定孩子的教学资料和作业记录；上传与批改由学生和归属教师完成。</span>
+    </div>
+  } @else {
+    <div class="quota-banner nur-card">
+      <div class="quota-left">
+        <span class="quota-title">教学资料存储配额</span>
+        <p class="quota-desc">每节课程、任务或答疑最多 20 个有效附件。单份文件 ≤20MB。</p>
+      </div>
+      <nur-storage-quota endpoint="/api/v1/learning/files/quota" [revision]="quotaRevision()" />
+    </div>
+  }
+
+  <!-- 三大业务 Tab 分区导航 -->
+  <nav class="business-tabs" aria-label="教学资料业务分区">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'materials'"
+      (click)="activeTab.set('materials')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>课件资料</span>
+      <span class="tab-badge">{{ files().length }}</span>
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'tasks'"
+      (click)="activeTab.set('tasks')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+      <span>课后作业</span>
+      <span class="tab-badge">{{ tasks().length }}</span>
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.tab-btn--active]="activeTab() === 'questions'"
+      (click)="activeTab.set('questions')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>课后答疑</span>
+      <span class="tab-badge">{{ questions().length }}</span>
+    </button>
+  </nav>
+
+  <!-- ================= Tab 1: 课件资料 ================= -->
+  @if (activeTab() === 'materials') {
+    <div class="tab-content-panel">
+      <!-- 教师上传区 -->
+      @if (auth.role() === 'TEACHER' && lessons().length) {
+        <section class="nur-card upload-section">
+          <div class="section-head">
+            <span class="section-badge">资料上传</span>
+            <h2 class="section-title nur-serif">上传课程讲义与参考资料</h2>
+          </div>
+          <div class="upload-form-grid">
+            <div class="form-field">
+              <label for="material-lesson-select">关联授课课程</label>
+              <select id="material-lesson-select" [value]="lesson()" (change)="lesson.set($any($event.target).value)" [disabled]="busy()">
+                @for (l of lessons(); track l.bookingId) {
+                  <option [value]="l.bookingId">{{ l.subject }} · {{ l.startAt | date:'M月d日 HH:mm' }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="material-file-input">选择讲义文件（单份 ≤20MB）</label>
+              <input id="material-file-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx" [disabled]="busy() || !lesson()" (change)="upload($event)" />
+            </div>
+          </div>
+          <p class="section-tip">支持 PDF、图片及无宏 Office 格式文档（DOCX/XLSX/PPTX）。</p>
+        </section>
+      }
+
+      <!-- 资料列表卡片 -->
+      <section class="nur-card files-list-section">
+        <div class="section-head">
+          <h2 class="section-title nur-serif">课件与参考资料列表</h2>
+          <span class="section-count">共 {{ files().length }} 份</span>
+        </div>
+
+        @if (loading()) {
+          <p class="empty-hint">正在读取教学资料…</p>
+        } @else if (!files().length) {
+          <div class="empty-state">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            <h3 class="empty-title">暂无教学资料</h3>
+            <p class="empty-hint">授课教师关联课程后上传的讲义、习题集将保存在这里。</p>
+          </div>
+        }
+
+        <div class="files-flow">
+          @for (f of files(); track f.fileId) {
+            <div class="file-item-card">
+              <div class="file-item-left">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                <div class="file-meta">
+                  <strong class="file-name">{{ f.filename }}</strong>
+                  <span class="file-size">{{ size(f.sizeBytes) }}</span>
+                </div>
+              </div>
+              <div class="file-item-actions">
+                <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="download(f)" [disabled]="busy()">下载</button>
+                @if (f.canDelete) {
+                  <button type="button" class="btn-text-danger-sm" (click)="remove(f)" [disabled]="busy()">移除</button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (pages() > 1) {
+          <nav class="pager-nav" aria-label="资料分页">
+            <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="turn(-1)" [disabled]="loading() || page() === 0">上一页</button>
+            <span class="pager-info">{{ page() + 1 }} / {{ pages() }}</span>
+            <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="turn(1)" [disabled]="loading() || page() + 1 >= pages()">下一页</button>
+          </nav>
+        }
+      </section>
+    </div>
+  }
+
+  <!-- ================= Tab 2: 课后作业 ================= -->
+  @if (activeTab() === 'tasks') {
+    <div class="tab-content-panel">
+      <section class="tasks-overview-section">
+        @if (!tasks().length) {
+          <div class="empty-state nur-card">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            <h3 class="empty-title">暂无课后作业任务</h3>
+            <p class="empty-hint">授课教师可在学习计划中发布课后任务，学生在此作答并查看批改。</p>
+          </div>
+        }
+
+        <div class="tasks-cards-list">
+          @for (t of tasks(); track t.taskId) {
+            <article class="nur-card task-full-card">
+              <div class="task-head">
+                <div class="task-title-wrap">
+                  <span class="status-pill status-{{ t.status.toLowerCase() }}">{{ status(t.status) }}</span>
+                  <h3 class="task-title nur-serif">{{ t.title }}</h3>
+                </div>
+              </div>
+
+              <div class="task-desc-box">
+                <span class="desc-tag">任务要求：</span>
+                <p class="desc-text">{{ t.description }}</p>
+              </div>
+
+              @if (t.submission) {
+                <div class="task-work-box">
+                  <span class="work-tag">学生提交内容：</span>
+                  <p class="work-text">{{ t.submission }}</p>
+                </div>
+              }
+
+              @if (t.feedback) {
+                <div class="task-work-box feedback-box">
+                  <span class="work-tag">教师批改与指导：</span>
+                  <p class="work-text">{{ t.feedback }}</p>
+                </div>
+              }
+
+              <!-- 附件组件 -->
+              <div class="attachments-wrap">
+                <nur-learning-attachments [taskId]="t.taskId" [status]="t.status" (changed)="quotaRevision.update(increment)" />
+              </div>
+
+              @if (t.canSubmit || t.canFeedback) {
+                <div class="task-actions-box">
+                  <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" (click)="begin(t)" [disabled]="busy()">
+                    {{ t.canSubmit ? '填写作业' : '批改与反馈' }}
+                  </button>
+
+                  @if (editor() === t.taskId) {
+                    <form (ngSubmit)="save(t)" class="task-form">
+                      <div class="form-field">
+                        <label for="material-task-work">{{ t.canSubmit ? '作业作答与说明' : '教师专业指导意见' }}</label>
+                        <textarea
+                          id="material-task-work"
+                          name="work"
+                          required
+                          [maxlength]="t.canSubmit ? 10000 : 4000"
+                          rows="4"
+                          placeholder="输入作答内容或批改反馈..."
+                          [ngModel]="work()"
+                          (ngModelChange)="work.set($event)"></textarea>
+                      </div>
+                      <div class="form-actions-row">
+                        <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="editor.set('')">取消</button>
+                        <button type="submit" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="busy() || !work().trim()">
+                          {{ t.canSubmit ? '确认提交作业' : '保存批改并完成' }}
+                        </button>
+                      </div>
+                    </form>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </div>
+
+        @if (taskPages() > 1) {
+          <nav class="pager-nav" aria-label="作业分页">
+            <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="turn(-1, true)" [disabled]="taskPage() === 0">上一页</button>
+            <span class="pager-info">{{ taskPage() + 1 }} / {{ taskPages() }}</span>
+            <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="turn(1, true)" [disabled]="taskPage() + 1 >= taskPages()">下一页</button>
+          </nav>
+        }
+      </section>
+    </div>
+  }
+
+  <!-- ================= Tab 3: 课后答疑 ================= -->
+  @if (activeTab() === 'questions') {
+    <div class="tab-content-panel">
+      <section class="questions-overview-section">
+        @if (!questions().length) {
+          <div class="empty-state nur-card">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <h3 class="empty-title">暂无课后答疑提问</h3>
+            <p class="empty-hint">学生可在课后发起知识点疑问，教师在此逐条答疑解惑。</p>
+          </div>
+        }
+
+        <div class="questions-cards-list">
+          @for (q of questions(); track q.questionId) {
+            <article class="nur-card question-full-card">
+              <div class="question-card-head">
+                <span class="status-pill" [class.status-closed]="q.status === 'CLOSED'" [class.status-answered]="q.status === 'ANSWERED'" [class.status-pending]="q.status !== 'CLOSED' && q.status !== 'ANSWERED'">
+                  {{ q.status === 'CLOSED' ? '已关闭' : q.status === 'ANSWERED' ? '已回答' : '待回答' }}
+                </span>
+                <h3 class="question-card-title nur-serif">{{ q.title }}</h3>
+              </div>
+
+              <div class="question-body-box">
+                <span class="desc-tag">提问内容：</span>
+                <p class="desc-text">{{ q.content }}</p>
+              </div>
+
+              @if (q.answer) {
+                <div class="question-answer-box">
+                  <span class="work-tag">教师专业解答：</span>
+                  <p class="work-text">{{ q.answer }}</p>
+                </div>
+              }
+
+              <!-- 答疑附件组件 -->
+              <div class="attachments-wrap">
+                <nur-learning-attachments [questionId]="q.questionId" [status]="q.status" (changed)="quotaRevision.update(increment)" />
+              </div>
+
+              @if (q.canAnswer) {
+                <div class="question-action-box">
+                  <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" (click)="editor.set(q.questionId); work.set('')" [disabled]="busy()">
+                    撰写解答
+                  </button>
+
+                  @if (editor() === q.questionId) {
+                    <form (ngSubmit)="answer(q)" class="answer-form">
+                      <div class="form-field">
+                        <label for="material-answer-text">解答内容</label>
+                        <textarea
+                          id="material-answer-text"
+                          name="answer"
+                          maxlength="4000"
+                          required
+                          rows="4"
+                          placeholder="详细解答学生的疑问与解题思路..."
+                          [ngModel]="work()"
+                          (ngModelChange)="work.set($event)"></textarea>
+                      </div>
+                      <div class="form-actions-row">
+                        <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="editor.set('')">取消</button>
+                        <button type="submit" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="busy() || !work().trim()">
+                          保存回答
+                        </button>
+                      </div>
+                    </form>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </div>
+
+        @if (questionPages() > 1) {
+          <nav class="pager-nav" aria-label="答疑分页">
+            <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="turnQuestion(-1)" [disabled]="questionPage() === 0">上一页</button>
+            <span class="pager-info">{{ questionPage() + 1 }} / {{ questionPages() }}</span>
+            <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="turnQuestion(1)" [disabled]="questionPage() + 1 >= questionPages()">下一页</button>
+          </nav>
+        }
+      </section>
+    </div>
+  }
 </main>

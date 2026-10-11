@@ -1,0 +1,99 @@
+<section class="nur-card verification-card nur-enter" aria-labelledby="verify-title">
+  <div class="card-head">
+    <div>
+      <h2 id="verify-title" class="card-title nur-serif">资质认证</h2>
+      <p class="card-subtitle">平台实名与学历资质核验 · 审核通过后获得认证标识</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="loadStatus()" [disabled]="!loaded()">
+      {{ !loaded() ? '加载中…' : '刷新' }}
+    </button>
+  </div>
+
+  @if (verification(); as v) {
+    <div class="verify-status-box">
+      <div class="status-header-row">
+        <span class="status-pill" [attr.data-status]="v.status">
+          @switch (v.status) {
+            @case ('APPROVED') { ✔ 已通过 }
+            @case ('UNDER_REVIEW') { ◷ 审核中 }
+            @case ('REJECTED') { ↺ 需补充 }
+            @case ('SUBMITTED') { ◔ 已提交 }
+            @default { ○ 未提交 }
+          }
+        </span>
+        @if (v.submittedAt) {
+          <span class="quiet-note">提交于 {{ v.submittedAt | date: 'M月d日 HH:mm' }}</span>
+        }
+      </div>
+
+      @if (v.status === 'REJECTED' && v.decisionNote) {
+        <div class="verify-decision-note" role="note">
+          <strong>审核意见：</strong> {{ v.decisionNote }}
+        </div>
+      }
+      <p class="quiet-note verify-guidance">{{ v.guidance }}</p>
+    </div>
+  } @else if (loaded()) {
+    <p class="quiet-note">暂未读取到认证状态，可直接在下方提交材料；若多次失败请联系运营客服。</p>
+  }
+
+  @if (showVerificationForm()) {
+    <form class="verify-upload-form" (submit)="$event.preventDefault(); submitVerification()" aria-label="资质材料上传">
+      <p class="section-label">请上传身份证明与学历证明（清晰照片或扫描件均可）：</p>
+
+      <div class="upload-field-row">
+        <label class="field-label" for="verify-id-input">身份证明</label>
+        <div class="field-control">
+          <input
+            id="verify-id-input"
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            [disabled]="verificationBusy()"
+            (change)="onVerificationFilePick('idDocument', $event)"
+          />
+          @if (idDocumentFile(); as f) {
+            <span class="file-chip">
+              {{ f.name }}（{{ f.sizeLabel }}）
+              <button type="button" class="chip-remove-btn" (click)="removeVerificationFile('idDocument')">移除</button>
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="upload-field-row">
+        <label class="field-label" for="verify-degree-input">学历证明</label>
+        <div class="field-control">
+          <input
+            id="verify-degree-input"
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            [disabled]="verificationBusy()"
+            (change)="onVerificationFilePick('degreeCert', $event)"
+          />
+          @if (degreeCertFile(); as f) {
+            <span class="file-chip">
+              {{ f.name }}（{{ f.sizeLabel }}）
+              <button type="button" class="chip-remove-btn" (click)="removeVerificationFile('degreeCert')">移除</button>
+            </span>
+          }
+        </div>
+      </div>
+
+      <p class="format-hint">支持 PDF/JPG/PNG 格式，单个文件不超过 20MB（服务端将校验文件真实格式）。</p>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="nur-btn nur-btn--primary nur-btn--sm"
+          [disabled]="!canSubmitVerification()"
+        >
+          {{ verificationBusy() ? '正在提交…' : '提交资质材料' }}
+        </button>
+      </div>
+
+      @if (verificationMessage(); as msg) {
+        <p class="panel-msg panel-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+      }
+    </form>
+  }
+</section>

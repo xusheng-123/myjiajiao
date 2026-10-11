@@ -1,233 +1,478 @@
 <div class="dashboard-shell">
+  <!-- 顶栏：问候与退出 -->
   <header class="dash-header">
     <div>
-      <p class="dash-greeting nur-serif">家长中心 · {{ displayName() }}</p>
-      <p class="dash-subtitle">看得见的进度，算得清的课时。</p>
+      <div class="dash-eyebrow">
+        <span class="eyebrow-dot"></span>
+        <span>PARENT WORKBENCH</span>
+      </div>
+      <h1 class="dash-greeting nur-serif">家长中心 · {{ displayName() }}</h1>
+      <p class="dash-subtitle">看得见的学业进度，算得清的课时流水。</p>
+    </div>
+    <div class="header-action-group">
+      <button
+        type="button"
+        class="nur-btn nur-btn--ghost nur-btn--sm"
+        (click)="auth.logout()"
+        aria-label="退出登录"
+      >
+        退出
+      </button>
     </div>
   </header>
-  <nav aria-label="客服服务"><a routerLink="/support">客服与申诉</a></nav>
-  <nav aria-label="课程服务"><a routerLink="/messages">课前咨询</a> · <a routerLink="/refunds">退款与处理进度</a></nav>
+
+  <!-- 顶部服务快捷导航 -->
+  <nav class="workbench-nav-card nur-card" aria-label="快捷服务导航">
+    <div class="nav-links">
+      <a routerLink="/messages" class="nav-chip">
+        <span class="chip-icon">💬</span>
+        <span>课前咨询</span>
+      </a>
+      <a routerLink="/support" class="nav-chip">
+        <span class="chip-icon">🛡️</span>
+        <span>客服与申诉</span>
+      </a>
+      <a routerLink="/refunds" class="nav-chip">
+        <span class="chip-icon">↩️</span>
+        <span>退款进度</span>
+      </a>
+    </div>
+  </nav>
 
   <!-- 核心主任务：子女学情看板 -->
   <section class="nur-card nur-enter" style="--stagger-index: 1" aria-labelledby="children-title">
-    <h2 id="children-title" class="nur-serif">绑定的子女</h2>
+    <div class="card-head">
+      <div>
+        <h2 id="children-title" class="card-title">绑定的子女</h2>
+        <p class="card-desc">全景追踪子女学情档案、学习计划与每周成长动态</p>
+      </div>
+      <span class="count-badge">共 {{ children().length }} 名子女</span>
+    </div>
+
     @if (children().length === 0) {
-      <p class="quiet-note">还没有绑定子女。填写学生的学生编号发起绑定，学生确认后即可查看学情看板。</p>
+      <div class="empty-box">
+        <p class="quiet-note">
+          还没有绑定子女。在下方填写学生的专属学生编号发起绑定，学生在个人工作台确认后即可开启学情看板。
+        </p>
+      </div>
     } @else {
-      <ul class="child-list">
+      <div class="child-card-list">
         @for (child of children(); track child.bindingId) {
-          <li class="child-item">
-            <div>
-              <p class="child-name">学生 {{ child.studentId.slice(0, 8) }}</p>
-              <p class="quiet-note">关系：{{ child.relation }} · 状态：{{ child.status === 'ACTIVE' ? '已生效' : child.status === 'PENDING' ? '待学生确认' : '已解除' }}</p>
-            </div>
-            <span class="status-pill" [attr.data-status]="child.status">
-              {{ child.status === 'ACTIVE' ? '✔ 已生效' : child.status === 'PENDING' ? '◷ 待确认' : '✕ 已解除' }}
-            </span>
-            @if (child.status === 'ACTIVE') {
-              <a routerLink="/learning/plans" [queryParams]="{childProfileId: child.studentId}">学习计划</a>
-              <a routerLink="/learning/assessments" [queryParams]="{childProfileId: child.studentId}">阶段小测与报告</a>
-              <a routerLink="/learning/mistakes" [queryParams]="{childProfileId: child.studentId}">错题与复习</a>
-              <a routerLink="/learning/materials" [queryParams]="{childProfileId: child.studentId}">教学资料与作业</a>
-              <nur-calendar-export [childProfileId]="child.studentId" />
-              <button type="button" class="btn-ghost-sm" (click)="toggleReport(child)"
-                [attr.aria-expanded]="reportFor() === child.studentId">学习周报</button>
-            }
-          </li>
-          @if (reportFor() === child.studentId) {
-            <li class="child-item report-panel" aria-live="polite">
-              @if (reportLoading()) { <p class="quiet-note">正在生成本周学习周报…</p> }
-              @if (reportError()) { <p class="quiet-note">{{ reportError() }}</p> }
-              @if (reportData(); as r) {
-                <div style="display:flex;gap:20px;flex-wrap:wrap;margin:8px 0">
-                  <div><p style="font-size:1.3rem;font-weight:700">{{ r.weekLessons }}</p><p class="quiet-note">本周课程</p></div>
-                  <div><p style="font-size:1.3rem;font-weight:700">{{ minutesText(r.weekMinutes) }}</p><p class="quiet-note">学习时长</p></div>
-                  <div><p style="font-size:1.3rem;font-weight:700">{{ r.taskCompleted }}/{{ r.taskTotal }}</p><p class="quiet-note">任务完成</p></div>
+          <article class="child-card" [class.child-card--active]="child.status === 'ACTIVE'">
+            <div class="child-card-top">
+              <div class="child-id-info">
+                <span class="child-avatar" aria-hidden="true">学</span>
+                <div>
+                  <h3 class="child-name">学生编号：{{ child.studentNo || child.studentId.slice(0, 8) }}</h3>
+                  <p class="child-meta">
+                    监护关系：{{ child.relation || '家长' }} · ID：{{ child.studentId.slice(0, 8) }}
+                  </p>
                 </div>
-                @if (r.teacherFeedbacks?.length) {
-                  <p style="font-weight:600;margin:8px 0 4px">教师反馈</p>
-                  @for (f of r.teacherFeedbacks; track f.subject) {
-                    <p class="quiet-note" style="margin:4px 0">
-                      {{ f.subject }}：{{ f.performance }} @if (f.nextSuggestion) { · {{ f.nextSuggestion }} }
-                    </p>
-                  }
-                } @else {
-                  <p class="quiet-note">本周还没有教师课堂记录。</p>
+              </div>
+
+              <!-- 双通道状态标识 -->
+              <span class="status-pill" [class.status-pill--active]="child.status === 'ACTIVE'" [class.status-pill--pending]="child.status === 'PENDING'">
+                {{ child.status === 'ACTIVE' ? '✔ 监护关系已生效' : child.status === 'PENDING' ? '◷ 待学生确认' : '✕ 已解除' }}
+              </span>
+            </div>
+
+            <!-- 分组操作区（取代旧版拥挤的 6 个裸链接堆叠） -->
+            @if (child.status === 'ACTIVE') {
+              <div class="child-actions-bar">
+                <!-- 主操作：学习周报 -->
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--primary nur-btn--sm"
+                  (click)="toggleReport(child)"
+                  [attr.aria-expanded]="reportFor() === child.studentId"
+                >
+                  {{ reportFor() === child.studentId ? '收起学习周报 ▲' : '查看学习周报 ▼' }}
+                </button>
+
+                <!-- 次级学习管理与日程导出操作组 -->
+                <div class="secondary-tools-group">
+                  <a
+                    routerLink="/learning/plans"
+                    [queryParams]="{childProfileId: child.studentId}"
+                    class="nav-chip"
+                  >
+                    学习计划
+                  </a>
+                  <a
+                    routerLink="/learning/assessments"
+                    [queryParams]="{childProfileId: child.studentId}"
+                    class="nav-chip"
+                  >
+                    阶段小测与报告
+                  </a>
+                  <a
+                    routerLink="/learning/mistakes"
+                    [queryParams]="{childProfileId: child.studentId}"
+                    class="nav-chip"
+                  >
+                    错题本
+                  </a>
+                  <a
+                    routerLink="/learning/materials"
+                    [queryParams]="{childProfileId: child.studentId}"
+                    class="nav-chip"
+                  >
+                    教学资料与作业
+                  </a>
+                  <div class="export-chip-wrap">
+                    <nur-calendar-export [childProfileId]="child.studentId" />
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <p class="pending-tip-line">
+                绑定申请已发出，请提醒孩子登录其学生工作台点击「确认绑定」。确认后方可代付下单并查看学情。
+              </p>
+            }
+
+            <!-- 学习周报展开面板 -->
+            @if (reportFor() === child.studentId) {
+              <div class="report-panel-box nur-enter" aria-live="polite">
+                <div class="panel-header">
+                  <h4 class="report-title">学习周报详情</h4>
+                  <button type="button" class="btn-close-sub" (click)="toggleReport(child)" aria-label="收起周报">✕</button>
+                </div>
+
+                @if (reportLoading()) {
+                  <p class="quiet-note">正在生成本周学习周报…</p>
                 }
-                @if (r.upcomingLessons?.length) {
-                  <p style="font-weight:600;margin:8px 0 4px">下周课程</p>
-                  @for (u of r.upcomingLessons; track u.startAt) {
-                    <p class="quiet-note">{{ u.subject }} · {{ u.startAt }}</p>
-                  }
-                } @else {
-                  <p class="quiet-note">暂无已确认的下周课程。</p>
+                @if (reportError()) {
+                  <p class="reschedule-msg reschedule-msg--error">{{ reportError() }}</p>
                 }
-              }
-            </li>
-          }
+                @if (reportData(); as r) {
+                  <!-- 本周三大核心指标 -->
+                  <div class="report-metrics-row">
+                    <div class="report-metric-cell">
+                      <span class="metric-label">本周完成课程</span>
+                      <div class="metric-val-row">
+                        <span class="metric-val">{{ r.weekLessons }}</span>
+                        <span class="metric-unit">节</span>
+                      </div>
+                    </div>
+                    <div class="report-metric-cell">
+                      <span class="metric-label">本周学习时长</span>
+                      <div class="metric-val-row">
+                        <span class="metric-val">{{ minutesText(r.weekMinutes) }}</span>
+                      </div>
+                    </div>
+                    <div class="report-metric-cell">
+                      <span class="metric-label">任务完成度</span>
+                      <div class="metric-val-row">
+                        <span class="metric-val">{{ r.taskCompleted }}</span>
+                        <span class="metric-slash">/</span>
+                        <span class="metric-total">{{ r.taskTotal }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 教师学情评语反馈 -->
+                  <div class="report-sub-block">
+                    <h5 class="sub-block-title">授课导师反馈</h5>
+                    @if (r.teacherFeedbacks?.length) {
+                      <div class="feedback-cards-list">
+                        @for (f of r.teacherFeedbacks; track f.subject) {
+                          <div class="feedback-card">
+                            <span class="fb-subject">{{ f.subject }}</span>
+                            <p class="fb-text">课堂表现：{{ f.performance }}</p>
+                            @if (f.nextSuggestion) {
+                              <p class="fb-suggestion">下一阶段建议：{{ f.nextSuggestion }}</p>
+                            }
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <p class="quiet-note">本周暂无教师课堂记录。</p>
+                    }
+                  </div>
+
+                  <!-- 下周排定课程预告 -->
+                  <div class="report-sub-block">
+                    <h5 class="sub-block-title">下周排课预告</h5>
+                    @if (r.upcomingLessons?.length) {
+                      <div class="upcoming-lessons-list">
+                        @for (u of r.upcomingLessons; track u.startAt) {
+                          <div class="upcoming-item">
+                            <span class="upcoming-dot"></span>
+                            <span class="upcoming-sub">{{ u.subject }}</span>
+                            <span class="upcoming-time">{{ u.startAt }}</span>
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <p class="quiet-note">暂无已排定的下周课程。</p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </article>
         }
-      </ul>
+      </div>
     }
 
-    <div class="bind-row">
-      <input
-        type="text"
-        placeholder="学生编号，如 NUR-STU-000123"
-        aria-label="学生编号"
-        [value]="studentNoInput()"
-        (input)="studentNoInput.set(numberInput.value)"
-        #numberInput
-      />
-      <input
-        type="text"
-        placeholder="与学生的关系（可选）"
-        aria-label="与学生关系"
-        [value]="relationInput()"
-        (input)="relationInput.set(relationField.value)"
-        #relationField
-      />
-      <button type="button" class="btn-primary-sm" (click)="bindChild()">绑定子女</button>
+    <!-- 绑定新子女表单 -->
+    <div class="bind-new-card">
+      <h3 class="bind-title">添加绑定新子女</h3>
+      <p class="quiet-note">
+        输入孩子的专属学生编号发起绑定申请，可在学生个人工作台「学生个人档案」卡片中获取编号（格式如 NUR-STU-000123）。
+      </p>
+
+      <div class="bind-form-row">
+        <input
+          type="text"
+          class="form-control bind-input"
+          placeholder="学生编号，如 NUR-STU-000123"
+          aria-label="学生编号"
+          [value]="studentNoInput()"
+          (input)="studentNoInput.set(numberInput.value)"
+          #numberInput
+        />
+        <input
+          type="text"
+          class="form-control bind-input"
+          placeholder="与学生关系（如：母亲、父亲）"
+          aria-label="与学生关系"
+          [value]="relationInput()"
+          (input)="relationInput.set(relationField.value)"
+          #relationField
+        />
+        <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" (click)="bindChild()">
+          发起绑定申请
+        </button>
+      </div>
+
+      @if (notice()) {
+        <p class="form-status" role="status">
+          <span aria-hidden="true">ℹ</span> {{ notice() }}
+        </p>
+      }
     </div>
-    @if (notice()) {
-      <p class="form-status" role="status"><span aria-hidden="true">ℹ</span> {{ notice() }}</p>
-    }
   </section>
 
   <!-- 家庭统一教育支付钱包 -->
   <section class="nur-card nur-enter" style="--stagger-index: 2" aria-labelledby="wallet-title">
-    <h2 id="wallet-title" class="nur-serif">家庭支付钱包</h2>
-    <div class="wallet-row">
-      <p class="wallet-balance">¥ {{ yuan(wallet()?.balanceCents) }}</p>
+    <div class="card-head">
+      <div>
+        <h2 id="wallet-title" class="card-title">家庭支付钱包</h2>
+        <p class="card-desc">统一资金账户，支持课时代付结算与自动退款原路保障</p>
+      </div>
+      <span class="gold-badge">统一结算</span>
+    </div>
+
+    <div class="wallet-overview-row">
+      <div class="wallet-balance-box">
+        <span class="balance-label">可用资金余额</span>
+        <div class="balance-number-row">
+          <span class="balance-cur">¥</span>
+          <span class="balance-number">{{ yuan(wallet()?.balanceCents) }}</span>
+        </div>
+      </div>
+
       <div class="topup-group" role="group" aria-label="快捷充值">
-        <button type="button" class="btn-ghost-sm" (click)="topUp(10000)">充 ¥100</button>
-        <button type="button" class="btn-ghost-sm" (click)="topUp(50000)">充 ¥500</button>
-        <button type="button" class="btn-ghost-sm" (click)="topUp(100000)">充 ¥1000</button>
+        <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="topUp(10000)">+ 充 ¥100</button>
+        <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="topUp(50000)">+ 充 ¥500</button>
+        <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="topUp(100000)">+ 充 ¥1000</button>
       </div>
     </div>
 
     <h3 class="section-sub">课时消费对账明细</h3>
     @if (wallet()?.recentTransactions?.length) {
-      <table class="txn-table">
-        <caption class="visually-hidden">钱包流水</caption>
-        <thead>
-          <tr>
-            <th scope="col">类型</th>
-            <th scope="col">金额（元）</th>
-            <th scope="col">变动后余额（元）</th>
-            <th scope="col">备注</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (txn of wallet()?.recentTransactions ?? []; track txn.txnId) {
+      <div class="table-responsive">
+        <table class="txn-table">
+          <caption class="visually-hidden">钱包流水</caption>
+          <thead>
             <tr>
-              <td>{{ txn.type === 'TOPUP' ? '充值' : txn.type === 'PAYMENT' ? '课时支付' : txn.type === 'REFUND' ? '退款入账' : '调整' }}</td>
-              <td [class.amount-negative]="txn.amountCents < 0">{{ txn.amountCents / 100 }}</td>
-              <td>{{ yuan(txn.balanceAfterCents) }}</td>
-              <td>{{ txn.memo || '—' }}</td>
+              <th scope="col">交易类型</th>
+              <th scope="col">变动金额（元）</th>
+              <th scope="col">变动后余额（元）</th>
+              <th scope="col">业务备注</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (txn of wallet()?.recentTransactions ?? []; track txn.txnId) {
+              <tr>
+                <td>
+                  <span class="type-pill" [class.type-pill--topup]="txn.type === 'TOPUP'" [class.type-pill--refund]="txn.type === 'REFUND'">
+                    {{ txn.type === 'TOPUP' ? '充值入账' : txn.type === 'PAYMENT' ? '课时扣款' : txn.type === 'REFUND' ? '退款返还' : '资金调整' }}
+                  </span>
+                </td>
+                <td [class.amount-negative]="txn.amountCents < 0" [class.amount-positive]="txn.amountCents > 0">
+                  {{ txn.amountCents > 0 ? '+' : '' }}{{ txn.amountCents / 100 }}
+                </td>
+                <td class="balance-after-col">{{ yuan(txn.balanceAfterCents) }}</td>
+                <td class="memo-col">{{ txn.memo || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     } @else {
-      <p class="quiet-note">暂无流水记录。第一笔充值或课时消费后会在这里留痕。</p>
+      <p class="quiet-note">暂无流水记录。完成第一笔充值或课程代付后在此留痕。</p>
     }
   </section>
 
   <!-- 课程与订单（G7）：选孩子 → 可下单课程 → 下单/支付 -->
   <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="orders-title">
-    <h2 id="orders-title" class="nur-serif">课程与订单</h2>
+    <div class="card-head">
+      <div>
+        <h2 id="orders-title" class="card-title">课程与订单</h2>
+        <p class="card-desc">为孩子确认预约的课程进行代付下单与支付管理</p>
+      </div>
+      <span class="count-badge">共 {{ orders().length }} 笔订单</span>
+    </div>
 
-    <div class="bind-row">
-      <select
-        aria-label="选择孩子"
-        [value]="selectedChild()"
-        (change)="selectedChild.set($any($event.target).value)"
-        [disabled]="activeChildren().length === 0"
+    <!-- 子女选择与查询栏 -->
+    <div class="order-select-bar">
+      <div class="select-field-wrap">
+        <label for="child-select" class="form-label">选择要代付的孩子</label>
+        <select
+          id="child-select"
+          class="form-control select-child-ctrl"
+          [value]="selectedChild()"
+          (change)="selectedChild.set($any($event.target).value)"
+          [disabled]="activeChildren().length === 0"
+        >
+          <option value="">请选择孩子…</option>
+          @for (child of activeChildren(); track child.studentId) {
+            <option [value]="child.studentId">学生 {{ child.studentNo || child.studentId.slice(0, 8) }}（{{ child.relation || '孩子' }}）</option>
+          }
+        </select>
+      </div>
+      <button
+        type="button"
+        class="nur-btn nur-btn--primary nur-btn--sm btn-query-orderable"
+        (click)="loadOrderable()"
+        [disabled]="orderableLoading() || !selectedChild()"
       >
-        <option value="">选择孩子…</option>
-        @for (child of activeChildren(); track child.studentId) {
-          <option [value]="child.studentId">学生 {{ child.studentId.slice(0, 8) }}</option>
-        }
-      </select>
-      <button type="button" class="btn-primary-sm" (click)="loadOrderable()" [disabled]="orderableLoading()">
         {{ orderableLoading() ? '查询中…' : '查看可下单课程' }}
       </button>
     </div>
 
     @if (activeChildren().length === 0) {
-      <p class="quiet-note">绑定生效后（学生确认），即可在这里为孩子查询并下单课程。</p>
-    }
-    @if (orderable().length > 0) {
-      <table class="txn-table">
-        <caption class="visually-hidden">可下单课程</caption>
-        <thead>
-          <tr>
-            <th scope="col">科目</th>
-            <th scope="col">上课时间</th>
-            <th scope="col">课程单价（元）</th>
-            <th scope="col">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (lesson of orderable(); track lesson.bookingId) {
-            <tr>
-              <td>{{ lesson.subject }}</td>
-              <td>{{ lesson.startAt ? (lesson.startAt | date: 'M月d日 HH:mm') : '时间待定' }}</td>
-              <td>{{ yuan(lesson.priceCents) }}</td>
-              <td>
-                <button type="button" class="btn-primary-sm" [disabled]="orderBusy()" (click)="createOrder(lesson.bookingId)">
-                  {{ orderBusy() ? '下单中…' : '下单' }}
-                </button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    } @else if (!orderableLoading() && selectedChild() && orderMsg()?.type !== 'error') {
-      <p class="quiet-note">该孩子当前没有待下单的课程（导师确认预约后会出现在这里）。</p>
+      <p class="quiet-note">暂无已生效的绑定子女。学生在工作台确认后即可代付下单。</p>
     }
 
-    <h3 class="section-sub">家庭订单（付款方视角）</h3>
-    @if (!ordersLoaded()) {
-      <p class="quiet-note" role="status">正在加载订单…</p>
-    } @else if (orders().length === 0) {
-      <p class="quiet-note">还没有订单。为孩子下单后会在这里展示。</p>
-    } @else {
-      <table class="txn-table">
-        <caption class="visually-hidden">家庭订单列表</caption>
-        <thead>
-          <tr>
-            <th scope="col">订单号</th>
-            <th scope="col">金额（元）</th>
-            <th scope="col">状态</th>
-            <th scope="col">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (order of orders(); track order.orderId) {
-            <tr>
-              <td>{{ order.orderNo }}</td>
-              <td>{{ yuan(order.amountCents) }}</td>
-              <td>
-                {{ order.status === 'PAID' ? '✓ 已支付' : order.status === 'PENDING_PAYMENT' ? '◷ 待支付' : order.status === 'CLOSED' ? '已关闭' : '已取消' }}
-              </td>
-              <td>
-                @if (order.status === 'PENDING_PAYMENT' && sandboxEnabled() === true) {
-                  <button type="button" class="btn-ghost-sm" [disabled]="isPaying(order.orderId)" (click)="payOrder(order)">
-                    {{ isPaying(order.orderId) ? '支付中…' : '沙箱演示支付' }}
-                  </button>
-                } @else if (order.status === 'PENDING_PAYMENT') {
-                  <span class="quiet-note">线下收款：转账后由运营确认（模式 B）</span>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      @if (sandboxEnabled() === true) {
-        <p class="quiet-note">当前环境开放沙箱演示支付：模拟渠道完成支付联动（非真实收款）。</p>
-      }
+    <!-- 可下单课程列表 -->
+    @if (orderable().length > 0) {
+      <div class="orderable-section">
+        <h3 class="section-sub">待下单课程（已通过导师审批）</h3>
+        <div class="table-responsive">
+          <table class="txn-table">
+            <caption class="visually-hidden">可下单课程</caption>
+            <thead>
+              <tr>
+                <th scope="col">科目</th>
+                <th scope="col">上课时间</th>
+                <th scope="col">课程定价（元）</th>
+                <th scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (lesson of orderable(); track lesson.bookingId) {
+                <tr>
+                  <td class="font-bold">{{ lesson.subject }}</td>
+                  <td>{{ lesson.startAt ? (lesson.startAt | date: 'M月d日 HH:mm') : '时间待定' }}</td>
+                  <td class="amount-col">¥{{ yuan(lesson.priceCents) }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="nur-btn nur-btn--primary nur-btn--sm"
+                      [disabled]="orderBusy()"
+                      (click)="createOrder(lesson.bookingId)"
+                    >
+                      {{ orderBusy() ? '下单中…' : '生成订单' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @else if (!orderableLoading() && selectedChild() && orderMsg()?.type !== 'error') {
+      <p class="quiet-note">该孩子当前没有待下单的课程（正式课预约经导师确认后会出现在这里）。</p>
     }
+
+    <!-- 家庭订单列表（付款方视角）与双通道状态指引 -->
+    <div class="family-orders-block">
+      <h3 class="section-sub">家庭订单（付款方视角）</h3>
+      @if (!ordersLoaded()) {
+        <p class="quiet-note" role="status">正在加载订单列表…</p>
+      } @else if (orders().length === 0) {
+        <p class="quiet-note">还没有订单。为孩子下单后会在这里集中展示。</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="txn-table">
+            <caption class="visually-hidden">家庭订单列表</caption>
+            <thead>
+              <tr>
+                <th scope="col">订单号</th>
+                <th scope="col">订单金额（元）</th>
+                <th scope="col">支付状态</th>
+                <th scope="col">操作 / 支付指引</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (order of orders(); track order.orderId) {
+                <tr>
+                  <td class="font-mono">{{ order.orderNo }}</td>
+                  <td class="amount-col">¥{{ yuan(order.amountCents) }}</td>
+                  <td>
+                    <!-- 双通道状态指引（图标 + 颜色 + 文案） -->
+                    <span
+                      class="status-pill"
+                      [class.status-pill--paid]="order.status === 'PAID'"
+                      [class.status-pill--pending-pay]="order.status === 'PENDING_PAYMENT'"
+                      [class.status-pill--closed]="order.status === 'CLOSED' || order.status === 'CANCELLED'"
+                    >
+                      {{
+                        order.status === 'PAID' ? '✔ 已支付' :
+                        order.status === 'PENDING_PAYMENT' ? '◷ 待支付' :
+                        order.status === 'CLOSED' ? '✕ 已关闭' : '✕ 已取消'
+                      }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (order.status === 'PENDING_PAYMENT' && sandboxEnabled() === true) {
+                      <button
+                        type="button"
+                        class="nur-btn nur-btn--primary nur-btn--sm"
+                        [disabled]="isPaying(order.orderId)"
+                        (click)="payOrder(order)"
+                      >
+                        {{ isPaying(order.orderId) ? '支付中…' : '沙箱演示支付' }}
+                      </button>
+                    } @else if (order.status === 'PENDING_PAYMENT') {
+                      <div class="offline-pay-guide">
+                        <span class="guide-tag">模式 B 线下收款</span>
+                        <span class="quiet-note">向平台账户打款后联系运营确认</span>
+                      </div>
+                    } @else if (order.status === 'PAID') {
+                      <span class="paid-done-note">课时已锁定</span>
+                    } @else {
+                      <span class="quiet-note">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (sandboxEnabled() === true) {
+          <div class="sandbox-note-card">
+            <span class="sandbox-icon">🧪</span>
+            <span class="sandbox-text">当前开发/测试环境开放沙箱演示支付：点击即可模拟完成真实渠道验签与扣款联动。</span>
+          </div>
+        }
+      }
+    </div>
+
     @if (orderMsg(); as msg) {
       <p class="form-status" role="status"><span aria-hidden="true">ℹ</span> {{ msg.text }}</p>
     }
@@ -235,10 +480,14 @@
 
   <!-- 授课进度透明度追踪 -->
   <section class="nur-card nur-enter" style="--stagger-index: 4" aria-labelledby="progress-title">
-    <h2 id="progress-title" class="nur-serif">授课进度透明追踪</h2>
+    <div class="card-head">
+      <h2 id="progress-title" class="card-title">授课进度透明追踪与保障</h2>
+      <span class="gold-badge">平台双阶段保障</span>
+    </div>
     <p class="quiet-note">
-      每节课后，导师的结构化学情反馈会同步至此；对课程有任何疑问，可通过站内信与导师直接沟通，
-      也可随时发起评价或申请退款（由平台两阶段仲裁保障）。
+      每节课后，导师的结构化学情反馈与知识点掌握情况会同步至学习周报；
+      对教学进度或课时扣减有任何疑问，可通过「课前咨询」与导师直接沟通，
+      或向平台发起客服工单；平台提供完善的两阶段取消与全额自动退款机制，全力保障家长权益。
     </p>
   </section>
 

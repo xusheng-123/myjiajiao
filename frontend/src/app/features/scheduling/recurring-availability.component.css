@@ -1,0 +1,174 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--bg-page, #f2f3ee);
+}
+
+.plans-shell {
+  max-width: var(--container-max, 1120px);
+  margin: 0 auto;
+  padding: var(--space-6, 24px) var(--space-4, 16px) var(--space-9, 64px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5, 20px);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-4, 16px);
+  padding-bottom: var(--space-3, 12px);
+  border-bottom: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-title, #1e3a31);
+}
+
+.page-header p {
+  margin: var(--space-1, 4px) 0 0;
+  font-size: 0.94rem;
+  color: var(--text-muted, #5c6662);
+}
+
+.banner-hint {
+  margin: 0;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-radius: var(--radius-control, 14px);
+  background: var(--bg-mist, #e6ebe5);
+  border: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+  color: var(--text-main, #2f3a36);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.read-note {
+  margin: 0;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-radius: var(--radius-control, 14px);
+  background: var(--color-primary-soft, #e3ece6);
+  border: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+  color: var(--color-primary, #1e4d3e);
+  font-size: 0.9rem;
+}
+
+.nur-card {
+  padding: var(--space-6, 24px);
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+  border-radius: var(--radius-card, 20px);
+  box-shadow: var(--shadow-subtle, 0 4px 16px rgba(30, 58, 49, 0.05));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+
+.nur-card h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-title, #1e3a31);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3, 12px);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 0.85rem;
+  color: var(--text-muted, #5c6662);
+}
+
+.nur-input {
+  min-height: 44px;
+  padding: 0 var(--space-3, 12px);
+  border: 1.5px solid var(--line, rgba(30, 58, 49, 0.14));
+  border-radius: var(--radius-control, 14px);
+  background: var(--bg-card, #ffffff);
+  color: var(--text-main, #2f3a36);
+  font: inherit;
+}
+
+.nur-input:focus-visible {
+  outline: none;
+  border-color: var(--color-primary, #1e4d3e);
+  box-shadow: 0 0 0 2px var(--color-primary-soft, #e3ece6);
+}
+
+.form-footnote {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-muted, #5c6662);
+  line-height: 1.6;
+}
+
+.milestone {
+  padding: var(--space-4, 16px);
+  background: var(--bg-page, #f2f3ee);
+  border: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+  border-radius: var(--radius-control, 14px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+}
+
+.milestone h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--text-title, #1e3a31);
+}
+
+.milestone p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-main, #2f3a36);
+}
+
+.conflict-warning {
+  color: var(--color-danger, #b3564d) !important;
+  font-size: 0.88rem !important;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  margin-top: var(--space-2, 8px);
+}
+
+.btn-ghost-sm {
+  min-height: 44px;
+  padding: 0 var(--space-4, 16px);
+  border: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--bg-card, #ffffff);
+  color: var(--text-main, #2f3a36);
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost-sm:hover:not([disabled]) {
+  border-color: var(--color-primary, #1e4d3e);
+  color: var(--color-primary, #1e4d3e);
+}

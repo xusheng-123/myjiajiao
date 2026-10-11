@@ -1,0 +1,67 @@
+<section class="nur-card request-card nur-enter" aria-labelledby="requests-title">
+  <div class="card-head">
+    <div>
+      <h2 id="requests-title" class="card-title nur-serif">预约审批</h2>
+      <p class="card-subtitle">待处理的学员课时申请 · 确认后锁定时段</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="refreshRequests()" [disabled]="loading()">
+      {{ loading() ? '刷新中…' : '刷新' }}
+    </button>
+  </div>
+
+  @if (notice(); as n) {
+    <div class="action-banner action-banner--{{ n.type }}" role="status">
+      <span>{{ n.text }}</span>
+      <button type="button" class="banner-close" (click)="notice.set(null)" aria-label="关闭提示">×</button>
+    </div>
+  }
+
+  @if (loading() && bookingRequests().length === 0) {
+    <p class="quiet-note" role="status">正在读取预约申请…</p>
+  } @else if (bookingRequests().length === 0) {
+    <p class="quiet-note">暂无待处理的预约申请。</p>
+  } @else {
+    <ul class="request-list">
+      @for (req of bookingRequests(); track req.bookingId) {
+        <li class="request-item">
+          <div class="request-info">
+            <div class="request-header-row">
+              <span class="request-subject">{{ req.subject }}</span>
+              <span class="type-pill">{{ req.type === 'TRIAL' ? '试听课' : '正式课' }}</span>
+              <span
+                class="status-pill"
+                [attr.data-status]="req.status"
+              >
+                {{ req.status === 'REQUESTED' ? '待审批' : (req.status === 'CONFIRMED' ? '已确认' : req.status) }}
+              </span>
+            </div>
+            <p class="request-meta quiet-note">
+              申请时间：{{ req.createdAt | date: 'M月d日 HH:mm' }} · 学员编号：{{ req.studentId.slice(0, 8) }}
+            </p>
+          </div>
+
+          @if (req.status === 'REQUESTED') {
+            <div class="request-actions" role="group" aria-label="审批操作">
+              <button
+                type="button"
+                class="nur-btn nur-btn--primary nur-btn--sm"
+                [disabled]="busyId() === req.bookingId"
+                (click)="decide(req.bookingId, 'approve')"
+              >
+                {{ busyId() === req.bookingId ? '正在处理…' : '确认接受' }}
+              </button>
+              <button
+                type="button"
+                class="btn-ghost-sm btn-danger"
+                [disabled]="busyId() === req.bookingId"
+                (click)="decide(req.bookingId, 'reject')"
+              >
+                驳回
+              </button>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

@@ -7,7 +7,7 @@ import { API } from '../../core/api/endpoints';
 import { NoticeCenterComponent } from '../../shared/components/notice-center.component';
 import { CalendarExportComponent } from '../../shared/components/calendar-export.component';
 
-interface Binding {
+export interface Binding {
   bindingId: string;
   studentId: string;
   studentNo: string | null;
@@ -15,7 +15,7 @@ interface Binding {
   relation: string | null;
 }
 
-interface WalletOverview {
+export interface WalletOverview {
   balanceCents: number;
   currency: string;
   recentTransactions: {
@@ -28,14 +28,14 @@ interface WalletOverview {
   }[];
 }
 
-interface OrderableLesson {
+export interface OrderableLesson {
   bookingId: string;
   subject: string;
   startAt: string | null;
   priceCents: number;
 }
 
-interface FamilyOrder {
+export interface FamilyOrder {
   orderId: string;
   orderNo: string;
   bookingId: string;
@@ -52,15 +52,15 @@ interface FamilyOrder {
   standalone: true,
   imports: [NoticeCenterComponent, DatePipe, RouterLink, CalendarExportComponent],
   templateUrl: './parent-dashboard.component.html',
-  styleUrl: './parent-dashboard.component.css',
+  styleUrls: ['./parent-dashboard.component.css', './parent-dashboard-forms.css'],
 })
 export class ParentDashboardComponent implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService);
 
   readonly displayName = this.auth.displayName;
   readonly children = signal<Binding[]>([]);
-  readonly reportFor = signal<string | null>(null);          // 正在查看周报的孩子 studentId
+  readonly reportFor = signal<string | null>(null); // 正在查看周报的孩子 studentId
   readonly reportData = signal<any | null>(null);
   readonly reportLoading = signal(false);
   readonly reportError = signal('');
@@ -70,7 +70,7 @@ export class ParentDashboardComponent implements OnInit {
   readonly studentNoInput = signal('');
   readonly relationInput = signal('');
 
-  // ---------- 课程与订单（G7）：孩子 → 可下单课程 → 下单/支付，金额一律以服务端为准 ----------
+  // ---------- 课程与订单（G7） ----------
   readonly activeChildren = computed(() => this.children().filter((c) => c.status === 'ACTIVE'));
   readonly selectedChild = signal<string>('');
   readonly orderable = signal<OrderableLesson[]>([]);
@@ -79,7 +79,7 @@ export class ParentDashboardComponent implements OnInit {
   readonly ordersLoaded = signal(false);
   readonly orderBusy = signal(false);
   readonly orderMsg = signal<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
-  /** 沙箱开关以服务端 /payment/config 为准：仅环境明确允许时展示沙箱演示支付。 */
+  /** 沙箱开关以服务端 /payment/config 为准 */
   readonly sandboxEnabled = signal<boolean | null>(null);
   private readonly payingOrderId = signal<string | null>(null);
 
@@ -95,7 +95,7 @@ export class ParentDashboardComponent implements OnInit {
   load(): void {
     this.http.get<Binding[]>(API.parent.children).subscribe({
       next: (data) => {
-        this.children.set(data);
+        this.children.set(data ?? []);
         this.loaded.set(true);
       },
       error: () => this.loaded.set(true),
@@ -119,6 +119,7 @@ export class ParentDashboardComponent implements OnInit {
         next: () => {
           this.notice.set('绑定申请已发出，待学生确认后生效。');
           this.studentNoInput.set('');
+          this.relationInput.set('');
           this.load();
         },
         error: () => this.notice.set('绑定未成功，请核对编号后原地重试。'),
@@ -126,15 +127,17 @@ export class ParentDashboardComponent implements OnInit {
   }
 
   topUp(amountCents: number): void {
-    this.http.post<WalletOverview>(`${API.parent.wallet}/topup`, {
-      amountCents,
-      memo: '家庭钱包充值',
-    }).subscribe({
-      next: (data) => {
-        this.wallet.set(data);
-        this.notice.set('充值已到账。');
-      },
-    });
+    this.http
+      .post<WalletOverview>(`${API.parent.wallet}/topup`, {
+        amountCents,
+        memo: '家庭钱包充值',
+      })
+      .subscribe({
+        next: (data) => {
+          this.wallet.set(data);
+          this.notice.set('充值已到账。');
+        },
+      });
   }
 
   // ── 课程与订单（G7） ──
@@ -151,7 +154,7 @@ export class ParentDashboardComponent implements OnInit {
       });
   }
 
-  /** 查看所选孩子的可下单课程（服务端校验监护关系与定价）。 */
+  /** 查看所选孩子的可下单课程 */
   loadOrderable(): void {
     const studentId = this.selectedChild();
     if (!studentId) {
@@ -174,7 +177,7 @@ export class ParentDashboardComponent implements OnInit {
     });
   }
 
-  /** 为孩子下单：金额以服务端返回的定价快照为准。 */
+  /** 为孩子下单 */
   createOrder(bookingId: string): void {
     if (this.orderBusy()) {
       return;
@@ -200,7 +203,7 @@ export class ParentDashboardComponent implements OnInit {
     });
   }
 
-  /** 支付待支付订单：仅沙箱环境开放演示支付；生产引导线下收款（模式 B）。 */
+  /** 支付待支付订单：沙箱演示支付 vs 生产线下打款引导 */
   payOrder(order: FamilyOrder): void {
     if (this.payingOrderId() || this.sandboxEnabled() !== true) {
       return;
@@ -211,7 +214,6 @@ export class ParentDashboardComponent implements OnInit {
       .post<{ attemptId: string }>(API.payment.initiate, { orderId: order.orderId, channel: 'MOCK' })
       .subscribe({
         next: () => {
-          // 沙箱网关模拟渠道回调：与真实回调同一条验签/防重入/联动链路
           this.http
             .post<{ result: string }>(API.payment.sandboxNotify, {
               orderId: order.orderId,
@@ -236,8 +238,10 @@ export class ParentDashboardComponent implements OnInit {
               },
               error: (err) => {
                 this.payingOrderId.set(null);
-                const detail = err?.error?.detail ?? err?.error?.message
-                  ?? '支付未完成：请确认家庭钱包余额充足后重试，或联系运营线下确认。';
+                const detail =
+                  err?.error?.detail ??
+                  err?.error?.message ??
+                  '支付未完成：请确认家庭钱包余额充足后重试，或联系运营线下确认。';
                 this.orderMsg.set({ type: 'error', text: detail });
                 this.loadOrders();
               },
@@ -259,7 +263,7 @@ export class ParentDashboardComponent implements OnInit {
     return ((cents ?? 0) / 100).toFixed(2);
   }
 
-  // ── 学习周报（模式：点开才拉取，切换孩子即换 ID 重新拉取）──
+  // ── 学习周报 ──
   toggleReport(child: Binding): void {
     if (child.status !== 'ACTIVE') {
       this.reportError.set('绑定生效后才能查看学习周报。');
@@ -275,7 +279,10 @@ export class ParentDashboardComponent implements OnInit {
     this.reportError.set('');
     this.reportLoading.set(true);
     this.http.get<any>(API.learning.weeklyReport(child.studentId)).subscribe({
-      next: (d) => { this.reportData.set(d); this.reportLoading.set(false); },
+      next: (d) => {
+        this.reportData.set(d);
+        this.reportLoading.set(false);
+      },
       error: (e) => {
         this.reportLoading.set(false);
         this.reportError.set(e?.error?.detail ?? '周报加载失败，请稍后重试。');

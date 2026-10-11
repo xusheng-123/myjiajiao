@@ -1,0 +1,191 @@
+:host {
+  display: block;
+}
+
+.verification-card {
+  padding: var(--space-6, 24px);
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+  border-radius: var(--radius-card, 20px);
+  box-shadow: var(--shadow-subtle, 0 4px 16px rgba(30, 58, 49, 0.05));
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4, 16px);
+  margin-bottom: var(--space-4, 16px);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-title, #1e3a31);
+}
+
+.card-subtitle {
+  margin: var(--space-1, 4px) 0 0;
+  font-size: 0.88rem;
+  color: var(--text-muted, #5c6662);
+}
+
+.quiet-note {
+  margin: 0;
+  color: var(--text-muted, #5c6662);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.verify-status-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  padding: var(--space-4, 16px);
+  background: var(--bg-page, #f2f3ee);
+  border: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+  border-radius: var(--radius-control, 14px);
+  margin-bottom: var(--space-4, 16px);
+}
+
+.status-header-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3, 12px);
+}
+
+.status-pill {
+  padding: 3px 12px;
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 0.84rem;
+  font-weight: 500;
+  background: var(--bg-mist, #e6ebe5);
+  color: var(--text-muted, #5c6662);
+}
+
+.status-pill[data-status='APPROVED'] {
+  background: var(--color-primary-soft, #e3ece6);
+  color: var(--color-primary, #1e4d3e);
+  font-weight: 600;
+}
+
+.status-pill[data-status='UNDER_REVIEW'] {
+  background: rgba(168, 135, 90, 0.15);
+  color: var(--color-gold-text, #8e6b3e);
+}
+
+.status-pill[data-status='REJECTED'] {
+  background: rgba(179, 86, 77, 0.12);
+  color: var(--color-danger, #b3564d);
+}
+
+.verify-decision-note {
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border-left: 3px solid var(--color-danger, #b3564d);
+  background: var(--bg-card, #ffffff);
+  border-radius: 4px;
+  font-size: 0.88rem;
+  color: var(--text-main, #2f3a36);
+  line-height: 1.6;
+}
+
+.verify-upload-form {
+  padding: var(--space-4, 16px);
+  border: 1px dashed var(--line, rgba(30, 58, 49, 0.2));
+  border-radius: var(--radius-card, 20px);
+  background: var(--bg-page, #f2f3ee);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+}
+
+.section-label {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-title, #1e3a31);
+}
+
+.upload-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3, 12px);
+}
+
+.field-label {
+  min-width: 4.5em;
+  font-size: 0.9rem;
+  color: var(--text-muted, #5c6662);
+}
+
+.field-control {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  padding: 4px 12px;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 0.84rem;
+  color: var(--text-main, #2f3a36);
+}
+
+.chip-remove-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-danger, #b3564d);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.format-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted, #5c6662);
+}
+
+.form-actions {
+  display: flex;
+  margin-top: var(--space-1, 4px);
+}
+
+.panel-msg {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.panel-msg--success { color: var(--color-primary, #1e4d3e); }
+.panel-msg--error { color: var(--color-danger, #b3564d); }
+.panel-msg--info { color: var(--text-muted, #5c6662); }
+
+.btn-ghost-sm {
+  min-height: 44px;
+  padding: 0 var(--space-3, 12px);
+  border: 1px solid var(--line, rgba(30, 58, 49, 0.14));
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--bg-card, #ffffff);
+  color: var(--text-main, #2f3a36);
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost-sm:hover:not([disabled]) {
+  border-color: var(--color-primary, #1e4d3e);
+  color: var(--color-primary, #1e4d3e);
+}

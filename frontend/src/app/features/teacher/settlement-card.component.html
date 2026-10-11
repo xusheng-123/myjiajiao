@@ -1,0 +1,59 @@
+<section class="nur-card settlement-card nur-enter" aria-labelledby="settle-title">
+  <div class="card-head">
+    <div>
+      <h2 id="settle-title" class="card-title nur-serif">课酬结算流水</h2>
+      <p class="card-subtitle">教学课酬对账 · 自动扣除平台费率 · 资金透明溯源</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="refreshSettlement()" [disabled]="loading()">
+      {{ loading() ? '刷新中…' : '刷新' }}
+    </button>
+  </div>
+
+  @if (settlement(); as s) {
+    <div class="settle-summary">
+      <div class="summary-item">
+        <p class="settle-num nur-serif">¥ {{ yuan(s.pendingNetCents) }}</p>
+        <p class="summary-label">待结算余额</p>
+      </div>
+      <div class="summary-item">
+        <p class="settle-num nur-serif">¥ {{ yuan(s.paidOutNetCents) }}</p>
+        <p class="summary-label">已结算入账</p>
+      </div>
+    </div>
+
+    @if (s.entries.length === 0) {
+      <p class="quiet-note">暂无课酬流水。完成首节课后，课酬将按平台规则进入结算流水。</p>
+    } @else {
+      <ul class="settle-list">
+        @for (entry of s.entries; track entry.entryId) {
+          <li class="settle-item" [class.settle-item--reversal]="entry.entryKind === 'REVERSAL'">
+            <div class="settle-item-info">
+              <span class="settle-item-title">
+                课程 {{ entry.bookingId.slice(0, 8) }} · {{ entry.entryKind === 'REVERSAL' ? '退款冲回' : '课酬入账' }}
+              </span>
+              <span class="settle-item-meta quiet-note">
+                @if (entry.entryKind !== 'REVERSAL') {
+                  总额 ¥{{ yuan(entry.grossCents) }} · 平台费 ¥{{ yuan(entry.platformFeeCents) }}
+                } @else {
+                  流水号: {{ entry.entryId.slice(0, 8) }}
+                }
+              </span>
+            </div>
+            <div class="settle-item-right">
+              <span class="settle-item-amount nur-serif" [class.reversal-amount]="entry.entryKind === 'REVERSAL'">
+                {{ entry.entryKind === 'REVERSAL' ? '-' : '+' }}¥{{ yuan(entry.netCents) }}
+              </span>
+              <span class="status-pill" [attr.data-status]="entry.status">
+                {{ entry.status === 'PENDING' ? '待结算' : (entry.status === 'SETTLED' ? '已结算' : '已提现') }}
+              </span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  } @else if (loading()) {
+    <p class="quiet-note" role="status">正在读取结算账户…</p>
+  } @else {
+    <p class="quiet-note">完成首节课后，课酬会按平台抽成规则进入待结算余额。</p>
+  }
+</section>

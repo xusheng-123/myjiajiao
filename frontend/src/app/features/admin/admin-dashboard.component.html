@@ -1,217 +1,203 @@
 <div class="dashboard-shell">
-  <header class="dash-header">
-    <div>
-      <p class="dash-greeting nur-serif">运营治理控制台 · {{ displayName() }}</p>
-      <p class="dash-subtitle">笃定运转，静水深处。</p>
+  <!-- 顶栏导航与身份欢迎 -->
+  <header class="dash-header nur-enter" style="--stagger-index: 0">
+    <div class="header-titles">
+      <span class="eyebrow-kicker">OPERATIONAL GOVERNANCE</span>
+      <h1 class="dash-greeting nur-serif">运营治理控制台 · {{ displayName() }}</h1>
+      <p class="dash-subtitle">笃定运转，静水深处。全域安全风控与闭环履约治理。</p>
     </div>
+    <nav aria-label="客服中心" class="header-nav">
+      <a routerLink="/support" class="btn-support-link">客服与申诉工单 ↗</a>
+    </nav>
   </header>
-  <nav aria-label="客服服务"><a routerLink="/support">客服与申诉</a></nav>
 
-  @if (notice()) {
-    <p class="form-status" role="status"><span aria-hidden="true">ℹ</span> {{ notice() }}</p>
+  @if (globalNotice()) {
+    <div class="global-notice" role="status">
+      <span class="notice-icon" aria-hidden="true">ℹ</span>
+      <span>{{ globalNotice() }}</span>
+      <button type="button" class="btn-dismiss" (click)="globalNotice.set('')" aria-label="关闭提示">×</button>
+    </div>
   }
 
-  <!-- 平台全景概览 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 1" aria-labelledby="overview-title">
-    <h2 id="overview-title" class="nur-serif">平台全景</h2>
+  <!-- 顶部平台指标大盘（白卡 + 宋体大数字 + 暖金点缀） -->
+  <section class="overview-section nur-card nur-enter" style="--stagger-index: 1" aria-labelledby="overview-title">
+    <div class="overview-header">
+      <div class="header-accent-dot" aria-hidden="true">✦</div>
+      <h2 id="overview-title" class="overview-heading nur-serif">平台全景大盘</h2>
+      <span class="refresh-hint">实时数据概览</span>
+    </div>
+
     @if (overview(); as o) {
       <dl class="metric-grid">
-        <div class="metric">
-          <dt>学生账户</dt>
-          <dd>{{ o['studentAccounts'] }}</dd>
+        <div class="metric-card">
+          <dt class="metric-label">
+            <span class="label-dot" aria-hidden="true"></span>
+            学生账户
+          </dt>
+          <dd class="metric-value nur-serif">{{ o['studentAccounts'] }}</dd>
+          <span class="metric-foot">全站注册学员</span>
         </div>
-        <div class="metric">
-          <dt>家长账户</dt>
-          <dd>{{ o['parentAccounts'] }}</dd>
+
+        <div class="metric-card">
+          <dt class="metric-label">
+            <span class="label-dot" aria-hidden="true"></span>
+            家长账户
+          </dt>
+          <dd class="metric-value nur-serif">{{ o['parentAccounts'] }}</dd>
+          <span class="metric-foot">家庭监护账户</span>
         </div>
-        <div class="metric">
-          <dt>导师</dt>
-          <dd>{{ o['teacherAccounts'] }}</dd>
+
+        <div class="metric-card">
+          <dt class="metric-label">
+            <span class="label-dot" aria-hidden="true"></span>
+            认证导师
+          </dt>
+          <dd class="metric-value nur-serif">{{ o['teacherAccounts'] }}</dd>
+          <span class="metric-foot">在册教学档案</span>
         </div>
-        <div class="metric">
-          <dt>累计预约</dt>
-          <dd>{{ o['activeBookings'] }}</dd>
+
+        <div class="metric-card">
+          <dt class="metric-label">
+            <span class="label-dot" aria-hidden="true"></span>
+            累计预约
+          </dt>
+          <dd class="metric-value nur-serif">{{ o['activeBookings'] }}</dd>
+          <span class="metric-foot">全周期排课课时</span>
         </div>
-        <div class="metric">
-          <dt>累计订单</dt>
-          <dd>{{ o['orders'] }}</dd>
+
+        <div class="metric-card">
+          <dt class="metric-label">
+            <span class="label-dot" aria-hidden="true"></span>
+            累计订单
+          </dt>
+          <dd class="metric-value nur-serif">{{ o['orders'] }}</dd>
+          <span class="metric-foot">交易履约单量</span>
         </div>
-        <div class="metric">
-          <dt>平台抽成</dt>
-          <dd>{{ o['platformFeeRate'] }}</dd>
+
+        <div class="metric-card metric-card--gold">
+          <dt class="metric-label">
+            <span class="label-dot label-dot--gold" aria-hidden="true"></span>
+            平台抽成比例
+          </dt>
+          <dd class="metric-value nur-serif metric-value--gold">{{ o['platformFeeRate'] }}</dd>
+          <span class="metric-foot">基础课酬留存系数</span>
         </div>
       </dl>
-    }
-  </section>
-
-  <!-- 教师资质审核流转 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 2" aria-labelledby="verify-title">
-    <h2 id="verify-title" class="nur-serif">教师资质审核流转</h2>
-    <nur-queue-pager label="资质审核" [page]="queues.verifications.page()" [pages]="queues.verifications.pages()" [total]="queues.verifications.total()" [busy]="queues.verifications.busy()" [filter]="queues.verifications.filter()" [options]="statusOptions.verifications" (turn)="turnQueue('verifications',$event)" (filterChange)="filterQueue('verifications',$event)" (reload)="loadQueue('verifications')" />
-    @if (verificationCases().length === 0) {
-      <p class="quiet-note">当前筛选没有资质审核案例。</p>
     } @else {
-      <ul class="case-list">
-        @for (c of verificationCases(); track c.caseId) {
-          <li class="case-item">
-            <div>
-              <p class="case-title">导师 {{ c.teacherId.slice(0, 8) }} · 提交于 {{ c.submittedAt | date:'M月d日 HH:mm' }}</p>
-              <p class="quiet-note">状态：{{ c.status }}</p>
-              <button type="button" class="btn-ghost-sm" (click)="downloadMaterial(c.caseId, 'identity')" [disabled]="materialBusy()">下载身份证明</button>
-              <button type="button" class="btn-ghost-sm" (click)="downloadMaterial(c.caseId, 'degree')" [disabled]="materialBusy()">下载学历证明</button>
-            </div>
-            @if (c.status === 'SUBMITTED' || c.status === 'UNDER_REVIEW') {
-              <div class="case-actions">
-                <button type="button" class="btn-primary-sm" (click)="decideVerification(c.caseId, true)">通过</button>
-                <button type="button" class="btn-ghost-sm" (click)="decideVerification(c.caseId, false)">驳回</button>
-              </div>
-            }
-          </li>
-        }
-      </ul>
-    }
-  </section>
-
-  <!-- 差错退款仲裁（两阶段） -->
-  <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="refund-title">
-    <h2 id="refund-title" class="nur-serif">差错退款仲裁 · 两阶段确认</h2>
-    <nur-queue-pager label="退款" [page]="queues.refunds.page()" [pages]="queues.refunds.pages()" [total]="queues.refunds.total()" [busy]="queues.refunds.busy()" [filter]="queues.refunds.filter()" [options]="statusOptions.refunds" (turn)="turnQueue('refunds',$event)" (filterChange)="filterQueue('refunds',$event)" (reload)="loadQueue('refunds')" />
-    @if (refundCases().length === 0) {
-      <p class="quiet-note">暂无退款案例。</p>
-    } @else {
-      <ul class="case-list">
-        @for (c of refundCases(); track c.caseId) {
-          <li class="case-item">
-            <div>
-              <p class="case-title">订单 {{ c.orderId.slice(0, 8) }} · ¥{{ yuan(c.computedAmountCents) }}</p>
-              <p class="quiet-note">原因：{{ c.reason }} · 状态：{{ c.status }}</p>
-            </div>
-            @if (c.status === 'REQUESTED' || c.status === 'EVALUATED') {
-              <div class="case-actions">
-                <button type="button" class="btn-ghost-sm" (click)="arbitrationPreview(c.caseId)" [disabled]="arbitrationBusy()">① 评估影响</button>
-                <button type="button" class="btn-primary-sm" (click)="arbitrationExecute(c.caseId, true)" [disabled]="arbitrationBusy()">② 执行退款</button>
-                <button type="button" class="btn-ghost-sm" (click)="arbitrationExecute(c.caseId, false)" [disabled]="arbitrationBusy()">驳回申请</button>
-              </div>
-            }
-            @if (preview(); as current) {
-              @if (current.caseId === c.caseId) {
-                <div class="impact-box">
-                  <p class="impact-title">级联影响预览（凭证 10 分钟有效）</p>
-                  <ul>
-                    @for (kv of current.data.cascadeImpact | keyvalue; track kv.key) {
-                      <li>{{ kv.key }}：{{ kv.value }}</li>
-                    }
-                  </ul>
-                </div>
-              }
-            }
-          </li>
-        }
-      </ul>
-    }
-  </section>
-
-  <!-- 账户管理 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 4" aria-labelledby="account-title">
-    <h2 id="account-title" class="nur-serif">账户管理</h2>
-    <nur-queue-pager label="账户" [page]="queues.accounts.page()" [pages]="queues.accounts.pages()" [total]="queues.accounts.total()" [busy]="queues.accounts.busy()" [filter]="queues.accounts.filter()" [options]="statusOptions.accounts" (turn)="turnQueue('accounts',$event)" (filterChange)="filterQueue('accounts',$event)" (reload)="loadQueue('accounts')" />
-    <p class="quiet-note">违规干预入口：锁定/解锁账户，全部动作写入不可篡改审计日志。</p>
-    <div class="table-scroll"><table class="audit-table">
-      <thead>
-        <tr>
-          <th scope="col">账户</th>
-          <th scope="col">角色</th>
-          <th scope="col">状态</th>
-          <th scope="col">操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (a of accounts(); track a.accountId) {
-          <tr>
-            <td>{{ a.displayName }}（{{ a.accountNo }}）</td>
-            <td>{{ a.role === 'STUDENT' ? '学生' : a.role === 'PARENT' ? '家长' : a.role === 'TEACHER' ? '导师' : a.role === 'ADMIN' ? '运营' : 'Agent' }}</td>
-            <td>{{ a.status === 'ACTIVE' ? '正常' : a.status === 'LOCKED' ? '已锁定' : '已注销' }}</td>
-            <td>
-              @if (a.role !== 'ADMIN') {
-                @if (a.status === 'ACTIVE') {
-                  <button type="button" class="btn-ghost-sm" (click)="setLock(a, true)">锁定</button>
-                } @else if (a.status === 'LOCKED') {
-                  <button type="button" class="btn-ghost-sm" (click)="setLock(a, false)">解锁</button>
-                }
-              } @else {
-                <span class="quiet-note">—</span>
-              }
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table></div>
-  </section>
-
-  <!-- 全站审计日志 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 5" aria-labelledby="audit-title">
-    <h2 id="audit-title" class="nur-serif">全站审计日志检视</h2>
-    <nur-queue-pager label="审计" [page]="queues.audit.page()" [pages]="queues.audit.pages()" [total]="queues.audit.total()" [busy]="queues.audit.busy()" [filter]="queues.audit.filter()" (turn)="turnQueue('audit',$event)" (filterChange)="filterQueue('audit',$event)" (reload)="loadQueue('audit')" />
-    <label>动作类型 <input aria-label="审计动作类型" maxlength="128" [value]="queues.audit.filter()" (change)="filterQueue('audit',$any($event.target).value)" placeholder="如 OFFERING_RELIST" /></label>
-    <p class="quiet-note">审计日志由数据库触发器防篡改，任何 UPDATE / DELETE 都会被拒绝。</p>
-    <div class="table-scroll"><table class="audit-table">
-      <thead>
-        <tr>
-          <th scope="col">时间</th>
-          <th scope="col">动作</th>
-          <th scope="col">调用者角色</th>
-          <th scope="col">执行状态</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (log of auditLogs(); track log.auditId) {
-          <tr>
-            <td>{{ log.occurredAt | date:'MM-dd HH:mm:ss' }}</td>
-            <td>{{ log.actionType }}</td>
-            <td>{{ log.callerRole || '—' }}</td>
-            <td>{{ log.executionStatus }}</td>
-          </tr>
-        }
-      </tbody>
-    </table></div>
-  </section>
-
-
-  <!-- 订单与收款（模式 B：线下收款确认） -->
-  <section class="nur-card nur-enter" aria-labelledby="orders-title">
-    <h2 id="orders-title" class="nur-serif">订单与收款</h2>
-    <nur-queue-pager label="待支付订单" [page]="queues.orders.page()" [pages]="queues.orders.pages()" [total]="queues.orders.total()" [busy]="queues.orders.busy()" [filter]="queues.orders.filter()" (turn)="turnQueue('orders',$event)" (filterChange)="filterQueue('orders',$event)" (reload)="loadQueue('orders')" />
-    <p class="quiet-note">仅当线下款项实际到账后才可确认；确认后订单转为已支付，课酬自动进入结算。</p>
-    @if (orderMsg(); as m) {
-      <p class="form-status" role="status" [attr.data-type]="m.type">{{ m.text }}</p>
-    }
-    @if (pendingOrders().length === 0) {
-      <p class="quiet-note">当前没有待支付的订单。</p>
-    } @else {
-      <ul class="slot-list">
-        @for (o of pendingOrders(); track o.orderId) {
-          <li>
-            <span>{{ o.orderNo }} · {{ o.subject }} · ¥{{ (o.amountCents / 100).toFixed(2) }}</span>
-            <span class="quiet-note">{{ o.payerName }} → {{ o.studentName }}（{{ o.teacherName }}）</span>
-            <button type="button" class="btn-ghost-sm" (click)="askConfirm(o)">确认收款</button>
-          </li>
-        }
-      </ul>
-    }
-    @if (confirmTarget(); as o) {
-      <div class="reschedule-panel" role="alertdialog" aria-label="确认收款">
-        <p class="reschedule-hint">
-          请确认「{{ o.orderNo }}」的款项 <strong>已实际到账</strong>（¥{{ (o.amountCents / 100).toFixed(2) }}，
-          {{ o.payerName }}）。确认后订单转为已支付，此操作不可撤销。
-        </p>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button type="button" class="btn-primary-sm" [disabled]="orderBusy()" (click)="confirmOffline(o)">
-            {{ orderBusy() ? '处理中…' : '确认已收到款项' }}
-          </button>
-          <button type="button" class="btn-ghost-sm" (click)="cancelConfirm()">取消</button>
-        </div>
+      <div class="metric-loading">
+        <p>指标数据同步中…</p>
       </div>
     }
+  </section>
+
+  <!-- 五大队列与参数配置 Tab 容器 -->
+  <section class="queues-container nur-enter" style="--stagger-index: 2" aria-labelledby="queues-title">
+    <h2 id="queues-title" class="visually-hidden">治理工作台队列</h2>
+
+    <!-- Tablist 标签栏 -->
+    <div
+      role="tablist"
+      aria-label="运营治理队列与参数设置"
+      class="tab-bar"
+    >
+      @for (t of tabs; track t.id; let idx = $index) {
+        <button
+          type="button"
+          role="tab"
+          [id]="'tab-' + t.id"
+          [attr.aria-selected]="activeTab() === t.id"
+          [attr.aria-controls]="'panel-' + t.id"
+          [attr.tabindex]="activeTab() === t.id ? 0 : -1"
+          class="tab-btn"
+          [class.tab-btn--active]="activeTab() === t.id"
+          (click)="setTab(t.id)"
+          (keydown)="onTabKeydown($event, idx)"
+        >
+          <span class="tab-label">{{ t.label }}</span>
+          @if (t.badge && t.badge() !== null) {
+            <span class="tab-badge" aria-label="待办件数">{{ t.badge() }}</span>
+          }
+        </button>
+      }
+    </div>
+
+    <!-- Tabpanel 内容区 -->
+    <div class="tab-content nur-card">
+      @if (activeTab() === 'verifications') {
+        <div
+          role="tabpanel"
+          id="panel-verifications"
+          aria-labelledby="tab-verifications"
+          tabindex="0"
+          class="panel-view"
+        >
+          <nur-admin-verifications (auditChanged)="onAuditChanged()" />
+        </div>
+      }
+
+      @if (activeTab() === 'refunds') {
+        <div
+          role="tabpanel"
+          id="panel-refunds"
+          aria-labelledby="tab-refunds"
+          tabindex="0"
+          class="panel-view"
+        >
+          <nur-admin-refunds (auditChanged)="onAuditChanged()" />
+        </div>
+      }
+
+      @if (activeTab() === 'accounts') {
+        <div
+          role="tabpanel"
+          id="panel-accounts"
+          aria-labelledby="tab-accounts"
+          tabindex="0"
+          class="panel-view"
+        >
+          <nur-admin-accounts (auditChanged)="onAuditChanged()" />
+        </div>
+      }
+
+      @if (activeTab() === 'orders') {
+        <div
+          role="tabpanel"
+          id="panel-orders"
+          aria-labelledby="tab-orders"
+          tabindex="0"
+          class="panel-view"
+        >
+          <nur-admin-orders (auditChanged)="onAuditChanged()" />
+        </div>
+      }
+
+      @if (activeTab() === 'audit') {
+        <div
+          role="tabpanel"
+          id="panel-audit"
+          aria-labelledby="tab-audit"
+          tabindex="0"
+          class="panel-view"
+        >
+          <nur-admin-audit-logs #auditLogsComp />
+        </div>
+      }
+
+      @if (activeTab() === 'configs') {
+        <div
+          role="tabpanel"
+          id="panel-configs"
+          aria-labelledby="tab-configs"
+          tabindex="0"
+          class="panel-view"
+        >
+          <nur-admin-platform-config
+            [currentFeeRate]="feeRateString()"
+            (configUpdated)="onConfigUpdated($event)"
+          />
+        </div>
+      }
+    </div>
   </section>
 
   <nur-notice-center />

@@ -1,0 +1,175 @@
+<section class="nur-card records-card nur-enter" aria-labelledby="records-title">
+  <div class="card-head">
+    <div>
+      <h2 id="records-title" class="card-title nur-serif">教学课堂记录</h2>
+      <p class="card-subtitle">录入课后学情反馈 · 沉淀教学证据 · 沉淀学生个人档案</p>
+    </div>
+    <div class="head-actions">
+      <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" (click)="openManual()">
+        + 录入记录
+      </button>
+      <button type="button" class="btn-ghost-sm" (click)="loadRecords()" [disabled]="loading()">
+        {{ loading() ? '读取中…' : '刷新' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- 录入表单面板 -->
+  @if (showForm()) {
+    <div class="record-form-panel" role="region" aria-label="录入课堂记录">
+      <div class="panel-head">
+        <h3 class="panel-title nur-serif">录入课后学情记录</h3>
+        <button type="button" class="btn-ghost-sm" (click)="closeForm()">关闭</button>
+      </div>
+
+      @if (formNotice(); as n) {
+        <div class="form-banner form-banner--{{ n.type }}" role="status">
+          {{ n.text }}
+        </div>
+      }
+
+      <form (submit)="$event.preventDefault(); submitRecord()" class="record-form">
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="field-label" for="booking-id-input">课程预约ID *</label>
+            <input
+              id="booking-id-input"
+              type="text"
+              class="nur-input"
+              placeholder="预约ID (UUID)"
+              [value]="inputBookingId()"
+              (input)="inputBookingId.set($any($event.target).value)"
+              required
+            />
+          </div>
+          <div class="form-field">
+            <label class="field-label" for="subject-input">授课科目 *</label>
+            <input
+              id="subject-input"
+              type="text"
+              class="nur-input"
+              placeholder="例如：数学 / 英语"
+              [value]="inputSubject()"
+              (input)="inputSubject.set($any($event.target).value)"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="field-label" for="knowledge-input">本节核心知识点</label>
+          <input
+            id="knowledge-input"
+            type="text"
+            class="nur-input"
+            placeholder="例如：导数在单调性判定中的应用、零点存在定理"
+            [value]="inputKnowledgePoints()"
+            (input)="inputKnowledgePoints.set($any($event.target).value)"
+          />
+        </div>
+
+        <div class="form-field">
+          <label class="field-label" for="performance-input">学生课堂表现</label>
+          <textarea
+            id="performance-input"
+            class="nur-textarea"
+            rows="2"
+            placeholder="例如：思维敏捷，课堂互动积极，基本公式掌握扎实"
+            [value]="inputPerformance()"
+            (input)="inputPerformance.set($any($event.target).value)"
+          ></textarea>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="field-label" for="problems-input">存在问题与薄弱点</label>
+            <textarea
+              id="problems-input"
+              class="nur-textarea"
+              rows="2"
+              placeholder="例如：分类讨论细节容易遗漏"
+              [value]="inputProblems()"
+              (input)="inputProblems.set($any($event.target).value)"
+            ></textarea>
+          </div>
+          <div class="form-field">
+            <label class="field-label" for="suggestion-input">下一步学习建议</label>
+            <textarea
+              id="suggestion-input"
+              class="nur-textarea"
+              rows="2"
+              placeholder="例如：做专项训练题3道，注意参数符号讨论"
+              [value]="inputNextSuggestion()"
+              (input)="inputNextSuggestion.set($any($event.target).value)"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="field-label" for="note-input">内部备忘（仅教师可见）</label>
+          <input
+            id="note-input"
+            type="text"
+            class="nur-input"
+            placeholder="可选内部备注"
+            [value]="inputNote()"
+            (input)="inputNote.set($any($event.target).value)"
+          />
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="formBusy()">
+            {{ formBusy() ? '正在提交…' : '保存并同步给学生' }}
+          </button>
+          <button type="button" class="btn-ghost-sm" (click)="closeForm()">取消</button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- 历史记录列表 -->
+  @if (loading() && records().length === 0) {
+    <p class="quiet-note" role="status">正在读取课堂记录…</p>
+  } @else if (records().length === 0) {
+    <p class="quiet-note">暂无历史课堂记录。完成课程后，点击上方「+ 录入记录」沉淀学情。</p>
+  } @else {
+    <ul class="record-list">
+      @for (rec of records(); track rec.recordId) {
+        <li class="record-item">
+          <div class="record-head-row">
+            <div>
+              <span class="record-subject">{{ rec.subject || '课堂记录' }}</span>
+              <span class="record-date quiet-note">{{ rec.createdAt | date: 'yyyy年M月d日 HH:mm' }}</span>
+            </div>
+            <span class="record-booking-id">预约: {{ rec.bookingId.slice(0, 8) }}</span>
+          </div>
+
+          @if (rec.knowledgePoints) {
+            <p class="record-field-line">
+              <span class="field-tag">知识点</span>
+              <span>{{ rec.knowledgePoints }}</span>
+            </p>
+          }
+          @if (rec.performance) {
+            <p class="record-field-line">
+              <span class="field-tag">表现</span>
+              <span>{{ rec.performance }}</span>
+            </p>
+          }
+          @if (rec.problems) {
+            <p class="record-field-line">
+              <span class="field-tag field-tag--problem">薄弱点</span>
+              <span>{{ rec.problems }}</span>
+            </p>
+          }
+          @if (rec.nextSuggestion) {
+            <p class="record-field-line">
+              <span class="field-tag field-tag--suggest">建议</span>
+              <span>{{ rec.nextSuggestion }}</span>
+            </p>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

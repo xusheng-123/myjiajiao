@@ -1,0 +1,57 @@
+<section class="nur-card reviews-card nur-enter" aria-labelledby="reviews-title">
+  <div class="card-head">
+    <div>
+      <h2 id="reviews-title" class="card-title nur-serif">学员评价反馈</h2>
+      <p class="card-subtitle">课后双向教学评价 · 学员真实反馈沉淀</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="loadReviews()" [disabled]="loading()">
+      {{ loading() ? '读取中…' : '刷新' }}
+    </button>
+  </div>
+
+  @if (loading() && reviews().length === 0) {
+    <p class="quiet-note" role="status">正在读取学员评价…</p>
+  } @else if (reviews().length === 0) {
+    <p class="quiet-note">暂无学员评价。结课后学员评价将在此汇聚展示，持续帮助提升教学体验。</p>
+  } @else {
+    <!-- 评分概览 -->
+    @if (averageRating(); as avg) {
+      <div class="rating-summary-box">
+        <div class="avg-score nur-serif">{{ avg }}</div>
+        <div class="avg-details">
+          <div class="stars-display" aria-label="评分">
+            ★★★★★
+          </div>
+          <span class="quiet-note">共收到 {{ reviews().length }} 条学员真实评价</span>
+        </div>
+      </div>
+    }
+
+    <!-- 评价列表 -->
+    <ul class="review-list">
+      @for (rev of reviews(); track rev.reviewId) {
+        <li class="review-item">
+          <div class="review-item-head">
+            <div class="review-rating-stars">
+              @for (s of starsArray(rev.rating); track s) {
+                <span class="star-active">★</span>
+              }
+              <span class="rating-num">（{{ rev.rating }} 星）</span>
+            </div>
+            <span class="quiet-note">预约号: {{ rev.bookingId.slice(0, 8) }}</span>
+          </div>
+
+          @if (rev.tags && rev.tags.length > 0) {
+            <div class="review-tags">
+              @for (tag of rev.tags; track tag) {
+                <span class="tag-chip">{{ tag }}</span>
+              }
+            </div>
+          }
+
+          <p class="review-comment">“{{ rev.comment || '学员未填写详细文字评语。' }}”</p>
+        </li>
+      }
+    </ul>
+  }
+</section>

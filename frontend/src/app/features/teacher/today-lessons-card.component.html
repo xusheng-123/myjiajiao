@@ -1,0 +1,342 @@
+<section class="nur-card today-card nur-enter" aria-labelledby="today-title">
+  <div class="card-head">
+    <div>
+      <h2 id="today-title" class="card-title nur-serif">今日课程</h2>
+      <p class="card-subtitle">今日教学行动聚焦中心 · 认真准备好每一堂课</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="refreshLessons()" [disabled]="loading()">
+      {{ loading() ? '刷新中…' : '刷新' }}
+    </button>
+  </div>
+
+  @if (actionNotice(); as notice) {
+    <div class="action-banner action-banner--{{ notice.type }}" role="status">
+      <span>{{ notice.text }}</span>
+      <button type="button" class="banner-close" (click)="actionNotice.set(null)" aria-label="关闭提示">×</button>
+    </div>
+  }
+
+  @if (completedLessonHint(); as hint) {
+    <div class="action-banner action-banner--success" role="alert">
+      <div>
+        <strong>课程已完成！</strong> 是否立即为「{{ hint.subject }}」录入课堂记录？
+      </div>
+      <div class="banner-actions">
+        <button
+          type="button"
+          class="nur-btn nur-btn--primary nur-btn--sm"
+          (click)="triggerRecordLesson(hint.bookingId, hint.subject)"
+        >
+          立即录入课堂记录
+        </button>
+        <button type="button" class="btn-ghost-sm" (click)="completedLessonHint.set(null)">稍后录入</button>
+      </div>
+    </div>
+  }
+
+  @if (loading() && todayLessons().length === 0) {
+    <div class="loading-state" role="status">
+      <p class="quiet-note">正在读取今日课表…</p>
+    </div>
+  } @else if (todayLessons().length === 0) {
+    <div class="empty-state">
+      <p class="quiet-note">今天没有排定的课程。安排好休息，也是认真教课的一部分。</p>
+    </div>
+  } @else {
+    <ul class="lesson-list">
+      @for (lesson of todayLessons(); track lesson.bookingId) {
+        <li class="lesson-item" [class.lesson-item--active]="lesson.status === 'IN_PROGRESS'">
+          <div class="lesson-main-info">
+            <div class="lesson-time-row">
+              <span class="lesson-time nur-serif">{{ lesson.startAt | date: 'HH:mm' }} – {{ lesson.endAt | date: 'HH:mm' }}</span>
+              <span class="lesson-subject">{{ lesson.subject }}</span>
+              <span
+                class="status-pill"
+                [attr.data-status]="lesson.status"
+              >
+                @switch (lesson.status) {
+                  @case ('IN_PROGRESS') { 上课中 }
+                  @case ('CONFIRMED') { 待上课 }
+                  @case ('COMPLETED') { 已完成 }
+                  @case ('CANCELLED') { 已取消 }
+                  @default { {{ lesson.status }} }
+                }
+              </span>
+            </div>
+            <div class="lesson-id-muted">预约号: {{ lesson.bookingId.slice(0, 8) }}</div>
+          </div>
+
+          <!-- 行动按钮组 -->
+          <div class="lesson-actions" role="group" aria-label="课程操作">
+            @if (lesson.status === 'CONFIRMED') {
+              <!-- A2: 开始上课 -->
+              <button
+                type="button"
+                class="nur-btn nur-btn--primary nur-btn--sm"
+                [disabled]="actionBusyId() === lesson.bookingId"
+                (click)="startLesson(lesson)"
+              >
+                {{ actionBusyId() === lesson.bookingId ? '正在开始…' : '开始上课' }}
+              </button>
+            }
+
+            @if (lesson.status === 'IN_PROGRESS') {
+              <!-- A2: 完成课程 -->
+              <button
+                type="button"
+                class="nur-btn nur-btn--primary nur-btn--sm"
+                [disabled]="actionBusyId() === lesson.bookingId"
+                (click)="completeLesson(lesson)"
+              >
+                {{ actionBusyId() === lesson.bookingId ? '正在结课…' : '完成课程' }}
+              </button>
+            }
+
+            @if (lesson.status === 'CONFIRMED' || lesson.status === 'IN_PROGRESS') {
+              <button
+                type="button"
+                class="btn-ghost-sm"
+                (click)="startClassroom(lesson)"
+                [attr.aria-expanded]="classroomBookingId() === lesson.bookingId"
+              >
+                课堂准备
+              </button>
+              <button
+                type="button"
+                class="btn-ghost-sm"
+                (click)="startReschedule(lesson)"
+                [attr.aria-expanded]="rescheduleBookingId() === lesson.bookingId"
+              >
+                改期
+              </button>
+            }
+
+            @if (lesson.status === 'COMPLETED') {
+              <button
+                type="button"
+                class="btn-ghost-sm"
+                (click)="triggerRecordLesson(lesson.bookingId, lesson.subject)"
+              >
+                写课堂记录
+              </button>
+            }
+
+            @if (lesson.status === 'CONFIRMED' || lesson.status === 'REQUESTED') {
+              <!-- A1: 取消预约入口 -->
+              <button
+                type="button"
+                class="btn-ghost-sm btn-danger"
+                (click)="startCancel(lesson)"
+                [attr.aria-expanded]="cancelBookingId() === lesson.bookingId"
+              >
+                取消预约
+              </button>
+            }
+          </div>
+        </li>
+
+        <!-- 课堂准备面板（包含 B6 课前任务） -->
+        @if (classroomBookingId() === lesson.bookingId) {
+          <li class="nested-panel prep-panel">
+            <div class="panel-header">
+              <h3 class="panel-title nur-serif">课堂准备 · {{ lesson.subject }}</h3>
+              <button type="button" class="btn-ghost-sm" (click)="cancelClassroom()">收起面板</button>
+            </div>
+
+            <!-- 第一步：登记外部会议链接 & 快速进入 -->
+            <div class="prep-step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <p class="step-hint">在腾讯会议/飞书等工具创建好会议室，登记会议链接后学生即可一键入会：</p>
+                <div class="input-action-row">
+                  <input
+                    type="url"
+                    class="nur-input"
+                    placeholder="https://meeting.tencent.com/..."
+                    aria-label="外部会议链接"
+                    [value]="meetingUrlInput()"
+                    (input)="onMeetingUrlInput($any($event.target).value)"
+                  />
+                  <button
+                    type="button"
+                    class="nur-btn nur-btn--primary nur-btn--sm"
+                    [disabled]="classroomBusy() || !meetingUrlInput().trim()"
+                    (click)="registerMeetingUrl()"
+                  >
+                    登记链接
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-ghost-sm"
+                    (click)="joinClassroom(lesson.bookingId)"
+                  >
+                    进入课堂
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- B6 课前任务切块 -->
+            <div class="prep-step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <div class="step-title-row">
+                  <p class="step-hint">课前准备清单（为学员生成 4 项微任务：准备材料/复习笔记/热身题/专注状态）：</p>
+                  <button
+                    type="button"
+                    class="btn-ghost-sm"
+                    [disabled]="prepTasksLoading()"
+                    (click)="generatePrepTasks()"
+                  >
+                    {{ prepTasksLoading() ? '正在生成…' : (prepTasks().length ? '重新生成清单' : '生成课前任务清单') }}
+                  </button>
+                </div>
+                @if (prepTasks().length > 0) {
+                  <ul class="task-checklist">
+                    @for (task of prepTasks(); track task.taskId) {
+                      <li class="task-check-item">
+                        <span class="task-icon">{{ task.completed ? '✓' : '○' }}</span>
+                        <span class="task-title" [class.task-title--done]="task.completed">{{ task.title }}</span>
+                        <span class="task-badge">{{ task.completed ? '学员已完成' : '待准备' }}</span>
+                      </li>
+                    }
+                  </ul>
+                } @else if (!prepTasksLoading()) {
+                  <p class="quiet-note">尚未生成课前任务，点击上方按钮一键生成。</p>
+                }
+              </div>
+            </div>
+
+            <!-- 第三步：结课与考勤 -->
+            <div class="prep-step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <p class="step-hint">结课与考勤登记（为课酬结算与退款争议留存依据）：</p>
+                <div class="attendance-buttons" role="group" aria-label="结课与考勤">
+                  <button type="button" class="btn-ghost-sm" [disabled]="classroomBusy()" (click)="endLesson()">
+                    结束课堂会话
+                  </button>
+                  <button type="button" class="nur-chip-btn" [disabled]="classroomBusy()" (click)="markAttendance('PRESENT')">
+                    考勤：正常出席
+                  </button>
+                  <button type="button" class="nur-chip-btn" [disabled]="classroomBusy()" (click)="markAttendance('LATE')">
+                    考勤：迟到
+                  </button>
+                  <button type="button" class="nur-chip-btn" [disabled]="classroomBusy()" (click)="markAttendance('ABSENT')">
+                    考勤：缺席
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            @if (classroomMessage(); as msg) {
+              <p class="panel-msg panel-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+            }
+          </li>
+        }
+
+        <!-- 改期面板（D11） -->
+        @if (rescheduleBookingId() === lesson.bookingId) {
+          <li class="nested-panel reschedule-panel">
+            <div class="panel-header">
+              <h3 class="panel-title nur-serif">调整上课时间</h3>
+              <button type="button" class="btn-ghost-sm" (click)="cancelReschedule()">取消改期</button>
+            </div>
+            @if (rescheduleCandidates().length > 0) {
+              <p class="step-hint">选择你要调整到的开放档期（档期来自你的日历）：</p>
+              <div class="slot-picker" role="group" aria-label="候选档期">
+                @for (slot of rescheduleCandidates(); track slot.slotId) {
+                  <button
+                    type="button"
+                    class="nur-chip-btn"
+                    [attr.aria-pressed]="pickedRescheduleSlot() === slot.slotId"
+                    (click)="pickRescheduleSlot(slot.slotId)"
+                  >
+                    {{ slot.startAt | date: 'M月d日 HH:mm' }}
+                  </button>
+                }
+              </div>
+              <div class="panel-actions">
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--primary nur-btn--sm"
+                  [disabled]="!pickedRescheduleSlot() || rescheduleBusy()"
+                  (click)="confirmReschedule()"
+                >
+                  {{ rescheduleBusy() ? '正在改期…' : '确认改期' }}
+                </button>
+              </div>
+            } @else {
+              <p class="quiet-note">目前没有其他开放档期，可先在下方「档期排定」中添加可用时段。</p>
+            }
+            @if (rescheduleMessage(); as msg) {
+              <p class="panel-msg panel-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+            }
+          </li>
+        }
+
+        <!-- A1: 导师侧两阶段取消预约弹窗/面板 -->
+        @if (cancelBookingId() === lesson.bookingId) {
+          <li class="nested-panel cancel-panel" role="alertdialog" aria-labelledby="cancel-heading">
+            <div class="panel-header">
+              <h3 id="cancel-heading" class="panel-title nur-serif danger-title">取消预约（两阶段确认）</h3>
+              <button type="button" class="btn-ghost-sm" (click)="closeCancel()">关闭</button>
+            </div>
+
+            @if (!cancelPreviewData()) {
+              <p class="step-hint">取消预约将影响学员安排与课时结算。请输入取消原因以预计算级联影响：</p>
+              <div class="cancel-reason-row">
+                <input
+                  type="text"
+                  class="nur-input"
+                  placeholder="请输入取消原因（如：身体不适/临时有事）"
+                  [value]="cancelReason()"
+                  (input)="onCancelReasonInput($any($event.target).value)"
+                />
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--primary nur-btn--sm"
+                  [disabled]="!cancelReason().trim() || cancelBusy()"
+                  (click)="requestCancelPreview()"
+                >
+                  {{ cancelBusy() ? '计算影响中…' : '第一步：预计算影响' }}
+                </button>
+              </div>
+            } @else {
+              <div class="cancel-consequence-box">
+                <div class="consequence-head">
+                  <span class="warning-icon">⚠</span>
+                  <strong>已生成取消级联预计算结果（凭证 10 分钟有效）：</strong>
+                </div>
+                <p class="consequence-notice">{{ cancelPreviewData()!.notice }}</p>
+                <div class="consequence-details">
+                  <p>取消原因：{{ cancelReason() }}</p>
+                  @if (cancelPreviewData()!.confirmationTokenExpiresAt) {
+                    <p class="quiet-note">凭据过期时间：{{ cancelPreviewData()!.confirmationTokenExpiresAt | date: 'HH:mm:ss' }}</p>
+                  }
+                </div>
+                <div class="panel-actions">
+                  <button
+                    type="button"
+                    class="btn-danger-execute"
+                    [disabled]="cancelBusy()"
+                    (click)="confirmCancelExecute()"
+                  >
+                    {{ cancelBusy() ? '正在取消…' : '确认终态取消（不可撤销）' }}
+                  </button>
+                  <button type="button" class="btn-ghost-sm" [disabled]="cancelBusy()" (click)="closeCancel()">
+                    放弃取消
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if (cancelMessage(); as msg) {
+              <p class="panel-msg panel-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+            }
+          </li>
+        }
+      }
+    </ul>
+  }
+</section>

@@ -1,0 +1,36 @@
+<section class="nur-card demands-card nur-enter" aria-labelledby="demand-title">
+  <div class="card-head">
+    <div>
+      <h2 id="demand-title" class="card-title nur-serif">学生需求池</h2>
+      <p class="card-subtitle">学员主动发布的找老师需求 · 主动联系促成课时匹配</p>
+    </div>
+    <button type="button" class="btn-ghost-sm" (click)="loadDemands()" [disabled]="loading()">
+      {{ loading() ? '读取中…' : '刷新' }}
+    </button>
+  </div>
+
+  @if (loading() && openDemands().length === 0) {
+    <p class="quiet-note" role="status">正在读取学员需求池…</p>
+  } @else if (openDemands().length === 0) {
+    <p class="quiet-note">需求池暂无开放中的需求。</p>
+  } @else {
+    <ul class="demand-list">
+      @for (d of openDemands(); track d.demandId) {
+        <li class="demand-item">
+          <div class="demand-info">
+            <span class="demand-subject">
+              {{ d.subject }}@if (d.gradeBand) { · {{ d.gradeBand }} }
+            </span>
+            @if (d.budgetMaxCents) {
+              <span class="demand-budget">预算 ≤ ¥{{ d.budgetMaxCents / 100 }}/小时</span>
+            }
+            <span class="status-pill">开放中</span>
+          </div>
+          @if (d.note) {
+            <p class="demand-note">“{{ d.note }}”</p>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

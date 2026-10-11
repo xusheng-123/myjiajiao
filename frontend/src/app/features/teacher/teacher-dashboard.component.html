@@ -1,392 +1,117 @@
 <div class="dashboard-shell">
-  <header class="dash-header">
-    <div>
-      <p class="dash-greeting nur-serif">导师工作台 · {{ displayName() }}</p>
-      <p class="dash-subtitle">认真准备好每一场雨。</p>
+  <!-- 顶栏欢迎区 -->
+  <header class="dash-header nur-enter" style="--stagger-index: 1">
+    <div class="header-main">
+      <div class="greeting-row">
+        <span class="header-eyebrow">NURTURE · 导师空间</span>
+        <h1 class="dash-greeting nur-serif">导师工作台 · {{ displayName() }}</h1>
+      </div>
+      <p class="dash-subtitle">认真准备好每一场雨，静候学海生花。</p>
     </div>
-    <button type="button" class="btn-ghost-sm" (click)="auth.logout()" aria-label="退出登录">
-      退出
-    </button>
+    <div class="header-actions">
+      <button type="button" class="btn-ghost-sm" (click)="auth.logout()" aria-label="退出登录">
+        退出登录
+      </button>
+    </div>
   </header>
-  <nav aria-label="阶段测评"><a routerLink="/learning/assessments">阶段小测与报告</a></nav>
-  <nav aria-label="客服服务"><a routerLink="/support">客服与申诉</a></nav>
-  <nav aria-label="课程服务"><a routerLink="/messages">课前咨询与回复</a> · <a routerLink="/learning/plans">学生学习计划</a> · <a routerLink="/learning/mistakes">学生错题本</a> · <a routerLink="/learning/materials">教学资料与作业</a></nav>
-  <nur-teacher-profile-editor />
-  <a routerLink="/scheduling/series">重复档期与日历</a>
 
-  @if (!loaded()) {
-    <p class="quiet-note" role="status">正在准备你的工作台…</p>
-  }
+  <!-- 快捷服务导航胶囊条 -->
+  <nav class="quick-nav-bar nur-enter" style="--stagger-index: 2" aria-label="教学协同快捷入口">
+    <a routerLink="/messages" class="nav-chip">课前咨询与回复</a>
+    <a routerLink="/learning/plans" class="nav-chip">学生学习计划</a>
+    <a routerLink="/learning/mistakes" class="nav-chip">学生错题本</a>
+    <a routerLink="/learning/materials" class="nav-chip">教学资料与作业</a>
+    <a routerLink="/learning/assessments" class="nav-chip">阶段小测与报告</a>
+    <a routerLink="/scheduling/series" class="nav-chip">重复档期日历</a>
+    <a routerLink="/support" class="nav-chip">客服与申诉</a>
+  </nav>
 
-  <!-- 当日课程（PRD 1.2 教师工作台：当日课程） -->
-  <section class="nur-card nur-enter" style="--stagger-index: 1" aria-labelledby="today-title">
-    <h2 id="today-title" class="nur-serif">今日课程</h2>
-    @if (todayLessons().length === 0) {
-      <p class="quiet-note">今天没有排定的课程。安排好休息，也是认真教课的一部分。</p>
-    } @else {
-      <ul class="slot-list">
-        @for (lesson of todayLessons(); track lesson.bookingId) {
-          <li>
-            <span>{{ lesson.startAt | date: 'HH:mm' }} – {{ lesson.endAt | date: 'HH:mm' }} · {{ lesson.subject }}</span>
-            <span class="status-pill">{{ lesson.status === 'IN_PROGRESS' ? '上课中' : '待上课' }}</span>
-            @if (lesson.status === 'CONFIRMED' || lesson.status === 'IN_PROGRESS') {
-              <button
-                type="button"
-                class="btn-ghost-sm reschedule-entry"
-                (click)="startReschedule(lesson)"
-                [attr.aria-expanded]="rescheduleBookingId() === lesson.bookingId"
-              >
-                改期
-              </button>
-              <button
-                type="button"
-                class="btn-ghost-sm reschedule-entry"
-                (click)="startClassroom(lesson)"
-                [attr.aria-expanded]="classroomBookingId() === lesson.bookingId"
-              >
-                课堂准备
-              </button>
-            }
-          </li>
-          @if (classroomBookingId() === lesson.bookingId) {
-            <li class="reschedule-panel">
-              <p class="reschedule-hint">第一步：在常用的会议工具（腾讯会议/飞书等）建好会议，把入会链接粘贴到这里：</p>
-              <div class="meeting-url-row">
-                <input
-                  type="url"
-                  class="meeting-url-input"
-                  placeholder="https://meeting.tencent.com/..."
-                  aria-label="外部会议链接"
-                  [value]="meetingUrlInput()"
-                  (input)="onMeetingUrlInput($any($event.target).value)"
-                />
-                <button
-                  type="button"
-                  class="nur-btn nur-btn--primary nur-btn--sm"
-                  [disabled]="classroomBusy() || !meetingUrlInput().trim()"
-                  (click)="registerMeetingUrl()"
-                >
-                  登记链接
-                </button>
-              </div>
-              <p class="reschedule-hint">第二步：下课后结束课堂并标记学生考勤（为结算与退款争议留存依据）：</p>
-              <div class="attendance-row" role="group" aria-label="结课与考勤">
-                <button type="button" class="btn-ghost-sm" [disabled]="classroomBusy()" (click)="endLesson()">
-                  结课
-                </button>
-                <button type="button" class="nur-chip-btn" [disabled]="classroomBusy()" (click)="markAttendance('PRESENT')">考勤：正常</button>
-                <button type="button" class="nur-chip-btn" [disabled]="classroomBusy()" (click)="markAttendance('LATE')">考勤：迟到</button>
-                <button type="button" class="nur-chip-btn" [disabled]="classroomBusy()" (click)="markAttendance('ABSENT')">考勤：缺席</button>
-              </div>
-              @if (classroomMessage(); as msg) {
-                <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
-              }
-              <button type="button" class="btn-ghost-sm" (click)="cancelClassroom()">收起课堂准备</button>
-            </li>
-          }
-          @if (rescheduleBookingId() === lesson.bookingId) {
-            <li class="reschedule-panel">
-              @if (rescheduleCandidates().length > 0) {
-                <p class="reschedule-hint">把这门课改到你的其他开放时段：</p>
-                <div class="slot-picker" role="group" aria-label="可改期的候选时段">
-                  @for (slot of rescheduleCandidates(); track slot.slotId) {
-                    <button
-                      type="button"
-                      class="nur-chip-btn"
-                      [attr.aria-pressed]="pickedRescheduleSlot() === slot.slotId"
-                      (click)="pickRescheduleSlot(slot.slotId)"
-                    >
-                      {{ slot.startAt | date: 'M月d日 HH:mm' }}
-                    </button>
-                  }
-                </div>
-                <button
-                  type="button"
-                  class="nur-btn nur-btn--primary nur-btn--sm"
-                  [disabled]="!pickedRescheduleSlot() || rescheduleBusy()"
-                  (click)="confirmReschedule()"
-                >
-                  {{ rescheduleBusy() ? '正在改期…' : '确认改期' }}
-                </button>
-              }
-              @if (rescheduleMessage(); as msg) {
-                <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
-              }
-              <button type="button" class="btn-ghost-sm" (click)="cancelReschedule()">取消改期</button>
-            </li>
-          }
-        }
-      </ul>
-    }
-  </section>
+  <!-- 教师公开名片与主页资料编辑 -->
+  <div class="profile-editor-host nur-enter" style="--stagger-index: 3">
+    <nur-teacher-profile-editor />
+  </div>
 
-  <!-- 资质认证（G5）：服务端真实状态 + 材料上传 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 2" aria-labelledby="verify-title">
-    <h2 id="verify-title" class="nur-serif">资质认证</h2>
-    @if (verification(); as v) {
-      <p class="verify-status">
-        <span class="status-pill" [attr.data-status]="v.status" aria-hidden="true">
-          {{ v.status === 'APPROVED' ? '✔ 已通过' : v.status === 'UNDER_REVIEW' ? '◷ 审核中' : v.status === 'REJECTED' ? '↺ 需补充' : v.status === 'SUBMITTED' ? '◔ 已提交' : '○ 未提交' }}
-        </span>
-        @if (v.submittedAt) {
-          <span class="quiet-note">材料提交于 {{ v.submittedAt | date: 'M月d日 HH:mm' }}</span>
-        }
-      </p>
-      @if (v.status === 'REJECTED' && v.decisionNote) {
-        <p class="verify-decision" role="note">审核意见：{{ v.decisionNote }}</p>
-      }
-      <p class="quiet-note">{{ v.guidance }}</p>
-    } @else if (loaded()) {
-      <p class="quiet-note">暂时读不到认证状态，可直接在下方重新提交材料；若多次失败请联系运营。</p>
-    }
-    @if (showVerificationForm()) {
-      <form class="verify-upload" (submit)="$event.preventDefault(); submitVerification()" aria-label="资质材料上传">
-        <p class="reschedule-hint">请上传两项材料：身份证明与学历证明（清晰照片或扫描件均可）。</p>
-        <div class="verify-file-row">
-          <label class="verify-file-label" for="verify-id-input">身份证明</label>
-          <input
-            id="verify-id-input"
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            [disabled]="verificationBusy()"
-            (change)="onVerificationFilePick('idDocument', $event)"
-          />
-          @if (idDocumentFile(); as f) {
-            <span class="verify-file-chip">
-              {{ f.name }}（{{ f.sizeLabel }}）
-              <button type="button" class="btn-ghost-sm" (click)="removeVerificationFile('idDocument')">移除</button>
-            </span>
-          }
+  <!-- 今日行动聚焦：今日课表卡置顶（高信息密度，包含 A1 取消 / A2 开始·结课 / B6 课前任务 / 考勤） -->
+  <div class="pinned-card-section nur-enter" style="--stagger-index: 4">
+    <nur-today-lessons-card (recordLesson)="onRecordLesson($event)" />
+  </div>
+
+  <!-- 次级分区选择器（ADHD 友好：聚焦当前工作任务，降低认知过载） -->
+  <div class="section-tabs-bar nur-enter" style="--stagger-index: 5" role="tablist" aria-label="工作台分区">
+    <button
+      type="button"
+      class="tab-btn"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'all'"
+      [class.tab-btn--active]="activeTab() === 'all'"
+      (click)="switchTab('all')"
+    >
+      全部面板
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'teaching'"
+      [class.tab-btn--active]="activeTab() === 'teaching'"
+      (click)="switchTab('teaching')"
+    >
+      教学与学员（4）
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'business'"
+      [class.tab-btn--active]="activeTab() === 'business'"
+      (click)="switchTab('business')"
+    >
+      档期与经营（5）
+    </button>
+  </div>
+
+  <!-- 卡片工作网格 -->
+  <main class="dashboard-grid">
+    <!-- 第一组：教学履约与学员服务 (Booking / Records / Students / Reviews) -->
+    @if (activeTab() === 'all' || activeTab() === 'teaching') {
+      <div class="grid-column grid-column--teaching">
+        <!-- 预约审批 -->
+        <nur-booking-requests-card />
+
+        <!-- 课堂记录录入与列表 (B4) -->
+        <div id="lesson-records-section">
+          <nur-lesson-records-card #lessonRecordsCard />
         </div>
-        <div class="verify-file-row">
-          <label class="verify-file-label" for="verify-degree-input">学历证明</label>
-          <input
-            id="verify-degree-input"
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            [disabled]="verificationBusy()"
-            (change)="onVerificationFilePick('degreeCert', $event)"
-          />
-          @if (degreeCertFile(); as f) {
-            <span class="verify-file-chip">
-              {{ f.name }}（{{ f.sizeLabel }}）
-              <button type="button" class="btn-ghost-sm" (click)="removeVerificationFile('degreeCert')">移除</button>
-            </span>
-          }
-        </div>
-        <p class="reschedule-hint">支持 PDF/JPG/PNG 格式，单个文件不超过 20MB（服务端将校验文件真实格式，与扩展名不符会被拒绝）。</p>
-        <button
-          type="submit"
-          class="nur-btn nur-btn--primary nur-btn--sm"
-          [disabled]="!canSubmitVerification()"
-        >
-          {{ verificationBusy() ? '正在提交…' : '提交资质材料' }}
-        </button>
-        @if (verificationMessage(); as msg) {
-          <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
-        }
-      </form>
-    }
-  </section>
 
-  <!-- 课程与定价管理（G6）：列表 / 新增 / 调价 / 下架（停止销售） -->
-  <section class="nur-card nur-enter" style="--stagger-index: 3" aria-labelledby="subjects-title">
-    <h2 id="subjects-title" class="nur-serif">课程与定价</h2>
-    @if (!subjectsLoaded()) {
-      <p class="quiet-note" role="status">正在读取开课条目…</p>
-    } @else if (subjectsError()) {
-      <p class="quiet-note">开课条目读取失败，请刷新页面重试。</p>
-    } @else if (subjects().length === 0) {
-      <p class="quiet-note">还没有开课条目。添加你的第一个科目与定价，学生才能在「找老师」中检索到你。</p>
-    } @else {
-      <ul class="slot-list subject-list">
-        @for (o of subjects(); track o.offeringId) {
-          <li>
-            <span class="subject-name">{{ o.subject }} · {{ o.gradeBand }}</span>
-            <span class="subject-price">¥{{ yuan(o.pricePerHourCents) }}/小时</span>
-            <span class="status-pill" [attr.data-status]="o.active ? 'OPEN' : 'CLOSED'">{{ o.active ? '在售' : '已下架' }}</span>
-            @if (o.active) {
-              <button type="button" class="btn-ghost-sm" (click)="startReprice(o)" [attr.aria-expanded]="repricingId() === o.offeringId">调价</button>
-              <button type="button" class="btn-ghost-sm" (click)="askDelist(o)" [attr.aria-expanded]="delistingId() === o.offeringId">下架</button>
-            } @else {
-              <button type="button" class="btn-ghost-sm" [disabled]="relistBusy()" (click)="relist(o)">重新上架</button>
-            }
-          </li>
-          @if (repricingId() === o.offeringId) {
-            <li class="subject-panel">
-              <p class="reschedule-hint">
-                当前价格：¥{{ yuan(o.pricePerHourCents) }}/小时。调整后仅影响之后的新订单，已生成订单金额不变。
-              </p>
-              <div class="meeting-url-row">
-                <input
-                  type="text"
-                  inputmode="decimal"
-                  class="meeting-url-input subject-price-input"
-                  aria-label="新价格（元/小时）"
-                  placeholder="新价格（元/小时，如 250 或 199.5）"
-                  [value]="repriceInputYuan()"
-                  (input)="onRepriceInput($any($event.target).value)"
-                />
-                <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="repriceBusy()" (click)="confirmReprice(o)">
-                  {{ repriceBusy() ? '正在保存…' : '确认调价' }}
-                </button>
-                <button type="button" class="btn-ghost-sm" [disabled]="repriceBusy()" (click)="cancelReprice()">取消</button>
-              </div>
-            </li>
-          }
-          @if (delistingId() === o.offeringId) {
-            <li class="subject-panel">
-              <p class="reschedule-hint">
-                确认下架「{{ o.subject }} · {{ o.gradeBand }}」？下架即停止销售：学生将无法再检索到或预约该条目；已生成订单不受影响。下架记录将保留，可在此重新上架。
-              </p>
-              <div class="attendance-row">
-                <button type="button" class="btn-primary-sm" [disabled]="delistBusy()" (click)="confirmDelist(o)">
-                  {{ delistBusy() ? '正在下架…' : '确认下架' }}
-                </button>
-                <button type="button" class="btn-ghost-sm" [disabled]="delistBusy()" (click)="cancelDelist()">取消</button>
-              </div>
-            </li>
-          }
-        }
-      </ul>
-    }
-    <form class="subject-add" (submit)="$event.preventDefault(); addSubject()" aria-label="新增开课条目">
-      <p class="reschedule-hint">新增开课条目（科目 + 学段 + 定价）。同一科目与学段重复添加不会重复创建。</p>
-      <div class="subject-add-row">
-        <input
-          type="text"
-          class="meeting-url-input subject-field"
-          aria-label="科目"
-          placeholder="科目，如：数学"
-          [value]="newSubjectName()"
-          (input)="onNewSubjectField('name', $any($event.target).value)"
-        />
-        <input
-          type="text"
-          class="meeting-url-input subject-field"
-          aria-label="学段"
-          placeholder="学段，如：初三"
-          [value]="newSubjectGradeBand()"
-          (input)="onNewSubjectField('gradeBand', $any($event.target).value)"
-        />
-        <input
-          type="text"
-          inputmode="decimal"
-          class="meeting-url-input subject-field subject-field--price"
-          aria-label="定价（元/小时）"
-          placeholder="定价（元/小时）"
-          [value]="newSubjectPriceYuan()"
-          (input)="onNewSubjectField('price', $any($event.target).value)"
-        />
-        <button type="submit" class="nur-btn nur-btn--primary nur-btn--sm" [disabled]="addSubjectBusy()">
-          {{ addSubjectBusy() ? '正在添加…' : '新增条目' }}
-        </button>
+        <!-- 我的学生与档案查看 (B5) -->
+        <nur-my-students-card />
+
+        <!-- 学员评价反馈 (C2) -->
+        <nur-student-reviews-card />
       </div>
-    </form>
-    @if (subjectsNotice(); as msg) {
-      <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
     }
-  </section>
 
-  <!-- 档期排定 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 4" aria-labelledby="schedule-title">
-    <h2 id="schedule-title" class="nur-serif">档期排定</h2>
-    <p class="quiet-note">发布可用时段后，学生即可预约。时段冲突将被自动拦截。</p>
-    <div class="slot-actions">
-      <button type="button" class="btn-ghost-sm" (click)="publishSlot(1, 9)">发布明日 09:00–10:00</button>
-      <button type="button" class="btn-ghost-sm" (click)="publishSlot(1, 19)">发布明日 19:00–20:00</button>
-      <button type="button" class="btn-ghost-sm" (click)="publishSlot(2, 15)">发布后天 15:00–16:00</button>
-    </div>
-    @if (slots().length) {
-      <ul class="slot-list">
-        @for (slot of slots(); track slot.slotId) {
-          <li>
-            <span>{{ slot.startAt | date:'M月d日 HH:mm' }} – {{ slot.endAt | date:'HH:mm' }}</span>
-            <span class="status-pill" [attr.data-status]="slot.status">{{ slot.status === 'OPEN' ? '可约' : slot.status }}</span>
-          </li>
-        }
-      </ul>
-    }
-    @if (notice()) {
-      <p class="form-status" role="status"><span aria-hidden="true">ℹ</span> {{ notice() }}</p>
-    }
-  </section>
+    <!-- 第二组：档期、定价、资质与结算 (Availability / Subjects / Settlement / Verification / Demands) -->
+    @if (activeTab() === 'all' || activeTab() === 'business') {
+      <div class="grid-column grid-column--business">
+        <!-- 档期排定 -->
+        <nur-availability-card />
 
-  <!-- 预约申请审批面板 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 5" aria-labelledby="booking-title">
-    <h2 id="booking-title" class="nur-serif">预约申请审批</h2>
-    @if (bookingRequests().length === 0) {
-      <p class="quiet-note">暂无待处理的预约申请。</p>
-    } @else {
-      <ul class="request-list">
-        @for (req of bookingRequests(); track req.bookingId) {
-          <li class="request-item">
-            <div>
-              <p class="request-title">{{ req.subject }} · {{ req.type === 'TRIAL' ? '试听课' : '正式课' }}</p>
-              <p class="quiet-note">{{ req.createdAt | date:'M月d日 HH:mm' }} · 状态：{{ req.status === 'REQUESTED' ? '待审批' : req.status }}</p>
-            </div>
-            @if (req.status === 'REQUESTED') {
-              <div class="request-actions">
-                <button type="button" class="btn-primary-sm" (click)="decide(req.bookingId, 'approve')">确认</button>
-                <button type="button" class="btn-ghost-sm" (click)="decide(req.bookingId, 'reject')">驳回</button>
-              </div>
-            }
-          </li>
-        }
-      </ul>
-    }
-  </section>
+        <!-- 课程与定价管理 -->
+        <nur-subjects-pricing-card />
 
-  <!-- 课酬结算 -->
-  <section class="nur-card nur-enter" style="--stagger-index: 6" aria-labelledby="settle-title">
-    <h2 id="settle-title" class="nur-serif">课酬结算流水</h2>
-    @if (settlement(); as s) {
-      <div class="settle-summary">
-        <div>
-          <p class="settle-num nur-serif">¥ {{ yuan(s.pendingNetCents) }}</p>
-          <p class="quiet-note">待结算</p>
-        </div>
-        <div>
-          <p class="settle-num nur-serif">¥ {{ yuan(s.paidOutNetCents) }}</p>
-          <p class="quiet-note">已提现</p>
-        </div>
+        <!-- 课酬结算流水 -->
+        <nur-settlement-card />
+
+        <!-- 资质认证 -->
+        <nur-verification-card />
+
+        <!-- 学生需求池 -->
+        <nur-open-demands-card />
       </div>
-      <ul class="settle-list">
-        @for (entry of s.entries; track entry.entryId) {
-          <li>
-            <span>课程 {{ entry.bookingId.slice(0, 8) }} · {{ entry.entryKind === 'REVERSAL' ? '退款冲回' : '课酬' }} ¥{{ yuan(entry.netCents) }}@if (entry.entryKind !== 'REVERSAL') {（平台服务费 ¥{{ yuan(entry.platformFeeCents) }}）}</span>
-            <span class="status-pill">{{ entry.status === 'PENDING' ? '待结算' : entry.status === 'SETTLED' ? '已结算' : '已提现' }}</span>
-          </li>
-        }
-      </ul>
-    } @else {
-      <p class="quiet-note">完成首节课后，课酬会按平台抽成规则进入待结算余额。</p>
     }
-  </section>
+  </main>
 
-  <!-- 需求池：学生发布的找老师需求（双入口之一） -->
-  <section class="nur-card nur-enter" style="--stagger-index: 7" aria-labelledby="demand-title">
-    <h2 id="demand-title" class="nur-serif">学生的需求</h2>
-    <p class="quiet-note">学生主动发布的求助描述——如果某条正好是你的专长，欢迎在站内信中主动联系。</p>
-    @if (openDemands().length === 0) {
-      <p class="quiet-note">需求池暂无开放中的需求。</p>
-    } @else {
-      <ul class="slot-list">
-        @for (d of openDemands(); track d.demandId) {
-          <li>
-            <span>
-              {{ d.subject }}@if (d.gradeBand) { · {{ d.gradeBand }} }
-              @if (d.budgetMaxCents) { · 预算 ≤ ¥{{ d.budgetMaxCents / 100 }}/小时 }
-            </span>
-            <span class="status-pill">开放中</span>
-          </li>
-          @if (d.note) {
-            <li class="demand-note-row">“{{ d.note }}”</li>
-          }
-        }
-      </ul>
-    }
-  </section>
-
+  <!-- 消息通知中心浮层 -->
   <nur-notice-center />
 </div>

@@ -1,0 +1,68 @@
+<section class="nur-card availability-card nur-enter" aria-labelledby="schedule-title">
+  <div class="card-head">
+    <div>
+      <h2 id="schedule-title" class="card-title nur-serif">档期排定</h2>
+      <p class="card-subtitle">发布可用授课时段 · 学员可直接预约 · 自动拦截时间冲突</p>
+    </div>
+    <div class="head-actions">
+      <a routerLink="/scheduling/series" class="btn-ghost-sm">重复档期与日历</a>
+      <button type="button" class="btn-ghost-sm" (click)="refreshSlots()" [disabled]="loading()">
+        {{ loading() ? '刷新中…' : '刷新' }}
+      </button>
+    </div>
+  </div>
+
+  @if (notice(); as n) {
+    <div class="action-banner action-banner--{{ n.type }}" role="status">
+      <span>{{ n.text }}</span>
+      <button type="button" class="banner-close" (click)="notice.set(null)" aria-label="关闭提示">×</button>
+    </div>
+  }
+
+  <div class="quick-publish-section">
+    <p class="section-label">快捷发布模板：</p>
+    <div class="slot-actions" role="group" aria-label="快捷时段发布">
+      <button
+        type="button"
+        class="btn-ghost-sm"
+        [disabled]="publishing()"
+        (click)="publishSlot(1, 9)"
+      >
+        发布明日 09:00–10:00
+      </button>
+      <button
+        type="button"
+        class="btn-ghost-sm"
+        [disabled]="publishing()"
+        (click)="publishSlot(1, 19)"
+      >
+        发布明日 19:00–20:00
+      </button>
+      <button
+        type="button"
+        class="btn-ghost-sm"
+        [disabled]="publishing()"
+        (click)="publishSlot(2, 15)"
+      >
+        发布后天 15:00–16:00
+      </button>
+    </div>
+  </div>
+
+  @if (loading() && slots().length === 0) {
+    <p class="quiet-note" role="status">正在读取未来两周档期…</p>
+  } @else if (slots().length === 0) {
+    <p class="quiet-note">未来两周暂无开放档期。可使用上方快捷按钮，或点击右上角「重复档期与日历」批量设置。</p>
+  } @else {
+    <ul class="slot-list">
+      @for (slot of slots(); track slot.slotId) {
+        <li class="slot-item">
+          <span class="slot-time">{{ slot.startAt | date: 'M月d日 HH:mm' }} – {{ slot.endAt | date: 'HH:mm' }}</span>
+          <span class="status-pill" [attr.data-status]="slot.status">
+            {{ slot.status === 'OPEN' ? '可预约' : (slot.status === 'BOOKED' ? '已预约' : slot.status) }}
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</section>

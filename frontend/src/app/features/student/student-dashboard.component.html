@@ -1,36 +1,101 @@
 <div class="dashboard-shell">
   <nur-calendar-export />
+
+  <!-- 顶栏：问候与核心模式切换 -->
   <header class="dash-header">
     <div>
-      <p class="dash-greeting nur-serif">你好，{{ displayName() }}</p>
+      <div class="dash-eyebrow">
+        <span class="eyebrow-dot"></span>
+        <span>STUDENT WORKBENCH</span>
+      </div>
+      <h1 class="dash-greeting nur-serif">你好，{{ displayName() }}</h1>
       <p class="dash-subtitle">按自己的节奏来，每一小步都算数。</p>
     </div>
-    <button type="button" class="btn-ghost-sm" (click)="toggleFocusMode()" [attr.aria-pressed]="focusMode()">
-      {{ focusMode() ? '展开全部' : '一键专注' }}
-    </button>
-    <button type="button" class="btn-ghost-sm" (click)="auth.logout()" aria-label="退出登录">
-      退出
-    </button>
+    <div class="header-action-group">
+      <button
+        type="button"
+        class="nur-btn nur-btn--ghost nur-btn--sm"
+        (click)="toggleFocusMode()"
+        [attr.aria-pressed]="focusMode()"
+      >
+        {{ focusMode() ? '展开全部功能' : '一键专注模式' }}
+      </button>
+      <button
+        type="button"
+        class="nur-btn nur-btn--ghost nur-btn--sm"
+        (click)="auth.logout()"
+        aria-label="退出登录"
+      >
+        退出
+      </button>
+    </div>
   </header>
-  <nav aria-label="阶段测评"><a routerLink="/learning/assessments">阶段小测与报告</a></nav>
-  <nav aria-label="客服服务"><a routerLink="/support">客服与申诉</a></nav>
-  <nav aria-label="课程服务"><a routerLink="/messages">课前咨询</a> · <a routerLink="/refunds">退款与处理进度</a></nav>
 
-  <!-- 次级入口：找老师（不与主 CTA 争抢，弱化为文本链接样式） -->
-  <p class="find-teacher-line">
-    还没有合适的老师？<a routerLink="/student/match">去「找老师」看看 →</a>
-    （也可以先听一节免费试听）
-  </p>
+  <!-- 顶部有组织的功能导航区（取代旧版散落的裸链接） -->
+  <nav class="workbench-nav-card nur-card" aria-label="学生工作台快捷导航">
+    <div class="nav-section-group">
+      <div class="nav-group-title">
+        <span class="group-icon">📚</span>
+        <span>学情中心</span>
+      </div>
+      <div class="nav-links">
+        <a routerLink="/student/growth" class="nav-chip">
+          <span>学习成长</span>
+        </a>
+        <a routerLink="/student/archive" class="nav-chip">
+          <span>学习档案</span>
+        </a>
+        <a routerLink="/student/questions" class="nav-chip">
+          <span>课后答疑</span>
+        </a>
+        <a routerLink="/learning/assessments" class="nav-chip">
+          <span>阶段小测与报告</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="nav-divider" aria-hidden="true"></div>
+
+    <div class="nav-section-group">
+      <div class="nav-group-title">
+        <span class="group-icon">🌿</span>
+        <span>约课与支持</span>
+      </div>
+      <div class="nav-links">
+        <a routerLink="/student/match" class="nav-chip nav-chip--highlight">
+          <span>找老师 / 预约试听 →</span>
+        </a>
+        <a routerLink="/messages" class="nav-chip">
+          <span>课前咨询</span>
+        </a>
+        <a routerLink="/support" class="nav-chip">
+          <span>客服与申诉</span>
+        </a>
+        <a routerLink="/refunds" class="nav-chip">
+          <span>退款进度</span>
+        </a>
+      </div>
+    </div>
+  </nav>
 
   @if (!loaded()) {
-    <p class="quiet-note" role="status">正在安静地准备你的学习台…</p>
+    <div class="quiet-box" role="status">
+      <p class="quiet-note">正在安静地准备你的学习台…</p>
+    </div>
   } @else {
-    <!-- 核心主任务：迫近课程 + 进入课堂（专注模式唯一保留块） -->
+    <!-- 核心主任务：迫近课程 + 进入课堂（专注模式核心保留块） -->
     <section class="focus-card nur-card nur-enter" style="--stagger-index: 1" aria-labelledby="focus-title">
       @if (overview()?.nextLesson; as lesson) {
-        <h2 id="focus-title" class="nur-serif">{{ lesson.subject }}</h2>
+        <div class="focus-card-header">
+          <div>
+            <span class="focus-pill">迫近课程</span>
+            <h2 id="focus-title" class="lesson-title nur-serif">{{ lesson.subject }}</h2>
+          </div>
+          <span class="status-tag status-tag--active">{{ lesson.status === 'CONFIRMED' ? '已确认' : '进行中' }}</span>
+        </div>
+
         <p class="lesson-meta">
-          与 {{ lesson.teacherName }} · {{ lesson.startAt ? (lesson.startAt | date:'M月d日 HH:mm') : '时间待定' }}
+          授课导师：{{ lesson.teacherName }} · {{ lesson.startAt ? (lesson.startAt | date:'M月d日 HH:mm') : '时间待定' }}
         </p>
 
         <!-- 课前准备任务切块：无序勾选 -->
@@ -50,9 +115,17 @@
         </fieldset>
         <p class="encouragement">{{ overview()?.encouragement }}</p>
 
-        <button type="button" class="btn-enter-class" (click)="enterClassroom()" [disabled]="classroomBusy()">
-          {{ classroomBusy() ? '正在进入…' : '进入课堂' }}
-        </button>
+        <div class="focus-action-row">
+          <button
+            type="button"
+            class="nur-btn nur-btn--primary btn-enter-class"
+            (click)="enterClassroom()"
+            [disabled]="classroomBusy()"
+          >
+            {{ classroomBusy() ? '正在进入…' : '进入课堂' }}
+          </button>
+        </div>
+
         @if (classroomMsg(); as cm) {
           <p class="encouragement" role="status">{{ cm.text }}</p>
         }
@@ -64,73 +137,592 @@
       } @else {
         <h2 id="focus-title" class="nur-serif">当前没有迫近课程</h2>
         <p class="lesson-meta">安静的休息同样宝贵。想找老师聊聊，随时可以出发。</p>
-        <button type="button" class="btn-enter-class" (click)="retry()">刷新看看</button>
+        <button type="button" class="nur-btn nur-btn--primary nur-btn--sm" (click)="retry()">刷新看看</button>
       }
     </section>
 
-    <!-- 专注模式收起的内容：次要信息弱化呈现 -->
+    <!-- 专注模式展开的内容：全部功能卡片 -->
     @if (!focusMode()) {
       <!-- 监护绑定申请（G3）：仅在有申请或需展示结果时出现 -->
       @if (pendingBindings().length > 0 || bindingMsg()) {
-        <section class="secondary-row">
-          <div class="nur-card secondary-card">
-            <h3>监护绑定申请</h3>
-            @for (req of pendingBindings(); track req.bindingId) {
-              <p>
-                「{{ req.parentDisplayName }}」{{ req.relation ? '（' + req.relation + '）' : '' }}申请与你建立监护关系。
-              </p>
-              <p class="quiet-note">确认后，对方可以为你的课程代付下单，并查看你的学习周报。</p>
-              <button type="button" class="btn-primary-sm" [disabled]="bindingBusy()" (click)="confirmBinding()">
+        <section class="nur-card notice-binding-card nur-enter">
+          <div class="card-head">
+            <h3 class="card-title">监护绑定申请</h3>
+            <span class="gold-badge">待确认</span>
+          </div>
+          @for (req of pendingBindings(); track req.bindingId) {
+            <div class="binding-item-row">
+              <div>
+                <p class="binding-text">
+                  「{{ req.parentDisplayName }}」{{ req.relation ? '（' + req.relation + '）' : '' }}申请与你建立监护关系。
+                </p>
+                <p class="quiet-note">确认后，对方可以为你的课程代付下单，并查看你的学习周报。</p>
+              </div>
+              <button
+                type="button"
+                class="nur-btn nur-btn--primary nur-btn--sm"
+                [disabled]="bindingBusy()"
+                (click)="confirmBinding()"
+              >
                 {{ bindingBusy() ? '确认中…' : '确认绑定' }}
               </button>
-            }
-            @if (bindingMsg(); as bm) {
-              <p class="reschedule-msg reschedule-msg--{{ bm.type }}" role="status">{{ bm.text }}</p>
-            }
-          </div>
+            </div>
+          }
+          @if (bindingMsg(); as bm) {
+            <p class="reschedule-msg reschedule-msg--{{ bm.type }}" role="status">{{ bm.text }}</p>
+          }
         </section>
       }
-      <!-- 我的课程表 -->
-      <section class="secondary-row">
-        <div class="nur-card secondary-card schedule-card">
-          <h3>我的课程表</h3>
-          @if (schedule().length === 0) {
-            <p class="quiet-note">还没有排定的课程。预约试听后会出现在这里。</p>
+
+      <!-- A3 缺口补齐：我的预约列表 (My Bookings) -->
+      <section class="nur-card bookings-card nur-enter" aria-labelledby="bookings-list-title">
+        <div class="card-head">
+          <div>
+            <h2 id="bookings-list-title" class="card-title">我的预约列表</h2>
+            <p class="card-desc">全量预约进度跟踪，支持两阶段取消与改期协调</p>
+          </div>
+          <span class="count-badge">共 {{ bookingsTotalElements() }} 条预约</span>
+        </div>
+
+        <!-- 状态分类筛选 -->
+        <div class="status-tab-group" role="tablist" aria-label="预约状态筛选">
+          <button
+            type="button"
+            class="status-tab"
+            [class.status-tab--active]="bookingsFilter() === 'ALL'"
+            (click)="bookingsFilter.set('ALL')"
+          >
+            全部
+          </button>
+          <button
+            type="button"
+            class="status-tab"
+            [class.status-tab--active]="bookingsFilter() === 'REQUESTED'"
+            (click)="bookingsFilter.set('REQUESTED')"
+          >
+            待审批
+          </button>
+          <button
+            type="button"
+            class="status-tab"
+            [class.status-tab--active]="bookingsFilter() === 'CONFIRMED'"
+            (click)="bookingsFilter.set('CONFIRMED')"
+          >
+            已确认
+          </button>
+          <button
+            type="button"
+            class="status-tab"
+            [class.status-tab--active]="bookingsFilter() === 'IN_PROGRESS'"
+            (click)="bookingsFilter.set('IN_PROGRESS')"
+          >
+            进行中
+          </button>
+          <button
+            type="button"
+            class="status-tab"
+            [class.status-tab--active]="bookingsFilter() === 'COMPLETED'"
+            (click)="bookingsFilter.set('COMPLETED')"
+          >
+            已完成
+          </button>
+          <button
+            type="button"
+            class="status-tab"
+            [class.status-tab--active]="bookingsFilter() === 'CANCELLED'"
+            (click)="bookingsFilter.set('CANCELLED')"
+          >
+            已取消
+          </button>
+        </div>
+
+        @if (bookingsLoading()) {
+          <div class="quiet-box">
+            <p class="quiet-note">正在获取你的预约列表…</p>
+          </div>
+        } @else if (filteredBookings().length === 0) {
+          <div class="empty-box">
+            <p class="quiet-note">
+              {{ bookingsFilter() === 'ALL' ? '还没有预约记录，去找老师预约一节试听或正式课吧。' : '当前筛选状态下暂无预约。' }}
+            </p>
+          </div>
+        } @else {
+          <div class="booking-list">
+            @for (item of filteredBookings(); track item.bookingId) {
+              <div class="booking-item-card">
+                <div class="booking-main-info">
+                  <div class="booking-title-row">
+                    <span class="type-badge" [class.type-badge--trial]="item.type === 'TRIAL'">
+                      {{ item.type === 'TRIAL' ? '免费试听' : '正式课' }}
+                    </span>
+                    <h3 class="booking-subject">{{ item.subject }}</h3>
+                    <span
+                      class="status-pill"
+                      [class.status-pill--confirmed]="item.status === 'CONFIRMED'"
+                      [class.status-pill--requested]="item.status === 'REQUESTED'"
+                      [class.status-pill--completed]="item.status === 'COMPLETED'"
+                      [class.status-pill--cancelled]="item.status === 'CANCELLED'"
+                    >
+                      {{
+                        item.status === 'CONFIRMED' ? '✔ 已确认' :
+                        item.status === 'REQUESTED' ? '◷ 待审批' :
+                        item.status === 'IN_PROGRESS' ? '● 进行中' :
+                        item.status === 'COMPLETED' ? '✔ 已完成' :
+                        item.status === 'CANCELLED' ? '✕ 已取消' : item.status
+                      }}
+                    </span>
+                  </div>
+
+                  <div class="booking-meta-line">
+                    <span class="meta-item">预约编号：{{ item.bookingId.slice(0, 8) }}</span>
+                    <span class="meta-item">课时费：¥{{ yuan(item.priceCents) }}</span>
+                    @if (item.createdAt) {
+                      <span class="meta-item">创建时间：{{ item.createdAt | date:'yyyy-MM-dd HH:mm' }}</span>
+                    }
+                    @if (item.cancelReason) {
+                      <span class="meta-item cancel-reason">取消原因：{{ item.cancelReason }}</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="booking-actions">
+                  <!-- 改期入口（针对 REQUESTED / CONFIRMED） -->
+                  @if (item.status === 'CONFIRMED' || item.status === 'REQUESTED') {
+                    <button
+                      type="button"
+                      class="nur-btn nur-btn--ghost nur-btn--sm"
+                      (click)="startReschedule({ bookingId: item.bookingId, teacherId: item.teacherId })"
+                    >
+                      改期
+                    </button>
+                  }
+
+                  <!-- A1 缺口补齐：取消预约入口（两阶段取消） -->
+                  @if (item.status === 'CONFIRMED' || item.status === 'REQUESTED') {
+                    <button
+                      type="button"
+                      class="nur-btn nur-btn--ghost nur-btn--sm btn-cancel-booking"
+                      (click)="openCancel(item.bookingId)"
+                    >
+                      取消预约
+                    </button>
+                  }
+
+                  <!-- 评价入口 -->
+                  @if (item.status === 'COMPLETED' || item.status === 'CLOSED') {
+                    @if (reviewedBookings().has(item.bookingId)) {
+                      <span class="reviewed-tag">✓ 已评价</span>
+                    } @else {
+                      <button
+                        type="button"
+                        class="nur-btn nur-btn--ghost nur-btn--sm"
+                        (click)="openReview(item.bookingId)"
+                      >
+                        写评价
+                      </button>
+                    }
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- 分页栏 -->
+          @if (bookingsTotalPages() > 1) {
+            <div class="pager-row">
+              <button
+                type="button"
+                class="nur-btn nur-btn--ghost nur-btn--sm"
+                [disabled]="bookingsPage() === 0 || bookingsLoading()"
+                (click)="turnBookingsPage(-1)"
+              >
+                上一页
+              </button>
+              <span class="pager-info">
+                第 {{ bookingsPage() + 1 }} / {{ bookingsTotalPages() }} 页
+              </span>
+              <button
+                type="button"
+                class="nur-btn nur-btn--ghost nur-btn--sm"
+                [disabled]="bookingsPage() + 1 >= bookingsTotalPages() || bookingsLoading()"
+                (click)="turnBookingsPage(1)"
+              >
+                下一页
+              </button>
+            </div>
+          }
+        }
+      </section>
+
+      <!-- A1 取消预约两阶段确认浮动面板/弹窗 -->
+      @if (cancelBookingId(); as cId) {
+        <div class="modal-backdrop" (click)="dismissCancel()">
+          <div class="modal-card nur-card nur-enter" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title">
+            <div class="card-head">
+              <h2 id="cancel-modal-title" class="card-title">取消预约 · 二次确认</h2>
+              <button type="button" class="close-x-btn" (click)="dismissCancel()" aria-label="关闭">✕</button>
+            </div>
+
+            <!-- 第一阶段：填写原因 -->
+            @if (cancelStage() === 'FORM') {
+              <div class="cancel-phase-body">
+                <p class="phase-desc">
+                  请说明取消该节预约的原因。系统将预估释放时段与可能的退款级联影响：
+                </p>
+                <div class="form-group">
+                  <label for="cancel-reason-input" class="form-label">取消原因 <span class="required">*</span></label>
+                  <textarea
+                    id="cancel-reason-input"
+                    class="form-control"
+                    rows="3"
+                    [(ngModel)]="cancelReason"
+                    placeholder="如：临时有学校考试、突发时间冲突等"
+                  ></textarea>
+                </div>
+
+                <div class="modal-actions">
+                  <button
+                    type="button"
+                    class="nur-btn nur-btn--primary"
+                    [disabled]="!cancelReason().trim() || cancelBusy()"
+                    (click)="previewCancel()"
+                  >
+                    {{ cancelBusy() ? '正在计算级联影响…' : '下一步：预览影响' }}
+                  </button>
+                  <button type="button" class="nur-btn nur-btn--ghost" (click)="dismissCancel()">
+                    放弃取消
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- 第二阶段：预览后果并终态执行 -->
+            @if (cancelStage() === 'PREVIEW' && cancelPreviewData(); as preview) {
+              <div class="cancel-phase-body">
+                <div class="impact-summary-box">
+                  <h3 class="impact-title">级联影响预览</h3>
+                  <div class="impact-item">
+                    <span class="impact-label">档期释放：</span>
+                    <span class="impact-val">{{ preview.cascadeImpact.willReleaseSlot ? '导师档期将立即重新开放给他人预约' : '不释放档期' }}</span>
+                  </div>
+                  <div class="impact-item">
+                    <span class="impact-label">退款金额：</span>
+                    <span class="impact-val impact-val--money">¥{{ yuan(preview.cascadeImpact.refundAmountCents) }}</span>
+                  </div>
+                  <div class="impact-item">
+                    <span class="impact-label">退款说明：</span>
+                    <span class="impact-val">{{ preview.cascadeImpact.refundDescription }}</span>
+                  </div>
+                  <div class="impact-item">
+                    <span class="impact-label">凭证有效性：</span>
+                    <span class="impact-val">{{ preview.notice }}</span>
+                  </div>
+                </div>
+
+                <div class="modal-actions">
+                  <button
+                    type="button"
+                    class="nur-btn nur-btn--primary btn-danger-action"
+                    [disabled]="cancelBusy()"
+                    (click)="executeCancel()"
+                  >
+                    {{ cancelBusy() ? '正在确认取消…' : '确认取消预约' }}
+                  </button>
+                  <button type="button" class="nur-btn nur-btn--ghost" (click)="cancelStage.set('FORM')">
+                    返回修改原因
+                  </button>
+                </div>
+              </div>
+            }
+
+            @if (cancelMsg(); as cm) {
+              <p class="reschedule-msg reschedule-msg--{{ cm.type }}" role="status">{{ cm.text }}</p>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 双卡片分栏：B2 学生个人资料卡 + B1 学习目标画像卡 -->
+      <div class="profile-cards-grid">
+        <!-- B2 缺口补齐：个人资料卡 -->
+        <section class="nur-card student-profile-card nur-enter" aria-labelledby="profile-title">
+          <div class="card-head">
+            <div>
+              <h2 id="profile-title" class="card-title">学生个人档案</h2>
+              <p class="card-desc">专属学生编号，用于家长监护绑定</p>
+            </div>
+            @if (!profileEditing()) {
+              <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="startEditProfile()">
+                编辑资料
+              </button>
+            }
+          </div>
+
+          @if (profileLoading()) {
+            <p class="quiet-note">正在读取档案…</p>
           } @else {
-            <ul class="schedule-list">
-              @for (lesson of schedule(); track lesson.bookingId) {
-                <li>
+            @if (studentProfile(); as sp) {
+              <!-- 学生编号高亮卡（核心识别码，绑定必用） -->
+              <div class="student-no-banner">
+                <div>
+                  <span class="banner-label">我的学生编号（家长绑定使用）</span>
+                  <p class="banner-no">{{ sp.studentNo || '生成中…' }}</p>
+                </div>
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--ghost nur-btn--sm btn-copy"
+                  (click)="copyStudentNo(sp.studentNo)"
+                >
+                  {{ copiedStudentNo() ? '✔ 已复制' : '复制编号' }}
+                </button>
+              </div>
+
+              @if (!profileEditing()) {
+                <div class="profile-view-list">
+                  <div class="view-item">
+                    <span class="item-label">当前学段</span>
+                    <span class="item-val">{{ sp.gradeLevel || '未设置' }}</span>
+                  </div>
+                  <div class="view-item">
+                    <span class="item-label">学习风格</span>
+                    <span class="item-val">{{ sp.learningStyle || '未设置' }}</span>
+                  </div>
+                  <div class="view-item">
+                    <span class="item-label">专注偏好</span>
+                    <span class="item-val">{{ sp.focusPreference || '未设置' }}</span>
+                  </div>
+                  <div class="view-item">
+                    <span class="item-label">重点偏好科目</span>
+                    <div class="subject-tags-wrap">
+                      @for (sub of sp.preferredSubjects; track sub) {
+                        <span class="sub-tag">{{ sub }}</span>
+                      }
+                      @if (!sp.preferredSubjects.length) {
+                        <span class="quiet-note">未设置</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <!-- 编辑表单 -->
+                <div class="profile-edit-form">
+                  <div class="form-group">
+                    <label for="edit-grade" class="form-label">学段</label>
+                    <input
+                      id="edit-grade"
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="editGradeLevel"
+                      placeholder="如：初二、高一、小学六年级"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="edit-style" class="form-label">学习风格</label>
+                    <input
+                      id="edit-style"
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="editLearningStyle"
+                      placeholder="如：视觉理解型、先做题后总结、图表导向"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="edit-focus" class="form-label">专注偏好</label>
+                    <input
+                      id="edit-focus"
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="editFocusPreference"
+                      placeholder="如：25分钟番茄钟、阶段性短时沉浸、安静少打扰"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">重点偏好科目（可多选）</label>
+                    <div class="chip-selector">
+                      @for (sub of ['语文', '数学', '英语', '物理', '化学', '生物', '历史', '地理']; track sub) {
+                        <button
+                          type="button"
+                          class="nur-chip-btn"
+                          [attr.aria-pressed]="editPreferredSubjects().includes(sub)"
+                          (click)="togglePreferredSubject(sub)"
+                        >
+                          {{ sub }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="form-actions-inline">
+                    <button
+                      type="button"
+                      class="nur-btn nur-btn--primary nur-btn--sm"
+                      [disabled]="profileSaving()"
+                      (click)="saveStudentProfile()"
+                    >
+                      {{ profileSaving() ? '保存中…' : '保存修改' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="nur-btn nur-btn--ghost nur-btn--sm"
+                      (click)="cancelEditProfile()"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              }
+            }
+          }
+
+          @if (profileMsg(); as pm) {
+            <p class="reschedule-msg reschedule-msg--{{ pm.type }}" role="status">{{ pm.text }}</p>
+          }
+        </section>
+
+        <!-- B1 缺口补齐：学习目标画像卡 -->
+        <section class="nur-card learning-profile-card nur-enter" aria-labelledby="learning-profile-title">
+          <div class="card-head">
+            <div>
+              <h2 id="learning-profile-title" class="card-title">学习目标画像</h2>
+              <p class="card-desc">明确长期目标与阶段，与授课导师同步期望</p>
+            </div>
+            @if (!learningProfileEditing()) {
+              <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="startEditLearningProfile()">
+                调整目标
+              </button>
+            }
+          </div>
+
+          @if (learningProfileLoading()) {
+            <p class="quiet-note">正在读取学习画像…</p>
+          } @else {
+            @if (learningProfile(); as lp) {
+              @if (!learningProfileEditing()) {
+                <div class="profile-view-list">
+                  <div class="view-item">
+                    <span class="item-label">长期目标</span>
+                    <p class="item-val-text">{{ lp.goal || '尚未设定长期目标，点击右上角设置。' }}</p>
+                  </div>
+                  <div class="view-item">
+                    <span class="item-label">当前阶段</span>
+                    <span class="item-val">{{ lp.stage || '未指定' }}</span>
+                  </div>
+                  <div class="view-item">
+                    <span class="item-label">目标科目</span>
+                    <span class="item-val">{{ lp.targetSubjects || '未指定' }}</span>
+                  </div>
+                </div>
+              } @else {
+                <!-- 编辑表单 -->
+                <div class="profile-edit-form">
+                  <div class="form-group">
+                    <label for="edit-goal" class="form-label">核心长期目标</label>
+                    <textarea
+                      id="edit-goal"
+                      class="form-control"
+                      rows="3"
+                      [(ngModel)]="editGoal"
+                      placeholder="如：期末数学提高20分、突破二次函数与几何压轴大题"
+                    ></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label for="edit-stage" class="form-label">当前阶段</label>
+                    <input
+                      id="edit-stage"
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="editStage"
+                      placeholder="如：初二下学期期中复习冲刺"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="edit-target-sub" class="form-label">重点目标科目</label>
+                    <input
+                      id="edit-target-sub"
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="editTargetSubjects"
+                      placeholder="如：数学、物理"
+                    />
+                  </div>
+
+                  <div class="form-actions-inline">
+                    <button
+                      type="button"
+                      class="nur-btn nur-btn--primary nur-btn--sm"
+                      [disabled]="learningProfileSaving()"
+                      (click)="saveLearningProfile()"
+                    >
+                      {{ learningProfileSaving() ? '保存中…' : '保存目标' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="nur-btn nur-btn--ghost nur-btn--sm"
+                      (click)="cancelEditLearningProfile()"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              }
+            }
+          }
+
+          @if (learningProfileMsg(); as lpm) {
+            <p class="reschedule-msg reschedule-msg--{{ lpm.type }}" role="status">{{ lpm.text }}</p>
+          }
+        </section>
+      </div>
+
+      <!-- 我的课程表与改期/评价 -->
+      <section class="nur-card schedule-section-card nur-enter" aria-labelledby="schedule-title">
+        <div class="card-head">
+          <h2 id="schedule-title" class="card-title">我的课程表</h2>
+          <span class="quiet-note">待开课与历史完成课程汇总</span>
+        </div>
+
+        @if (schedule().length === 0) {
+          <p class="quiet-note">还没有排定的课程。预约试听后会出现在这里。</p>
+        } @else {
+          <ul class="schedule-list">
+            @for (lesson of schedule(); track lesson.bookingId) {
+              <li class="schedule-item-row">
+                <div class="schedule-info">
                   <span class="schedule-subject">{{ lesson.subject }}</span>
                   <span class="schedule-time">
                     {{ lesson.startAt ? (lesson.startAt | date: 'M月d日 HH:mm') : '时间待定' }}
                   </span>
+                </div>
+
+                <div class="schedule-status-group">
                   @if (lesson.status === 'CONFIRMED') {
                     @if (orderOf(lesson.bookingId); as ord) {
-                      <span class="status-pill">{{ ord.status === 'PAID' ? '✓ 已支付' : ord.status === 'CLOSED' ? '订单已关闭' : ord.status === 'CANCELLED' ? '订单已取消' : '◷ 待支付' }}</span>
+                      <span class="status-pill status-pill--confirmed">{{ ord.status === 'PAID' ? '✓ 已支付' : ord.status === 'CLOSED' ? '订单已关闭' : ord.status === 'CANCELLED' ? '订单已取消' : '◷ 待支付' }}</span>
                     } @else if (lesson.type === 'TRIAL') {
-                      <!-- 试听免费（2026-10-10 决策）：试听预约不提供付费下单入口，服务端同样拒绝 -->
                       <span class="status-pill">免费试听</span>
                     } @else {
-                      <span class="status-pill">请家长在家长中心下单付款</span>
+                      <span class="status-pill">待家长付款</span>
                     }
                   }
+
                   @if (lesson.status === 'CONFIRMED' || lesson.status === 'REQUESTED') {
                     <button
                       type="button"
-                      class="btn-ghost-sm reschedule-entry"
+                      class="nur-btn nur-btn--ghost nur-btn--sm"
                       (click)="startReschedule(lesson)"
                       [attr.aria-expanded]="rescheduleBookingId() === lesson.bookingId"
                     >
                       改期
                     </button>
                   }
+
                   @if (lesson.status === 'COMPLETED' || lesson.status === 'CLOSED') {
                     @if (reviewedBookings().has(lesson.bookingId)) {
-                      <span class="status-pill">✓ 已评价</span>
+                      <span class="status-pill status-pill--confirmed">✓ 已评价</span>
                     } @else {
                       <button
                         type="button"
-                        class="btn-ghost-sm reschedule-entry"
+                        class="nur-btn nur-btn--ghost nur-btn--sm"
                         (click)="openReview(lesson.bookingId)"
                         [attr.aria-expanded]="reviewBookingId() === lesson.bookingId"
                       >
@@ -138,67 +730,79 @@
                       </button>
                     }
                   }
-                </li>
-                @if (reviewBookingId() === lesson.bookingId) {
-                  <li class="reschedule-panel" role="group" aria-label="课程评价">
-                    <p class="reschedule-hint">这节课上得怎么样？</p>
-                    <div class="slot-picker" role="radiogroup" aria-label="星级评分">
-                      @for (star of [1, 2, 3, 4, 5]; track star) {
-                        <button
-                          type="button"
-                          class="nur-chip-btn"
-                          [attr.aria-pressed]="reviewRating() >= star"
-                          (click)="reviewRating.set(star)"
-                        >{{ star }} ★</button>
-                      }
-                    </div>
-                    <div class="slot-picker" role="group" aria-label="评价标签（最多选 3 个）" style="margin-top:6px">
-                      @for (tag of ['讲解清晰', '耐心细致', '方法实用', '节奏合适', '有收获']; track tag) {
-                        <button
-                          type="button"
-                          class="nur-chip-btn"
-                          [attr.aria-pressed]="reviewTags().includes(tag)"
-                          (click)="toggleReviewTag(tag)"
-                        >{{ tag }}</button>
-                      }
-                    </div>
-                    <textarea
-                      aria-label="文字评语"
-                      rows="3"
-                      [value]="reviewComment()"
-                      (input)="reviewComment.set($any($event.target).value)"
-                      placeholder="写点什么给老师（可选，最多 1024 字）"
-                      style="width:100%;margin-top:6px;padding:8px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--bg-card);color:var(--text-main)"
-                    ></textarea>
-                    @if (reviewMsg(); as rm) {
-                      <p class="reschedule-msg reschedule-msg--{{ rm.type }}" role="status">{{ rm.text }}</p>
+                </div>
+              </li>
+
+              <!-- 课程评价展开面板 -->
+              @if (reviewBookingId() === lesson.bookingId) {
+                <li class="reschedule-panel" role="group" aria-label="课程评价">
+                  <p class="reschedule-hint">这节课上得怎么样？给导师一个客观反馈：</p>
+                  <div class="slot-picker" role="radiogroup" aria-label="星级评分">
+                    @for (star of [1, 2, 3, 4, 5]; track star) {
+                      <button
+                        type="button"
+                        class="nur-chip-btn"
+                        [attr.aria-pressed]="reviewRating() >= star"
+                        (click)="reviewRating.set(star)"
+                      >{{ star }} ★</button>
                     }
-                    <div style="display:flex;gap:8px;margin-top:8px">
-                      <button type="button" class="btn-primary-sm" [disabled]="reviewBusy()" (click)="submitReview(lesson.bookingId)">
-                        {{ reviewBusy() ? '提交中…' : '提交评价' }}
-                      </button>
-                      <button type="button" class="btn-ghost-sm" (click)="cancelReview()">取消</button>
+                  </div>
+                  <div class="slot-picker" role="group" aria-label="评价标签" style="margin-top:6px">
+                    @for (tag of ['讲解清晰', '耐心细致', '方法实用', '节奏合适', '有收获']; track tag) {
+                      <button
+                        type="button"
+                        class="nur-chip-btn"
+                        [attr.aria-pressed]="reviewTags().includes(tag)"
+                        (click)="toggleReviewTag(tag)"
+                      >{{ tag }}</button>
+                    }
+                  </div>
+                  <textarea
+                    aria-label="文字评语"
+                    class="form-control"
+                    rows="3"
+                    [value]="reviewComment()"
+                    (input)="reviewComment.set($any($event.target).value)"
+                    placeholder="写点什么给老师（可选，最多 1024 字）"
+                    style="margin-top:8px"
+                  ></textarea>
+                  @if (reviewMsg(); as rm) {
+                    <p class="reschedule-msg reschedule-msg--{{ rm.type }}" role="status">{{ rm.text }}</p>
+                  }
+                  <div class="form-actions-inline" style="margin-top:8px">
+                    <button
+                      type="button"
+                      class="nur-btn nur-btn--primary nur-btn--sm"
+                      [disabled]="reviewBusy()"
+                      (click)="submitReview(lesson.bookingId)"
+                    >
+                      {{ reviewBusy() ? '提交中…' : '提交评价' }}
+                    </button>
+                    <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="cancelReview()">取消</button>
+                  </div>
+                </li>
+              }
+
+              <!-- 改期展开面板 -->
+              @if (rescheduleBookingId() === lesson.bookingId) {
+                <li class="reschedule-panel">
+                  @if (slotsLoading()) {
+                    <p class="quiet-note" role="status">正在获取导师的可约时间…</p>
+                  } @else if (openSlots().length > 0) {
+                    <p class="reschedule-hint">选择一个新的时段：</p>
+                    <div class="slot-picker" role="group" aria-label="可改期的候选时间">
+                      @for (slot of openSlots(); track slot.slotId) {
+                        <button
+                          type="button"
+                          class="nur-chip-btn"
+                          [attr.aria-pressed]="pickedSlotId() === slot.slotId"
+                          (click)="pickSlot(slot.slotId)"
+                        >
+                          {{ slot.startAt | date: 'M月d日 HH:mm' }}
+                        </button>
+                      }
                     </div>
-                  </li>
-                }
-                @if (rescheduleBookingId() === lesson.bookingId) {
-                  <li class="reschedule-panel">
-                    @if (slotsLoading()) {
-                      <p class="quiet-note" role="status">正在获取导师的可约时间…</p>
-                    } @else if (openSlots().length > 0) {
-                      <p class="reschedule-hint">选择一个新的时间：</p>
-                      <div class="slot-picker" role="group" aria-label="可改期的候选时间">
-                        @for (slot of openSlots(); track slot.slotId) {
-                          <button
-                            type="button"
-                            class="nur-chip-btn"
-                            [attr.aria-pressed]="pickedSlotId() === slot.slotId"
-                            (click)="pickSlot(slot.slotId)"
-                          >
-                            {{ slot.startAt | date: 'M月d日 HH:mm' }}
-                          </button>
-                        }
-                      </div>
+                    <div class="form-actions-inline" style="margin-top:8px">
                       <button
                         type="button"
                         class="nur-btn nur-btn--primary nur-btn--sm"
@@ -207,42 +811,110 @@
                       >
                         {{ rescheduleBusy() ? '正在改期…' : '确认改期' }}
                       </button>
-                    }
-                    @if (rescheduleMessage(); as msg) {
-                      <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
-                    }
-                    <button type="button" class="btn-ghost-sm" (click)="cancelReschedule()">取消改期</button>
-                  </li>
-                }
+                      <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="cancelReschedule()">取消改期</button>
+                    </div>
+                  }
+                  @if (rescheduleMessage(); as msg) {
+                    <p class="reschedule-msg reschedule-msg--{{ msg.type }}" role="status">{{ msg.text }}</p>
+                  }
+                </li>
               }
-            </ul>
-          }
-          @if (orderMsg(); as om) {
-            <p class="reschedule-msg reschedule-msg--{{ om.type }}" role="status">{{ om.text }}</p>
-          }
+            }
+          </ul>
+        }
+      </section>
+
+      <!-- 课后快速提问卡 -->
+      <section class="nur-card quick-ask-card nur-enter" aria-labelledby="quick-ask-title">
+        <div class="card-head">
+          <h2 id="quick-ask-title" class="card-title">快速答疑便签</h2>
+          <a routerLink="/student/questions" class="nav-chip">前往答疑专区 →</a>
         </div>
-        <div class="nur-card secondary-card">
-          <h3>课后疑难提问</h3>
-          <p class="quiet-note">把卡住的关窍写下来，导师会像及时雨一样回应。</p>
-          <textarea
-            rows="3"
-            placeholder="例如：这道题的第二步为什么要设辅助线？"
-            aria-label="问题描述"
-            #question
-          ></textarea>
-          <button type="button" class="btn-ghost-sm" [disabled]="asking()" (click)="askTeacher(question.value)">
+        <p class="quiet-note">把卡住的关窍写下来，将直接通知下一堂课的授课导师。</p>
+        <textarea
+          class="form-control"
+          rows="3"
+          placeholder="例如：这道题的第二步为什么要设辅助线？"
+          aria-label="问题描述"
+          #questionInput
+        ></textarea>
+        <div class="form-actions-inline" style="margin-top:8px">
+          <button
+            type="button"
+            class="nur-btn nur-btn--primary nur-btn--sm"
+            [disabled]="asking()"
+            (click)="askTeacher(questionInput.value)"
+          >
             {{ asking() ? '发送中…' : '发送给导师' }}
           </button>
         </div>
       </section>
 
-      @if(legacyError() && !legacyWallet()){<p role="alert">历史钱包读取失败。<button type="button" class="btn-ghost-sm" (click)="loadLegacyWallet()" [disabled]="legacyLoading()">重试读取</button></p>}
-      @if(legacyWallet();as w){@if(w.present){<section class="nur-card secondary-card" aria-labelledby="legacy-wallet-title"><h2 id="legacy-wallet-title" class="nur-serif">历史学生付款钱包（只读）</h2><p>余额 ¥{{((w.balanceCents??0)/100).toFixed(2)}} · {{w.currency}}</p><p class="quiet-note">历史余额和原付款人保持不变，绑定家长不会转移资金。需核对旧退款时，请通过客服与申诉联系运营。</p>
-        @if(legacyError()){<p role="alert">历史钱包读取失败，请刷新重试。</p>}
-        <button type="button" class="btn-ghost-sm" (click)="loadLegacyWallet()" [disabled]="legacyLoading()">刷新历史钱包</button>
-        @for(t of w.transactions.content;track t.txnId){<p>{{t.createdAt | date:'MM-dd HH:mm'}} · {{t.memo || t.type}} · ¥{{(t.amountCents/100).toFixed(2)}} · 变动后余额 ¥{{(t.balanceAfterCents/100).toFixed(2)}}</p>}
-        <p>共{{w.transactions.totalElements}}条流水 · 第{{w.transactions.totalPages?legacyPage()+1:0}}/{{w.transactions.totalPages}}页</p><button type="button" class="btn-ghost-sm" [disabled]="legacyLoading() || legacyPage()===0" (click)="turnLegacyWallet(-1)">上一页</button><button type="button" class="btn-ghost-sm" [disabled]="legacyLoading() || legacyPage()+1>=w.transactions.totalPages" (click)="turnLegacyWallet(1)">下一页</button>
-      </section>}}
+      <!-- 历史学生付款钱包（只读） -->
+      @if (legacyError() && !legacyWallet()) {
+        <p class="reschedule-msg reschedule-msg--error" role="alert">
+          历史钱包读取失败。<button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="loadLegacyWallet()" [disabled]="legacyLoading()">重试读取</button>
+        </p>
+      }
+      @if (legacyWallet(); as w) {
+        @if (w.present) {
+          <section class="nur-card legacy-wallet-card nur-enter" aria-labelledby="legacy-wallet-title">
+            <h2 id="legacy-wallet-title" class="card-title nur-serif">历史学生付款钱包（只读）</h2>
+            <div class="wallet-stat-row">
+              <span class="wallet-money">余额 ¥{{ ((w.balanceCents ?? 0) / 100).toFixed(2) }}</span>
+              <span class="quiet-note">{{ w.currency }}</span>
+            </div>
+            <p class="quiet-note">
+              历史余额和原付款人保持不变，绑定家长不会转移资金。需核对旧退款时，请通过客服与申诉联系运营。
+            </p>
+            @if (legacyError()) {
+              <p class="reschedule-msg reschedule-msg--error" role="alert">历史钱包读取失败，请刷新重试。</p>
+            }
+            <button
+              type="button"
+              class="nur-btn nur-btn--ghost nur-btn--sm"
+              (click)="loadLegacyWallet()"
+              [disabled]="legacyLoading()"
+            >
+              刷新历史钱包
+            </button>
+            <div class="wallet-txn-list">
+              @for (t of w.transactions.content; track t.txnId) {
+                <div class="wallet-txn-row">
+                  <span>{{ t.createdAt | date:'MM-dd HH:mm' }}</span>
+                  <span>{{ t.memo || t.type }}</span>
+                  <span>¥{{ (t.amountCents / 100).toFixed(2) }}</span>
+                  <span class="quiet-note">变动后 ¥{{ (t.balanceAfterCents / 100).toFixed(2) }}</span>
+                </div>
+              }
+            </div>
+            <div class="pager-row">
+              <span class="quiet-note">
+                共 {{ w.transactions.totalElements }} 条流水 · 第 {{ w.transactions.totalPages ? legacyPage() + 1 : 0 }} / {{ w.transactions.totalPages }} 页
+              </span>
+              <div class="form-actions-inline">
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--ghost nur-btn--sm"
+                  [disabled]="legacyLoading() || legacyPage() === 0"
+                  (click)="turnLegacyWallet(-1)"
+                >
+                  上一页
+                </button>
+                <button
+                  type="button"
+                  class="nur-btn nur-btn--ghost nur-btn--sm"
+                  [disabled]="legacyLoading() || legacyPage() + 1 >= w.transactions.totalPages"
+                  (click)="turnLegacyWallet(1)"
+                >
+                  下一页
+                </button>
+              </div>
+            </div>
+          </section>
+        }
+      }
+
       <nur-notice-center />
     }
   }

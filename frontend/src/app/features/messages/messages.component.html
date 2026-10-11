@@ -1,39 +1,194 @@
 <main class="message-shell">
-  <header><h1 class="nur-serif">课前咨询</h1><a [routerLink]="home()">返回控制台</a><button type="button" (click)="refresh()">刷新</button></header>
-  <p class="hint">与老师沟通学习目标和课程安排。页面每 15 秒更新，老师回复后可在这里查看。</p>
-  @if (notice()) { <p role="status">{{ notice() }}</p> }
-  <div class="message-layout">
-    <nav aria-label="咨询会话" class="nur-card conversations">
-      @if (!loaded()) { <p role="status">正在加载…</p> }
-      @else if (!conversations().length) { <p>还没有咨询会话。学生可以从「找老师」发起咨询。</p> }
-      @for (c of conversations(); track c.conversationId) {
-        <button type="button" [class.selected]="active()?.conversationId === c.conversationId" [disabled]="sending() || busy()" (click)="select(c)">
-          {{ c.counterpartName }} · {{ c.subject ?? '课程咨询' }}
-          @if (c.unreadCount) { <span class="unread">{{ c.unreadCount }} 条未读</span> }
-        </button>
+  <header class="message-header">
+    <div class="header-main">
+      <a class="back-link" [routerLink]="home()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>返回工作台</span>
+      </a>
+      <div class="title-group">
+        <span class="nur-kicker">CONSULTATION & MESSAGING</span>
+        <h1 class="nur-serif page-title">课前咨询与消息</h1>
+        <p class="page-desc">与授课导师沟通学习目标、授课排期与课程要求。离开页面自动休眠轮询，返回时即时同步。</p>
+      </div>
+    </div>
+    <div class="header-tools">
+      <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm" (click)="refresh()" [disabled]="busy() || sending()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+        <span>刷新</span>
+      </button>
+    </div>
+  </header>
+
+  @if (notice()) {
+    <div class="notice-bar" role="status" aria-live="polite">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>{{ notice() }}</span>
+    </div>
+  }
+
+  <!-- 会话主布局（移动端根据 mobileView 互斥显示） -->
+  <div class="message-layout" [class.show-chat-mobile]="mobileView() === 'chat'">
+    <!-- 左栏：会话列表 -->
+    <nav class="conversations-pane nur-card" aria-label="咨询会话列表">
+      <div class="pane-head">
+        <h2 class="pane-title nur-serif">全部咨询</h2>
+        <span class="conversations-count">{{ conversations().length }}</span>
+      </div>
+
+      @if (!loaded()) {
+        <p class="empty-hint" role="status">正在加载会话…</p>
+      } @else if (!conversations().length) {
+        <div class="empty-state">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <p class="empty-text">暂无咨询会话</p>
+          <p class="empty-hint">学生可在「找老师」或导师详情页发起课前咨询。</p>
+        </div>
       }
+
+      <div class="conversations-list">
+        @for (c of conversations(); track c.conversationId) {
+          <button
+            type="button"
+            class="conversation-item"
+            [class.conversation-item--active]="active()?.conversationId === c.conversationId"
+            [disabled]="sending() || busy()"
+            (click)="select(c)">
+            <div class="item-avatar">
+              <span>{{ c.counterpartName ? c.counterpartName.slice(0, 1) : '友' }}</span>
+            </div>
+            <div class="item-info">
+              <div class="item-top-row">
+                <strong class="item-name">{{ c.counterpartName }}</strong>
+                @if (c.unreadCount) {
+                  <span class="unread-badge">{{ c.unreadCount }} 未读</span>
+                }
+              </div>
+              <p class="item-subject">{{ c.subject ?? '课程咨询' }}</p>
+            </div>
+          </button>
+        }
+      </div>
     </nav>
-    <section class="nur-card thread" aria-label="消息记录">
+
+    <!-- 右栏：聊天窗口 -->
+    <section class="chat-thread-pane nur-card" aria-label="消息记录">
       @if (active(); as c) {
-        <h2 class="nur-serif">{{ c.counterpartName }} · {{ c.subject ?? '课程咨询' }}</h2>
-        @if (hasOlder()) { <button type="button" (click)="loadMessages(true)" [disabled]="busy()">查看更早消息</button> }
-        <ol class="messages" aria-live="polite" aria-relevant="additions">
-          @for (m of messages(); track m.messageId) {
-            <li [class.mine]="m.mine"><small>{{ m.mine ? '我' : c.counterpartName }} · {{ m.sentAt | date:'M月d日 HH:mm' }}</small>
-              <p>{{ m.body }}</p>@if(m.attachmentId){<button type="button" (click)="download(m)" [disabled]="sending()">下载附件</button>}@if (m.mine) { <small>{{ m.readAt ? '对方已读' : '已发送' }}</small> }
-            </li>
+        <!-- 移动端顶部返回栏 -->
+        <div class="chat-header">
+          <div class="header-left-cluster">
+            <button type="button" class="btn-mobile-back" (click)="backToList()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <span>会话列表</span>
+            </button>
+            <div class="chat-avatar">
+              <span>{{ c.counterpartName ? c.counterpartName.slice(0, 1) : '友' }}</span>
+            </div>
+            <div class="chat-title-wrap">
+              <h2 class="chat-title nur-serif">{{ c.counterpartName }}</h2>
+              <span class="chat-subtitle">{{ c.subject ?? '课程咨询' }}</span>
+            </div>
+          </div>
+          @if (hasOlder()) {
+            <button type="button" class="btn-load-older" (click)="loadMessages(true)" [disabled]="busy()">
+              查看更早历史
+            </button>
           }
-        </ol>
-        @if (busy()) { <p role="status">正在更新消息…</p> }
-        <nur-storage-quota endpoint="/api/v1/messaging/files/quota" [revision]="quotaRevision()" />
-        <label class="hint">发送附件<input type="file" accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx" (change)="upload($event)" [disabled]="sending() || busy()" /></label>
-        <p class="hint">支持PDF、图片与无宏Office文档，每份≤10MB、个人保留容量100MB、每会话最多100份。已发附件与消息保留，暂无撤回或自动清理。</p>
-        <form (submit)="$event.preventDefault(); send()">
-          <label for="message-draft">发送消息</label>
-          <textarea id="message-draft" rows="3" maxlength="4000" [value]="draft()" [disabled]="sending()" (input)="draft.set($any($event.target).value)"></textarea>
-          <button type="submit" [disabled]="sending() || !draft().trim()">{{ sending() ? '发送中…' : '发送' }}</button>
+        </div>
+
+        <!-- 消息气泡流 -->
+        <div class="messages-scroll-area">
+          <ol class="messages-stream" aria-live="polite" aria-relevant="additions">
+            @for (m of messages(); track m.messageId) {
+              <li class="message-bubble-row" [class.message-mine]="m.mine">
+                <div class="bubble-box">
+                  <div class="bubble-meta">
+                    <span class="bubble-author">{{ m.mine ? '我' : c.counterpartName }}</span>
+                    <time class="bubble-time">{{ m.sentAt | date:'M月d日 HH:mm' }}</time>
+                  </div>
+                  <p class="bubble-content">{{ m.body }}</p>
+
+                  @if (m.attachmentId) {
+                    <div class="bubble-attachment">
+                      <button type="button" class="btn-download-att" (click)="download(m)" [disabled]="sending()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                        <span>下载附件</span>
+                      </button>
+                    </div>
+                  }
+
+                  @if (m.mine) {
+                    <span class="read-status">{{ m.readAt ? '对方已读' : '已发送' }}</span>
+                  }
+                </div>
+              </li>
+            }
+          </ol>
+          @if (busy()) {
+            <p class="updating-hint" role="status">正在同步消息…</p>
+          }
+        </div>
+
+        <!-- 发送失败重试横幅 -->
+        @if (sendFailed()) {
+          <div class="retry-error-bar" role="alert">
+            <div class="retry-msg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>消息发送失败，草稿已保存在本地</span>
+            </div>
+            <button type="button" class="btn-retry-send" (click)="retrySend()" [disabled]="sending()">
+              重试发送
+            </button>
+          </div>
+        }
+
+        <!-- 附件上传与配额栏 -->
+        <div class="chat-tools-bar">
+          <div class="quota-container">
+            <nur-storage-quota endpoint="/api/v1/messaging/files/quota" [revision]="quotaRevision()" />
+          </div>
+          <label class="attachment-upload-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            <span>发送附件</span>
+            <input type="file" class="visually-hidden" accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx,.pptx" (change)="upload($event)" [disabled]="sending() || busy()" />
+          </label>
+        </div>
+        <p class="tools-hint">支持 PDF、图片及无宏 Office 格式文档，每份 ≤10MB。已发附件与消息终身留存。</p>
+
+        <!-- 消息输入与发送表单（支持 localStorage 自动草稿暂存） -->
+        <form (submit)="$event.preventDefault(); send()" class="chat-compose-form">
+          <label for="message-draft" class="visually-hidden">发送消息内容</label>
+          <div class="textarea-wrapper">
+            <textarea
+              id="message-draft"
+              rows="3"
+              maxlength="4000"
+              [value]="draft()"
+              [disabled]="sending()"
+              (input)="updateDraft($any($event.target).value)"
+              placeholder="按 Enter 发送消息，或输入内容自动暂存草稿..."></textarea>
+          </div>
+          <div class="compose-footer">
+            <span class="draft-indicator">
+              @if (draft().trim()) {
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
+                <span>草稿已就地自动缓存</span>
+              }
+            </span>
+            <button
+              type="submit"
+              class="nur-btn nur-btn--primary"
+              [disabled]="sending() || !draft().trim()">
+              <span>{{ sending() ? '发送中…' : '发送消息' }}</span>
+            </button>
+          </div>
         </form>
-      } @else { <p>选择一段会话，按自己的节奏聊一聊。</p> }
+      } @else {
+        <div class="chat-placeholder">
+          <svg class="large-chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <h3 class="placeholder-title">选择会话开始沟通</h3>
+          <p class="placeholder-desc">从左侧列表选择咨询，按自己的节奏与导师或学员在线交流。</p>
+        </div>
+      }
     </section>
   </div>
 </main>

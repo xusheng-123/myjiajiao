@@ -9,7 +9,7 @@ interface Preview {occurrences:Occurrence[];publishCount:number;ready:boolean;}
 interface Slot {slotId:string;startAt:string;endAt:string;status:string;}
 interface Created {seriesId:string;timeZone:string;slots:Slot[];}
 interface Series {seriesId:string;timeZone:string;startDate:string;startTime:string;weekCount:number;}
-@Component({selector:'nur-recurring-availability',standalone:true,imports:[FormsModule,RouterLink,CalendarExportComponent],templateUrl:'./recurring-availability.component.html',styleUrl:'../learning/learning-plans.component.css'})
+@Component({selector:'nur-recurring-availability',standalone:true,imports:[FormsModule,RouterLink,CalendarExportComponent],templateUrl:'./recurring-availability.component.html',styleUrl:'./recurring-availability.component.css'})
 export class RecurringAvailabilityComponent implements OnInit {
   private http=inject(HttpClient);
   readonly date=signal(this.defaultDate());readonly time=signal('15:00');readonly zone=signal('Asia/Shanghai');readonly duration=signal(60);readonly weeks=signal(4);
