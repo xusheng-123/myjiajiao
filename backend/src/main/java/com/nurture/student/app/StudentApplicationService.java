@@ -66,8 +66,8 @@ public class StudentApplicationService {
     @Transactional
     public void askQuestion(UUID teacherId, String question) {
         UUID studentId = CallerContext.require().accountId();
-        var conversation = messagingService.openOrGet(studentId, teacherId, "课后疑难");
-        messagingService.send(conversation.getId(), question);
+        var conversation = messagingService.openOrGetId(studentId, teacherId, "课后疑难");
+        messagingService.send(conversation, question);
     }
 
     private String nextNo() {

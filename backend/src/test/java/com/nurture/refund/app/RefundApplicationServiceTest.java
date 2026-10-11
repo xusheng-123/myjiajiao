@@ -44,8 +44,8 @@ class RefundApplicationServiceTest {
         UUID orderId = UUID.randomUUID();
         RefundCase refundCase = new RefundCase(orderId, UUID.randomUUID(), "课程质量争议", 30000, 1);
         when(refundRepository.lockById(refundCase.getId())).thenReturn(java.util.Optional.of(refundCase));
-        Order order = org.mockito.Mockito.mock(Order.class);
-        when(orderService.get(orderId)).thenReturn(order);
+        OrderApplicationService.OrderSnapshot order = org.mockito.Mockito.mock(OrderApplicationService.OrderSnapshot.class);
+        when(orderService.getSnapshot(orderId)).thenReturn(order);
         when(order.getOrderNo()).thenReturn("NUR-ORD-TEST");
         when(settlementService.refundNote(order)).thenReturn("退款执行时追加教师课酬红冲条目，待结算净额相应扣减 ¥255.00");
         when(twoPhaseService.issue(anyString(), any(), anyString()))

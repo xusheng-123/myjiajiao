@@ -11,7 +11,7 @@ import com.nurture.order.app.OrderApplicationService;
 import com.nurture.shared.security.CallerRole;
 import com.nurture.teacher.app.TeacherApplicationService;
 import com.nurture.verification.app.VerificationApplicationService;
-import com.nurture.verification.domain.VerificationCase;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,7 +35,7 @@ public class AdminApplicationService {
     private final IdentityApplicationService identityService;
     private final BookingApplicationService bookingService;
     private final OrderApplicationService orderService;
-    private final com.nurture.order.infra.OrderRepository orderRepository;
+
     private final TeacherApplicationService teacherService;
 
     public AdminApplicationService(PlatformConfigRepository configRepository,
@@ -45,7 +45,6 @@ public class AdminApplicationService {
                                    IdentityApplicationService identityService,
                                    BookingApplicationService bookingService,
                                    OrderApplicationService orderService,
-                                   com.nurture.order.infra.OrderRepository orderRepository,
                                    TeacherApplicationService teacherService) {
         this.configRepository = configRepository;
         this.auditLogRepository = auditLogRepository;
@@ -54,7 +53,6 @@ public class AdminApplicationService {
         this.identityService = identityService;
         this.bookingService = bookingService;
         this.orderService = orderService;
-        this.orderRepository = orderRepository;
         this.teacherService = teacherService;
     }
 
@@ -83,7 +81,7 @@ public class AdminApplicationService {
         data.put("activeBookings", bookingService.countAll());
         data.put("orders", orderService.countOrders());
         data.put("pendingVerifications", verificationService
-                .listView(VerificationCase.VerificationStatus.SUBMITTED, Pageable.ofSize(1)).getTotalElements());
+                .listViewByStatus("SUBMITTED", Pageable.ofSize(1)).getTotalElements());
         data.put("platformFeeRate", get("settlement.platform-fee-rate").orElse("0.15"));
         return data;
     }
@@ -153,19 +151,18 @@ public class AdminApplicationService {
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<Map<String, Object>> pendingPaymentOrders(
             org.springframework.data.domain.Pageable pageable) {
-        var page = orderRepository.findByStatus(
-                com.nurture.order.domain.Order.OrderStatus.PENDING_PAYMENT, pageable);
+        var page = orderService.pendingPaymentSnapshots(pageable);
         return page.map(o -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("orderId", o.getId().toString());
             m.put("orderNo", o.getOrderNo());
             m.put("amountCents", o.getAmountCents());
-            m.put("status", o.getStatus().name());
+            m.put("status", o.getStatus());
             m.put("createdAt", o.getCreatedAt().toString());
             m.put("payerName", identityService.displayNameOf(o.getPayerParentId()).orElse("家长"));
             m.put("teacherName", identityService.displayNameOf(o.getTeacherId()).orElse("导师"));
             m.put("studentName", identityService.displayNameOf(o.getStudentId()).orElse("学生"));
-            m.put("subject", bookingService.get(o.getBookingId()).getSubject());
+            m.put("subject", bookingService.orderViewOf(o.getBookingId()).subject());
             return m;
         });
     }

@@ -109,11 +109,17 @@ export class StudentDashboardComponent implements OnInit {
   readonly orderBusy = signal(false);
   readonly orderMsg = signal<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
 
+  readonly legacyWallet=signal<{present:boolean;balanceCents:number|null;currency:string|null;transactions:{content:{txnId:string;type:string;amountCents:number;balanceAfterCents:number;memo:string;createdAt:string}[];totalPages:number;totalElements:number}}|null>(null);
+  readonly legacyPage=signal(0);readonly legacyLoading=signal(false);readonly legacyError=signal(false);
+  loadLegacyWallet(page=this.legacyPage()):void{this.legacyLoading.set(true);this.legacyError.set(false);this.http.get<any>('/api/v1/student/me/legacy-wallet',{params:{page,size:20}}).subscribe({next:w=>{this.legacyWallet.set(w);this.legacyPage.set(page);this.legacyLoading.set(false);},error:()=>{this.legacyLoading.set(false);this.legacyError.set(true);}});}
+  turnLegacyWallet(delta:number):void{if(this.legacyLoading() || this.legacyPage()+delta<0 || this.legacyPage()+delta>=(this.legacyWallet()?.transactions.totalPages??0))return;this.loadLegacyWallet(this.legacyPage()+delta);}
+
   constructor() {
     this.load();
   }
 
   ngOnInit(): void {
+    this.loadLegacyWallet();
     this.http
       .get<{ bookingId: string; subject: string; status: string; type: string; startAt: string | null; teacherId: string | null }[]>(API.student.upcomingLessons)
       .subscribe({ next: (data) => { this.upcomingLessons.set(data ?? []); this.refreshSchedule(); } });

@@ -53,6 +53,9 @@ public class MessagingApplicationService {
     }
 
     @Transactional
+    public UUID openOrGetId(UUID student,UUID teacher,String subject){return openOrGet(student,teacher,subject).getId();}
+
+    @Transactional
     public Message send(UUID conversationId, String body) {
         if (body == null || body.isBlank() || body.length() > 4000) throw new IllegalArgumentException("消息须为 1–4000 字");
         CallerPrincipal caller = CallerContext.require();

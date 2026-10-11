@@ -27,10 +27,11 @@
 | `docs/DECISIONS.md` | 关键技术决策 + 原因 + 被否决方案 | 做架构/选型判断时 |
 | `docs/CHANGELOG.md` | 按日期的变更与验证记录 | 了解某功能何时/如何落地 |
 | `deploy/RUNBOOK.md` | 部署 / 备份恢复 / 回滚 / 初始化 / Cloudflare 人工操作 | 部署相关 |
+| `docs/交付报告_八阶段总验收_2026-10-11.md` | 八阶段最新交付范围、真实验证与剩余缺口 | 查看最终结果/交接时 |
 | `docs/FEATURE_ROADMAP.md` | 功能增补路线图（缺口复核 / A-F 新功能评估 / 四阶段顺序） | 规划下一批功能时 |
 | `README.md`（功能根目录） | 构建与启动命令速查 | 启动环境时 |
 
-## 3. 当前开发进度总表（2026-10-11 阶段7交付核实）
+## 3. 当前开发进度总表（2026-10-11 八阶段最终验收）
 
 状态图例：✅已完成且已验证 · 🟡已实现未充分验证 · 🔶部分实现 · 🔵规划中 · ⛔阻塞
 
@@ -47,11 +48,12 @@
 | 短信不可用如实503/密码默认、家长付款旅程引导 | ✅ | SmsDeliveryFailureTest 3例、能力端点IT、相关订单归属与UI |
 | 阶段6运营与检索/客服/重新上架 | ✅ | 46+129/E2E220/0、7真实浏览器截图、V18回滚48表不变；阶段6报告 |
 | 阶段7测评/报告/咨询附件/通知 | ✅ | 46+143/E2E220/0/6图/V19/V20回滚52表旧列；见阶段7报告 |
+| 阶段8工程契约/真实架构/旧钱包只读/样式预算/总验收 | ✅ | 49+147/E2E220/0/探针19拒绝0漏洞/52图/零CSS警告；Sites已更新，见阶段8与总验收报告 |
 | 完整竞品能力、真实短信/支付、全栈部署 | 🔶 / ⛔ | 见 docs/补缺执行清单_2026-10-10.md，未完成项保持未完成 |
 
-**八阶段执行进度（2026-10-11）**：阶段1–5✅。阶段5V17有限重复档期/真实冲突预览、跳过与当天时间例外、发布咨询锁、规则分页/刷新恢复、三角色ICS导出；不创建订单或批量扣款。最终46单元/架构+113IT零失败，E2E220/0、探针19拒绝/0漏洞、配置/构建及6桌面/375px三端旅程通过；主库仍V10。报告docs/交付报告_阶段5重复档期与日历_2026-10-11.md；阶段3/4报告保留。下一步阶段6运营/检索分页、重新上架、客服与首页治理，从V18起；阶段6–8未完成。
+**八阶段执行进度（2026-10-11）**：阶段1–8均完成本地验证。源码V1–V20，最终49单元/架构+147IT、E2E220/0、探针19拒绝/0漏洞、生产构建零warning、52桌面/375px截图与原1,065条品牌CSS声明保留；Sites私有静态前端已更新。主库仍V10/资金未动，外部资源、全栈Staging与其它产品缺口保持未完成；见总验收报告。
 
-以下既有轮次表保留原验证范围；本轮最终回归基线为单元38+ArchUnit2（合计40）、IT65、E2E218/0、探针19项拒绝/0漏洞、配置门禁全过、production build通过。正式课、聊天、退款UI、材料查看及Mock默认问题已补齐，早期竞品静态评估不再代表当前状态。
+以下既有轮次表保留原验证范围；当轮历史回归基线为单元38+ArchUnit2（合计40）、IT65、E2E218/0、探针19项拒绝/0漏洞、配置门禁全过、production build通过。正式课、聊天、退款UI、材料查看及Mock默认问题已补齐，早期竞品静态评估不再代表当前状态。
 
 ### 版本保护（2026-10-09 新增）
 | 项 | 状态 | 说明 |
@@ -59,7 +61,7 @@
 | 本地 Git 仓库 | ✅ | 基线 `9631f8d`（480 文件）+ G3 `7979522` + G7 `3f6da7d`；identity 本地署名，**无远程仓库**（恢复能力=commit 历史本身） |
 | .gitignore | ✅ | 排除 node_modules/dist/target/日志/deploy 备份与部署包/.env（.env.example 反排除保留）/运行期上传文件 backend/data/files/（历史已跟踪文件不受影响）/__pycache__ |
 | 凭据核查 | ✅ | application.yml 密钥全部 `${VAR:dev默认}` 注入，仓库内仅开发占位值；无硬编码真实凭据 |
-| Sites 前端预览 | ✅ | 私有 Site v2 已更新（部署succeeded）：`https://nurture-platform-preview.kelly-cooper-4963.chatgpt.site`；Angular 前端静态包，构建提交 `fac74ba3dfb1c496fa1402d2e0ce722674d8d769`。后端 API 未部署，页面已显式标注受影响功能 |
+| Sites 前端预览 | ✅ | 2026-10-11最新私有静态版本已更新（部署succeeded）：`https://nurture-platform-preview.kelly-cooper-4963.chatgpt.site`；Angular 前端静态包，构建提交 `dd22e5ccb04a7e5b3f8cd1e6b24d6b402a921301`。后端 API 未部署，页面已显式标注受影响功能 |
 
 ### 交易与履约闭环（第一梯队，全部 ✅）
 | 功能 | 状态 | 验证依据 |
@@ -105,7 +107,7 @@
 | 功能 | 状态 | 验证依据 |
 |---|---|---|
 | 授权漏洞修复 | ✅ 19 项 | probe_authz.py 多轮 0 漏洞 |
-| 六层测试体系 | ✅ | 当前单元38 + ArchUnit2 / IT65 / E2E218 / 探针19 / 配置门禁全过（2026-10-10） |
+| 六层测试体系 | ✅ | 最新44单元+5架构 / IT147 / E2E220 / 探针19拒绝0漏洞 / 配置全过与零warning生产构建（2026-10-11） |
 | 备份恢复 | ✅ 实弹演练 | RTO 实测 55 秒（deploy/backup.sh + restore.sh） |
 | 健康检查 | ✅ | actuator + probes + compose healthcheck + cloudflared 依赖 |
 | 答辩 PPT / 计划书 / 小白指南 | ✅ | E:\线上家教平台\ 下三份 docx + pptx |
@@ -117,36 +119,38 @@
 🔵 教育合规（ICP / 协议 / 未成年人条款）——正式运营最大前置
 🔵 生产备份调度、AI 上层能力（均规划中）
 
-## 4. 当前工作现场（2026-10-11 阶段7最终快照）
+## 4. 当前工作现场（2026-10-11 八阶段最终快照）
 
-阶段7已完整验证，阶段8接续；当前Git阶段6检查点89ffcc1，阶段7以git log为准。
+阶段1–8本地计划已完成，最终报告为docs/交付报告_八阶段总验收_2026-10-11.md。原ArchUnit条件方向错误/admin直连仓库与跨domain依赖已修正，用应用DTO/标量端口及五项严格规则/反例守门，不使用冻结豁免；原交易行为/事务/锁经过完整回归。阶段8检查点以git log为准（阶段7为096e474），无远端。
 
-- **代码与迁移**：V1–V20，主库nurture仍V10；8080连接nurture_gap_acceptance_phase7_final_20261011（V20）、IT库V20，旧副本/JAR保持。
-- **测试**：08:40:11完整verify46单元/架构+143IT零失败；新增小测9/咨询附件通知5；Angular production成功，E2E220/0、探针19拒绝/0漏洞、配置全过；6三端截图/52表旧列V19/V20回滚通过。日志phase7-final-{verify,e2e,probe,config,server}.log、phase7-release-browser.log、phase7-migration.log、frontend/phase7-final-release-build.log。
-- **运行**：Docker deploy-postgres-1 healthy；8080 PID1928/phase7-final-runtime.jar，4200 PID18036，5432 PID36760；8081无本轮服务。
-- **产物**：phase7-final-runtime.jar SHA256 D7DA3D039D688D25F37DAE1BB7DE67C90C030E9441B3A4F400BA6A6361362A4C；target/phase7-final-files；截图.walk/assessments-messages/；docs阶段7交付报告。
+- **代码与迁移**：V1–V20，无本阶段新迁移；主库nurture仍V10；8080仅连接nurture_gap_acceptance_phase8_20261011(V20)，IT库V20；旧副本/JAR/文件保持。
+- **测试**：08:55:30完整verify49单元/架构+147IT零失败；09:00:18最后架构复查49/0；E2E220/0、探针19拒绝0漏洞、配置全过、Angular生产构建零warning且原预算不变；8浏览器脚本52截图无溢出，CSS1,065声明守恒。日志phase8-final-verify.log、phase8-final-arch-unit.log、phase8-e2e/probe/config.log、phase8-*-browser*.log、phase8-css-preservation-final.log、frontend/phase8-final-release-build.log。
+- **运行**：Docker deploy-postgres-1 healthy；8080 PID8804/phase8-runtime.jar，4200 PID18036，5432 PID36760；本轮8081无服务。
+- **产物**：phase8-runtime.jar SHA256 32B7435DB6A35DD707025AF859FEB56057274B7FE4FF96E8450E14C1636442D7；target/phase8-files；.walk/各阶段截图及engineering-final/；阶段8与总验收报告。
+- **修复与失败记录**：旧钱包只读按既有parent_profile归属，不创建/转移；旧COMPLETED统计比较修复。咨询附件375px原生输入溢出7px已修复重验；旧钱包SQL测试夹具字段/归属、浏览器GBK编码已修正后完整通过，失败日志保留。原CSS值只因CRLF/LF字面比较不同，规范化后全部一致；Sites输出目录改为支持的out。
 - **历史资金**：未对主库迁移或订正。已备份恢复nurture_gap_acceptance_20261010_legacy并完成V11/V12真实Flyway迁移；17会话/18消息/90结算保持。副本重查A类38条/¥6545，事务订正对账通过且ROLLBACK恢复全部资金指纹。主库仍V10，不能把副本演练视为实际订正；下一步制定受控执行/回退范围，不去掉脚本保护直接执行。
 - **版本保护**：核心补缺已提交本地检查点 `b9c7ae42cf30a8fdb7bc9489dd7e5693545d55d6`（88文件），无远端；最新阶段提交以git log为准。接手前已有 `tools/settlement_walkthrough.png` 未跟踪，保持原样。禁止reset/clean。AGENTS迁移核实已更新V20、本地Git无远端；旧报告继续保留历史范围。
-- **阶段1收尾**：备份deploy/backups/stage1_20261010；stage1订正隔离库V12已提交38笔负向条目，回退副本nurture_gap_acceptance_stage1_recovery_20261010保持V10并恢复318文件。主库指纹不变；阶段1当时8080连旧final验收库，当前已切phase5，阶段1的8081已停止。
+- **阶段1收尾**：备份deploy/backups/stage1_20261010；stage1订正隔离库V12已提交38笔负向条目，回退副本nurture_gap_acceptance_stage1_recovery_20261010保持V10并恢复318文件。主库指纹不变；阶段1当时8080连旧final验收库，当前已切phase8，阶段1的8081已停止。
 - **交付报告**：`docs/交付报告_核心旅程补缺_2026-10-10.md`、`交付报告_退款红冲与账务安全_2026-10-10.md`、`交付报告_验收与交接_2026-10-10.md`，执行清单 `docs/补缺执行清单_2026-10-10.md`。
-- **Sites**：私有静态前端预览v2部署succeeded，commit `fac74ba3dfb1c496fa1402d2e0ce722674d8d769`，保持原URL和owner-only，版本/部署ID见验收报告；不连接 Java/PostgreSQL，顶部说明接口操作不可用，不等同完整Staging。
+- **Sites**：最新owner-private静态部署succeeded，原URL保持；source commit `dd22e5ccb04a7e5b3f8cd1e6b24d6b402a921301`，version `appgprj_6aca1413ee208191b584850869b65459~appgver_b0b12a2e8eac81918d1aab0ca12b21f0`，deployment `appgdep_6acb0eb66a9c81918ca30499ed7bc4b3`。不连接Java/PostgreSQL，顶栏说明接口操作不可用，不等同完整Staging；Sites源产物out，旧dist保留。
+
 
 ## 5. 当前运行与验证方式（PowerShell，本轮实测）
 
-先确认Docker Desktop与数据库容器健康、验收库已创建。禁止将测试命令指向历史主库；下面 phase7_final 库已存在，可恢复本轮现场；完整E2E固定试听夹具不可在已消耗名额的同库重复，复跑须新建隔离验收库，禁止清旧记录绕过规则。
+先确认Docker Desktop与数据库容器健康、验收库已创建。禁止将测试命令指向历史主库；下面 phase8 库已存在，可恢复本轮现场；完整E2E固定试听夹具不可在已消耗名额的同库重复，复跑须新建隔离验收库，禁止清旧记录绕过规则。
 
 ```powershell
 # 在 backend/ 构建；默认PATH可能是Java11，必须指定Java25
 $env:JAVA_HOME='C:/Users/lxs/apps/jdk-25.0.4.1+1'
 $env:Path="$env:JAVA_HOME/bin;$env:Path"
 & 'C:/Users/lxs/apps/apache-maven-3.9.16/bin/mvn.cmd' -B -s C:/Users/lxs/apps/maven-settings.xml -Pintegration verify
-# 核实并停止此前自己启动的phase7-final-runtime.jar进程后复制新构建，勿杀全部Java
-Copy-Item target/nurture-backend-1.0.0.jar target/phase7-final-runtime.jar
-$env:NURTURE_DB_URL='jdbc:postgresql://localhost:5432/nurture_gap_acceptance_phase7_final_20261011'
+# 核实并停止此前自己启动的phase8-runtime.jar进程后复制新构建，勿杀全部Java
+Copy-Item target/nurture-backend-1.0.0.jar target/phase8-runtime.jar
+$env:NURTURE_DB_URL='jdbc:postgresql://localhost:5432/nurture_gap_acceptance_phase8_20261011'
 $env:NURTURE_ADMIN_PHONE='13800000000'
 $env:NURTURE_ADMIN_PASSWORD='Admin#2026'
-$env:NURTURE_STORAGE_DIR='./target/phase7-final-files'
-& "$env:JAVA_HOME/bin/java.exe" -jar target/phase7-final-runtime.jar --nurture.payment.sandbox.enabled=true
+$env:NURTURE_STORAGE_DIR='./target/phase8-files'
+& "$env:JAVA_HOME/bin/java.exe" -jar target/phase8-runtime.jar --nurture.payment.sandbox.enabled=true
 # 另一个终端 frontend/
 npm.cmd start -- --host 127.0.0.1
 npx.cmd ng build --configuration production
@@ -161,13 +165,15 @@ python tools/recurring_schedule_walkthrough.py
 python tools/operations_support_walkthrough.py
 python tools/admin_queue_walkthrough.py
 python tools/assessments_messages_walkthrough.py
+python tools/engineering_acceptance_walkthrough.py
+node tools/verify_brand_css.cjs
 python tools/settlement_correction_rehearsal.py nurture_gap_acceptance_20261010_final
 # 以下只在重新恢复的V10历史副本上执行；当前legacy已升级V12，勿直接重跑迁移演练
 # python tools/legacy_migration_rehearsal.py <nurture_gap_acceptance_开头的V10副本名>
 python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 ```
 
-本机验收账号：学生13900000002/Student#2026、家长13900000003/Parent#2026、教师13900000001/Teacher#2026、运营13800000000/Admin#2026（只用于开发验收）。E2E先生成夹具再跑浏览器。注册限流生产规则50次/自然小时/IP不降低，测试按类/浏览器夹具隔离XFF桶。运行中的副本被Windows锁定时，只停止已确认CommandLine为phase7-final-runtime.jar（或确属本轮旧gap-runtime.jar）的本轮进程再复制，不按进程名全杀。
+本机验收账号：学生13900000002/Student#2026、家长13900000003/Parent#2026、教师13900000001/Teacher#2026、运营13800000000/Admin#2026（只用于开发验收）。E2E先生成夹具再跑浏览器。注册限流生产规则50次/自然小时/IP不降低，测试按类/浏览器夹具隔离XFF桶。运行中的副本被Windows锁定时，只停止已确认CommandLine为phase8-runtime.jar（或确属本轮旧gap-runtime.jar）的本轮进程再复制，不按进程名全杀。
 
 ## 6. 新模型接手指南（按顺序执行）
 
@@ -188,8 +194,8 @@ python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 | 已完成 | 阶段5重复档期/ICS | V17有限材料化、冲突/例外/发布锁、规则分页和三端私有ICS；报告见阶段5 | 46+113、E2E220/0、6截图真浏览器；不批量扣款 |
 | 已完成 | 阶段6运营/检索/重新上架/客服/示例 | V18四表，五队列分页、全量公开排序分页与私有工单证据；见阶段6报告 | 46+129、E2E220/0、7截图/V18回滚48表 |
 | 已完成 | 阶段7小测/报告/咨询附件/通知 | V19/V20、有限客观题/教师批注/成绩独立分页/真实报告、私有消息附件与通知已读 | 46+143、E2E220/0、6截图、52表旧列回滚 |
-| P1-1 | 阶段8工程契约与最终交付 | 幂等键严格UUIDv4；修正完整ArchUnit边界、保留原交易行为；移出品牌装饰样式并验证视觉/预算；最终全量回归与Sites静态刷新 | 不降低校验，不改品牌/交易规则，不把静态站点当全栈上线 |
-| P2 | 测验/阶段评估、外部提醒/PWA、课堂回放协作衔接 | ROADMAP D与执行清单；只计算真实学习证据，保持外部课堂方案 | 不虚构掌握度，不自研RTC/不接大模型 |
+| 已完成 | 阶段8工程契约与最终交付 | 严格UUIDv4、五项完整架构/应用端口、旧钱包只读、真实完成课统计、原品牌预算零警告、最终全量回归/Sites静态更新 | 49+147/220/52图；报告与现场见§4 |
+| P2 | 公开检索投影/负载、文件保留/扫描、客服课程选择器、PWA/外部提醒/回放衔接 | 当前已授权八阶段已完成；先分析公开检索全候选查询/容量/具体提供商能力，再按后续范围实施 | 小测已完成有限客观题；新增能力不虚构掌握度，不自研RTC/不接大模型 |
 | ⛔ | 真实短信/支付退款提现、完整Staging | 用户明确当前没有外部资源；取得测试资源后按供应商适配与RUNBOOK实施 | 真投递/验签/重放/对账及全栈部署验收，不把静态预览当上线 |
 
 完整状态与细化步骤见 `docs/补缺执行清单_2026-10-10.md`。Sites静态预览为前端交付，资源阻塞的全栈部署仍未完成。
@@ -197,16 +203,16 @@ python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 ## 8. 风险与限制
 
 - V13保留历史重复活动试听，不能自动撤销旧预约；新预约受统一名额限制。计划开课时间已过的取消会消耗名额，界面已说明；旧CANCELLED不追罚。V14编号序列可有空号、超过六位时自然扩展，旧编号保留；不可多实例混跑旧随机编号生成版本与新序列版本。
-- 阶段7本地46/143/220与真浏览器已通过；Sites仍私有静态v2，尚未包含本阶段新界面，阶段8统一更新；后端API仍未托管。
+- 阶段1–8本地计划已验证，最终49/147/220与52图；Sites最新静态版已包含当前前端，后端API仍未托管，静态登录/API操作不可用。
 
 - 历史主库还在V10，没有应用新退款行为或订正旧账；配套备份/318上传文件恢复及38笔精确批次提交/重放/回退恢复已在隔离库通过18项断言。实际投入使用前仍须受控执行与重查，当前dry-run强制回滚不能用于直接修正。
 - V12会合并同一师生重复会话并迁移消息，旧重复ID链接可能失效；已在恢复副本验证18条历史消息和合成重复组守恒、唯一约束及无孤儿；实际主库迁移仍未执行。
 - 用户暂无短信服务商/支付商户/服务器/域名；没有真实投递、渠道退款或提现、没有完整Staging。Sites只为owner-private前端静态预览，顶栏说明API未连接。
 - 退款仅全额、仅PENDING自动红冲；SETTLED/PAID_OUT及异常账目需人工核查。红冲fee=0保留原抽成快照，不用fee列总和推导退款后平台净收入。
-- 学生前端默认家长付款，后端仍兼容旧学生payer订单；阶段1已明确保留原payer、不转移余额、不重复退款；主库58个学生payer订单均未付，无学生钱包余额。旧余额自助只读界面仍未补，家长下单仍需有效学生绑定。
+- 学生前端默认家长付款，后端仍兼容旧学生payer订单；阶段1已明确保留原payer、不转移余额、不重复退款；主库58个学生payer订单均未付，无学生钱包余额。旧余额自助只读界面已补并隔离验证，不自动创建钱包，家长下单仍需有效学生绑定。
 - 聊天15秒轮询，私有咨询附件与通知分页/已读已完成，外部推送仍未实现；运营五队列/公开分页/重新上架/私有客服已完成；公开分页仍全候选服务端过滤排序，扩大数据量前需查询投影/负载验证，旧私有推荐20条接口保留；学习计划、错题本、教学资料/作业/答疑附件已完成；有限重复档期与ICS已完成；有限客观测验/教师批注/真实报告已完成，课堂协作/外部提醒仍待资源与后续范围。
-- 教师教龄为自报，公开资质只代表平台审核；旧账号缺资料需本人编辑。首页/登录旧数字已清理、场景评价已明确非真实；保留auth/landing/match三处CSS预算警告，production build无错误。
-- 既有UUID校验仅解析而非严格v4/variant；ArchUnit只禁跨模块infra和api依赖infra，尚未覆盖全部架构文字承诺。未在本轮冒充已修复。
+- 教师教龄为自报，公开资质只代表平台审核；旧账号缺资料需本人编辑。首页/登录旧数字已清理、场景评价已明确非真实；auth/landing/match原品牌声明保留，production build零warning且预算未提高。
+- UUID现在严格规范v4/variant；原ArchUnit方向错误已修复，五项全量严格检查包含坏/好反例，无冻结豁免。接口状态快照为字符串，改变状态名称须同步应用端口消费者。
 - 教学文件逻辑下架仍计200MB保留容量，目前没有自动物理清理/病毒扫描；咨询附件另计100MB保留容量，同样不提供物理清理/病毒扫描。
 - 重复规则仅有限档期生成、例外在发布前设置，不是无限滚动排课或外部日历同步。
 - 本地Git无远端，阶段4在ba2ddcd、阶段3在929ca88保护、核心补缺已在b9c7ae4保护，后续阶段提交以git log为准；文件系统及现有历史需保护，禁止reset/clean。`tools/settlement_walkthrough.png`接手前已存在。旧报告与表格按历史范围阅读，以最新代码与本节快照为准。

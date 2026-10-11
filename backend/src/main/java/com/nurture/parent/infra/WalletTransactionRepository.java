@@ -9,5 +9,7 @@ import java.util.UUID;
 
 public interface WalletTransactionRepository extends JpaRepository<WalletTransaction, UUID> {
 
+    Page<WalletTransaction> findByWalletId(UUID walletId,Pageable pageable);
+
     Page<WalletTransaction> findByWalletIdOrderByCreatedAtDesc(UUID walletId, Pageable pageable);
 }

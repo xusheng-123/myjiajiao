@@ -211,6 +211,24 @@ public class OrderApplicationService {
         return OrderView.from(order);
     }
 
+    /** Immutable application-layer facts. Commands still execute the existing domain transitions. */
+    public record OrderSnapshot(UUID id,String orderNo,UUID bookingId,UUID payerParentId,UUID studentId,UUID teacherId,long amountCents,String status,java.time.Instant createdAt){
+        public UUID getId(){return id;}public String getOrderNo(){return orderNo;}public UUID getBookingId(){return bookingId;}
+        public UUID getPayerParentId(){return payerParentId;}public UUID getStudentId(){return studentId;}public UUID getTeacherId(){return teacherId;}
+        public long getAmountCents(){return amountCents;}public String getStatus(){return status;}public java.time.Instant getCreatedAt(){return createdAt;}
+    }
+    public static OrderSnapshot snapshot(Order o){return new OrderSnapshot(o.getId(),o.getOrderNo(),o.getBookingId(),o.getPayerParentId(),o.getStudentId(),o.getTeacherId(),o.getAmountCents(),o.getStatus().name(),o.getCreatedAt());}
+    @Transactional(readOnly=true)
+    public OrderSnapshot getSnapshot(UUID id){return snapshot(get(id));}
+    @Transactional(readOnly=true,noRollbackFor=IllegalArgumentException.class)
+    public OrderSnapshot getByBookingSnapshot(UUID id){return snapshot(getByBooking(id));}
+    @Transactional
+    public OrderSnapshot markPaidSnapshot(UUID id){return snapshot(markPaid(id));}
+    @Transactional(propagation=org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public OrderSnapshot lockForRefundSnapshot(UUID id){return snapshot(lockForRefund(id));}
+    @Transactional(readOnly=true)
+    public Page<OrderSnapshot> pendingPaymentSnapshots(Pageable page){return orderRepository.findByStatus(Order.OrderStatus.PENDING_PAYMENT,page).map(OrderApplicationService::snapshot);}
+
     @Transactional(readOnly = true)
     public Order get(UUID orderId) {
         return orderRepository.findById(orderId)

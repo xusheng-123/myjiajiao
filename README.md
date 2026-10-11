@@ -4,7 +4,7 @@
 
 全栈实现 · 领域驱动设计 (DDD) · 模块化单体 · AI Agent 双客户端平等模型 · ADHD 友好交互
 
-当前交付状态（2026-10-10）：核心旅程与退款红冲增量已通过本地隔离验收，真实短信/支付与完整Staging仍待外部资源。续作先读 [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md)，本机最新启动命令见其§5；本轮三份交付报告与剩余功能清单位于 `docs/`。历史业务库仍V10，新代码启动会应用V11/V12，开发验收必须显式使用隔离库，不直接升级历史库。
+当前交付状态（2026-10-11）：已授权的本地八阶段完善计划完成，49单元/架构+147IT、E2E220/0、52桌面/手机截图、生产构建零警告。结果见 [八阶段总验收报告](docs/交付报告_八阶段总验收_2026-10-11.md)，续作入口 [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) §5包含实际启动命令。源码迁移V1–V20，历史业务库仍V10；开发验收必须显式使用隔离库，不直接升级历史库。Sites私有静态前端已更新，真实短信/支付、后端托管与完整Staging仍待外部资源。
 
 ---
 
@@ -54,7 +54,7 @@ NURTURE_ADMIN_PASSWORD='Admin#2026' \
 mvn spring-boot:run
 ```
 
-启动后自动执行当前 Flyway V1–V12（新V11=退款红冲、V12=会话唯一），并创建初始运营管理员。下面示例应显式设置 `NURTURE_DB_URL` 指向隔离开发数据库；本次Windows已验证命令以PROJECT_HANDOFF §5为准。
+启动后自动执行当前 Flyway V1–V20，并创建初始运营管理员；迁移能力说明见docs/ARCHITECTURE.md。下面示例应显式设置 `NURTURE_DB_URL` 指向隔离开发数据库；本次Windows已验证命令以PROJECT_HANDOFF §5为准。
 
 - OpenAPI 3.0 契约：http://localhost:8080/api/v1/api-docs
 - Swagger UI：http://localhost:8080/api/v1/swagger-ui

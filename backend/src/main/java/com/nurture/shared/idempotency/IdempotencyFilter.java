@@ -218,8 +218,10 @@ public class IdempotencyFilter extends OncePerRequestFilter {
 
     private boolean isValidUuid(String value) {
         try {
-            UUID.fromString(value);
-            return true;
+            if (value.length() != 36) return false;
+            UUID uuid = UUID.fromString(value);
+            return uuid.version() == 4 && uuid.variant() == 2
+                    && uuid.toString().equalsIgnoreCase(value);
         } catch (IllegalArgumentException e) {
             return false;
         }

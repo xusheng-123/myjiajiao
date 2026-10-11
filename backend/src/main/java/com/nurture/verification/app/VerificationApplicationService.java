@@ -58,6 +58,9 @@ public class VerificationApplicationService {
                 .orElse(null);
     }
 
+    @Transactional(readOnly=true)
+    public Page<VerificationCaseView> listViewByStatus(String status,Pageable page){return listView(status==null || status.isBlank()?null:VerificationCase.VerificationStatus.valueOf(status),page);}
+
     @Transactional(readOnly = true)
     public Page<VerificationCaseView> listView(VerificationCase.VerificationStatus status, Pageable pageable) {
         Page<VerificationCase> page = status == null

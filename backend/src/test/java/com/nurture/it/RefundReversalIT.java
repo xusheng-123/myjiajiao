@@ -90,7 +90,7 @@ class RefundReversalIT {
         var c = request(); var p = preview(c); long before = balance();
         assertThat(write(executeUrl(c), admin, Map.of("approve", true, "decisionNote", "同意", "confirmationToken", p.get("confirmationToken").asText()))).isEqualTo(200);
         assertReversed(); assertThat(balance()).isEqualTo(before + 30000);
-        assertThat(orders.get(orderId).getStatus().name()).isEqualTo("CLOSED");
+        assertThat(orders.getSnapshot(orderId).getStatus()).isEqualTo("CLOSED");
         assertThat(write(executeUrl(c), admin, Map.of("approve", false, "decisionNote", "重复驳回"))).isEqualTo(409);
     }
     @Test void previewAndRejectionDoNotReverse() throws Exception {
@@ -106,12 +106,12 @@ class RefundReversalIT {
         assertThat(write("/api/v1/refund/cases", outsider.accessToken(), Map.of("orderId", orderId, "reason", "越权"))).isEqualTo(403);
     }
     @Test void reversalIsIdempotent() {
-        new TransactionTemplate(txManager).executeWithoutResult(s -> { settlement.reverseForRefund(orders.get(orderId)); settlement.reverseForRefund(orders.get(orderId)); });
+        new TransactionTemplate(txManager).executeWithoutResult(s -> { settlement.reverseForRefund(orders.getSnapshot(orderId)); settlement.reverseForRefund(orders.getSnapshot(orderId)); });
         assertReversed(); assertThat(settlement.summaryOf(teacher.accountId()).entries()).hasSize(2);
     }
     @Test void rollbackRemovesReversalAndKeepsOriginal() {
         assertThatThrownBy(() -> new TransactionTemplate(txManager).executeWithoutResult(s -> {
-            settlement.reverseForRefund(orders.get(orderId)); throw new IllegalStateException("模拟后续入账失败");
+            settlement.reverseForRefund(orders.getSnapshot(orderId)); throw new IllegalStateException("模拟后续入账失败");
         })).isInstanceOf(IllegalStateException.class);
         assertThat(entries.findByReversesEntryId(earning().getId())).isEmpty();
         assertThat(settlement.summaryOf(teacher.accountId()).pendingNetCents()).isEqualTo(25500);
@@ -120,7 +120,7 @@ class RefundReversalIT {
         new TransactionTemplate(txManager).executeWithoutResult(s -> { var e = earning(); e.markSettled(); e.markPaidOut(); entries.save(e); });
         var c = request(); var p = preview(c); long before = balance();
         assertThat(write(executeUrl(c), admin, Map.of("approve", true, "decisionNote", "同意", "confirmationToken", p.get("confirmationToken").asText()))).isEqualTo(409);
-        assertThat(balance()).isEqualTo(before); assertThat(orders.get(orderId).getStatus().name()).isEqualTo("PAID");
+        assertThat(balance()).isEqualTo(before); assertThat(orders.getSnapshot(orderId).getStatus()).isEqualTo("PAID");
         assertThat(entries.findByReversesEntryId(earning().getId())).isEmpty();
     }
     @Test void concurrentArbitrationOnlyOneWalletCredit() throws Exception {
@@ -150,7 +150,7 @@ class RefundReversalIT {
         var p = Support.postJson(mvc, om, "/api/v1/booking/bookings/"+bookingId+":cancel/preview", student.accessToken(), Map.of("reason", "取消"));
         assertThat(write("/api/v1/booking/bookings/"+bookingId+":cancel/execute", student.accessToken(),
                 Map.of("reason", "取消", "confirmationToken", p.get("confirmationToken").asText()))).isEqualTo(409);
-        assertThat(orders.get(orderId).getStatus().name()).isEqualTo("PAID"); assertThat(balance()).isEqualTo(before);
+        assertThat(orders.getSnapshot(orderId).getStatus()).isEqualTo("PAID"); assertThat(balance()).isEqualTo(before);
         assertThat(entries.findByReversesEntryId(earning().getId())).isEmpty();
         var evaluated = preview(c);
         assertThat(write(executeUrl(c), admin, Map.of("approve", true, "decisionNote", "同意", "confirmationToken", evaluated.get("confirmationToken").asText()))).isEqualTo(200);

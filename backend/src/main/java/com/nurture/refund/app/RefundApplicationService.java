@@ -2,7 +2,7 @@ package com.nurture.refund.app;
 
 import com.nurture.messaging.app.MessagingApplicationService;
 import com.nurture.order.app.OrderApplicationService;
-import com.nurture.order.domain.Order;
+import com.nurture.order.app.OrderApplicationService.OrderSnapshot;
 import com.nurture.parent.app.ParentApplicationService;
 import com.nurture.refund.domain.RefundCase;
 import com.nurture.refund.infra.RefundCaseRepository;
@@ -62,7 +62,7 @@ public class RefundApplicationService {
     /** 家长/学生发起退款申请（首笔评估金额 = 订单实付）。 */
     @Transactional
     public RefundCase request(UUID orderId, String reason) {
-        Order order = orderService.lockForRefund(orderId);
+        OrderSnapshot order = orderService.lockForRefundSnapshot(orderId);
         var caller = CallerContext.require();
         if (!order.getPayerParentId().equals(caller.accountId()) && !order.getStudentId().equals(caller.accountId())) {
             throw new org.springframework.security.access.AccessDeniedException("仅付款人或课程学生本人可申请退款");
@@ -71,7 +71,7 @@ public class RefundApplicationService {
             throw new IllegalArgumentException("退款原因须为 1–512 字");
         }
         if (refundRepository.existsByOrderId(orderId)) throw new IllegalStateException("该订单已存在退款申请，请查看处理进度");
-        if (order.getStatus() != Order.OrderStatus.PAID) {
+        if (!"PAID".equals(order.getStatus())) {
             throw new IllegalStateException("仅已支付订单可申请退款");
         }
         RefundCase refundCase = new RefundCase(orderId, CallerContext.require().accountId(), reason,
@@ -79,11 +79,14 @@ public class RefundApplicationService {
         return refundRepository.save(refundCase);
     }
 
+    @Transactional
+    public void refundForCancelledBooking(OrderSnapshot order,String reason){executeForBookingCancellation(order,reason);}
+
     /** 供 booking 域调用：取消已付课时时的自动全额退款闭环（原路入账家庭钱包）。 */
     @Transactional
-    public RefundCase executeForBookingCancellation(Order order, String reason) {
-        order = orderService.lockForRefund(order.getId());
-        if (order.getStatus() != Order.OrderStatus.PAID) throw new IllegalStateException("订单已处理，请刷新课程和退款进度");
+    public RefundCase executeForBookingCancellation(OrderSnapshot order, String reason) {
+        order = orderService.lockForRefundSnapshot(order.getId());
+        if (!"PAID".equals(order.getStatus())) throw new IllegalStateException("订单已处理，请刷新课程和退款进度");
         if (refundRepository.existsByOrderId(order.getId())) throw new IllegalStateException("订单已有退款申请，请联系运营处理课程取消");
         settlementService.reverseForRefund(order);
         RefundCase refundCase = new RefundCase(order.getId(), order.getPayerParentId(), reason,
@@ -108,7 +111,7 @@ public class RefundApplicationService {
         if (refundCase.getStatus() != RefundCase.RefundStatus.REQUESTED && refundCase.getStatus() != RefundCase.RefundStatus.EVALUATED) {
             throw new IllegalStateException("退款已处理，不能重新评估");
         }
-        Order order = orderService.get(refundCase.getOrderId());
+        OrderSnapshot order = orderService.getSnapshot(refundCase.getOrderId());
 
         Map<String, Object> impact = new LinkedHashMap<>();
         impact.put("refundCaseId", refundCaseId);
@@ -144,8 +147,8 @@ public class RefundApplicationService {
         if (approve) {
             twoPhaseService.consume("refund:arbitrate", refundCaseId, confirmationToken);
             refundCase.approve(arbiterId, decisionNote);
-            Order order = orderService.lockForRefund(refundCase.getOrderId());
-            if (order.getStatus() != Order.OrderStatus.PAID) throw new IllegalStateException("订单已非已支付状态，请核对退款结果");
+            OrderSnapshot order = orderService.lockForRefundSnapshot(refundCase.getOrderId());
+            if (!"PAID".equals(order.getStatus())) throw new IllegalStateException("订单已非已支付状态，请核对退款结果");
             settlementService.reverseForRefund(order);
             parentService.creditRefund(order.getPayerParentId(), order.getId(),
                     refundCase.getComputedAmountCents(), "差错退款入账（仲裁通过）");

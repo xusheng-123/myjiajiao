@@ -2,7 +2,7 @@ package com.nurture.payment.app;
 
 import com.nurture.messaging.app.MessagingApplicationService;
 import com.nurture.order.app.OrderApplicationService;
-import com.nurture.order.domain.Order;
+import com.nurture.order.app.OrderApplicationService.OrderSnapshot;
 import com.nurture.parent.app.ParentApplicationService;
 import com.nurture.payment.domain.PaymentAttempt;
 import com.nurture.payment.domain.PaymentGateway;
@@ -57,7 +57,7 @@ public class PaymentApplicationService {
 
     @Transactional
     public InitiatedPayment initiate(UUID orderId, String channelName) {
-        Order order = orderService.get(orderId);
+        OrderSnapshot order = orderService.getSnapshot(orderId);
         // 对象级授权：仅订单付款方/学生本人或运营可发起支付
         var caller = com.nurture.shared.security.CallerContext.require();
         boolean allowed = caller.role() == com.nurture.shared.security.CallerRole.ADMIN
@@ -66,7 +66,7 @@ public class PaymentApplicationService {
         if (!allowed) {
             throw new org.springframework.security.access.AccessDeniedException("仅订单付款方或运营可发起支付");
         }
-        if (order.getStatus() != Order.OrderStatus.PENDING_PAYMENT) {
+        if (!"PENDING_PAYMENT".equals(order.getStatus())) {
             throw new IllegalStateException("订单当前状态不可发起支付: " + order.getStatus());
         }
         PaymentAttempt.PaymentChannel channel = parseChannel(channelName);
@@ -100,7 +100,7 @@ public class PaymentApplicationService {
         }
         // 回调防重入：唯一(channel, channelRef) + 幂等状态机
         attempt.succeed(sha256(payload));
-        Order order = orderService.markPaid(orderId);
+        OrderSnapshot order = orderService.markPaidSnapshot(orderId);
         parentService.chargeForOrder(order.getPayerParentId(), orderId, order.getAmountCents(), "课时费支付 " + order.getOrderNo());
         settlementService.createEntryForPaidOrder(order);
         messagingService.notify(order.getTeacherId(), "SETTLEMENT",
@@ -159,14 +159,14 @@ public class PaymentApplicationService {
      */
     @Transactional
     public Map<String, Object> confirmOfflinePayment(UUID orderId) {
-        Order current = orderService.get(orderId);
-        if (current.getStatus() == Order.OrderStatus.PAID) {
+        OrderSnapshot current = orderService.getSnapshot(orderId);
+        if ("PAID".equals(current.getStatus())) {
             // 幂等返回与首次成功响应字段对齐（含 amountCents），便于客户端与测试做一致性断言
-            return Map.of("orderId", orderId.toString(), "status", Order.OrderStatus.PAID.name(),
+            return Map.of("orderId", orderId.toString(), "status", "PAID",
                     "channel", PaymentAttempt.PaymentChannel.OFFLINE.name(),
                     "amountCents", current.getAmountCents(), "idempotent", true);
         }
-        if (current.getStatus() != Order.OrderStatus.PENDING_PAYMENT) {
+        if (!"PENDING_PAYMENT".equals(current.getStatus())) {
             throw new IllegalStateException("订单当前状态不可确认线下收款: " + current.getStatus());
         }
         PaymentAttempt attempt = attemptRepository
@@ -181,7 +181,7 @@ public class PaymentApplicationService {
             attempt.succeed(sha256("OFFLINE-CONFIRMED:" + orderId));
             attemptRepository.save(attempt);
         }
-        Order order = orderService.markPaid(orderId);
+        OrderSnapshot order = orderService.markPaidSnapshot(orderId);
         settlementService.createEntryForPaidOrder(order);
         messagingService.notify(order.getTeacherId(), "SETTLEMENT",
                 "课酬入账提醒", "订单 " + order.getOrderNo() + " 支付已确认，课酬进入待结算余额。");
@@ -191,7 +191,7 @@ public class PaymentApplicationService {
                 Map.of("orderId", orderId.toString(), "amountCents", order.getAmountCents()),
                 "运营线下收款确认（资金不经平台网关）");
         log.info("线下收款确认完成 orderId={}", orderId);
-        return Map.of("orderId", orderId.toString(), "status", order.getStatus().name(),
+        return Map.of("orderId", orderId.toString(), "status", order.getStatus(),
                 "channel", PaymentAttempt.PaymentChannel.OFFLINE.name(), "amountCents", order.getAmountCents());
     }
 

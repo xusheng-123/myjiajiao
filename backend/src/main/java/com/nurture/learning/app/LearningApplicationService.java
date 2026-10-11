@@ -194,14 +194,14 @@ public class LearningApplicationService {
     public Map<String, Object> archiveOf(UUID studentId) {
         ensureProfile(studentId);
         LearningProfile p = profileRepository.findByStudentId(studentId).orElseThrow();
-        var bookings = bookingService.ofStudent(studentId, PageRequest.of(0, 200)).getContent();
+        var bookings = bookingService.studentSnapshots(studentId, PageRequest.of(0, 200)).getContent();
         long completed = bookings.stream().filter(b -> "COMPLETED".equals(b.getStatus())).count();
         List<Map<String, Object>> history = bookings.stream()
                 .map(b -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("bookingId", b.getId());
                     m.put("subject", b.getSubject());
-                    m.put("status", b.getStatus().name());
+                    m.put("status", b.getStatus());
 
                     m.put("teacherName", identityService.displayNameOf(b.getTeacherId()).orElse("导师"));
                     return m;
@@ -261,7 +261,7 @@ public class LearningApplicationService {
                 .map(this::taskView).toList();
         // 本周已完成课程（按 slot 结束时间落在本周）
         List<LearningTask> ftasks = tasks;
-        long weekLessons = bookingService.ofStudent(studentId, PageRequest.of(0, 200)).getContent().stream()
+        long weekLessons = bookingService.studentSnapshots(studentId, PageRequest.of(0, 200)).getContent().stream()
                 .filter(b -> "COMPLETED".equals(b.getStatus()))
                 .filter(b -> {
                     try {
@@ -271,7 +271,7 @@ public class LearningApplicationService {
                         return false;
                     }
                 }).count();
-        double minutes = bookingService.ofStudent(studentId, PageRequest.of(0, 200)).getContent().stream()
+        double minutes = bookingService.studentSnapshots(studentId, PageRequest.of(0, 200)).getContent().stream()
                 .filter(b -> "COMPLETED".equals(b.getStatus()))
                 .filter(b -> {
                     try {
@@ -322,7 +322,7 @@ public class LearningApplicationService {
 
     /** 连续学习天数：连续自然日中存在已完成课程（按 slot 结束日），最多回看 30 天。 */
     private int streakOf(UUID studentId) {
-        var days = bookingService.ofStudent(studentId, PageRequest.of(0, 200)).getContent().stream()
+        var days = bookingService.studentSnapshots(studentId, PageRequest.of(0, 200)).getContent().stream()
                 .filter(b -> "COMPLETED".equals(b.getStatus()))
                 .map(b -> {
                     try {
@@ -354,7 +354,7 @@ public class LearningApplicationService {
     /** 家长学习周报：仅 ACTIVE 绑定的孩子；结构化真实数据，无虚构指标。 */
     public Map<String, Object> weeklyReport(UUID studentId) {
         Instant weekStart = weekStart();
-        var weekBookings = bookingService.ofStudent(studentId, PageRequest.of(0, 200)).getContent().stream()
+        var weekBookings = bookingService.studentSnapshots(studentId, PageRequest.of(0, 200)).getContent().stream()
                 .filter(b -> {
                     try {
                         var slot = schedulingService.slotOf(b.getSlotId());

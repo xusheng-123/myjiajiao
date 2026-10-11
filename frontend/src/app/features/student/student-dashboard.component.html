@@ -236,6 +236,13 @@
         </div>
       </section>
 
+      @if(legacyError() && !legacyWallet()){<p role="alert">历史钱包读取失败。<button type="button" class="btn-ghost-sm" (click)="loadLegacyWallet()" [disabled]="legacyLoading()">重试读取</button></p>}
+      @if(legacyWallet();as w){@if(w.present){<section class="nur-card secondary-card" aria-labelledby="legacy-wallet-title"><h2 id="legacy-wallet-title" class="nur-serif">历史学生付款钱包（只读）</h2><p>余额 ¥{{((w.balanceCents??0)/100).toFixed(2)}} · {{w.currency}}</p><p class="quiet-note">历史余额和原付款人保持不变，绑定家长不会转移资金。需核对旧退款时，请通过客服与申诉联系运营。</p>
+        @if(legacyError()){<p role="alert">历史钱包读取失败，请刷新重试。</p>}
+        <button type="button" class="btn-ghost-sm" (click)="loadLegacyWallet()" [disabled]="legacyLoading()">刷新历史钱包</button>
+        @for(t of w.transactions.content;track t.txnId){<p>{{t.createdAt | date:'MM-dd HH:mm'}} · {{t.memo || t.type}} · ¥{{(t.amountCents/100).toFixed(2)}} · 变动后余额 ¥{{(t.balanceAfterCents/100).toFixed(2)}}</p>}
+        <p>共{{w.transactions.totalElements}}条流水 · 第{{w.transactions.totalPages?legacyPage()+1:0}}/{{w.transactions.totalPages}}页</p><button type="button" class="btn-ghost-sm" [disabled]="legacyLoading() || legacyPage()===0" (click)="turnLegacyWallet(-1)">上一页</button><button type="button" class="btn-ghost-sm" [disabled]="legacyLoading() || legacyPage()+1>=w.transactions.totalPages" (click)="turnLegacyWallet(1)">下一页</button>
+      </section>}}
       <nur-notice-center />
     }
   }

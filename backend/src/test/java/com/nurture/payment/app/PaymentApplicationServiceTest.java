@@ -60,7 +60,7 @@ class PaymentApplicationServiceTest {
                 orderService, parentService, settlementService, messagingService, auditService);
         order = new Order("NUR-TEST", UUID.randomUUID(), payerId, UUID.randomUUID(),
                 UUID.randomUUID(), Order.OrderType.FORMAL_LESSONS, 20000L, "{}");
-        when(orderService.get(orderId)).thenReturn(order);
+        when(orderService.getSnapshot(orderId)).thenAnswer(invocation -> OrderApplicationService.snapshot(order));
         when(gateway.channelName()).thenReturn("MOCK");
         when(gateway.createPayment(any(), any(Long.class), any())).thenReturn("MOCK-PAY-ref");
         when(attemptRepository.findByOrderIdAndChannel(any(), any()))

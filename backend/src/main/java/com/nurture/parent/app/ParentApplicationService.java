@@ -174,6 +174,21 @@ public class ParentApplicationService {
                         t.getMemo(), t.getCreatedAt())).toList());
     }
 
+    public record LegacyWalletView(boolean present,Long balanceCents,String currency,Page<TxnView> transactions){}
+    /** Historical student payer compatibility: read existing ownership; never create or transfer money. */
+    @Transactional(readOnly=true)
+    public LegacyWalletView legacyStudentWallet(int page,int size){
+        var caller=com.nurture.shared.security.CallerContext.require();
+        if(caller.role()!=com.nurture.shared.security.CallerRole.STUDENT)throw new org.springframework.security.access.AccessDeniedException("历史学生钱包仅本人可读");
+        if(page<0 || page>10000 || size<1 || size>50)throw new IllegalArgumentException("分页参数无效");
+        var pageable=PageRequest.of(page,size,org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,"createdAt","id"));
+        var wallet=parentProfileRepository.findByAccountId(caller.accountId())
+                .flatMap(profile -> walletRepository.findByParentId(profile.getId())).orElse(null);
+        if(wallet==null)return new LegacyWalletView(false,null,null,Page.empty(pageable));
+        var transactions=txnRepository.findByWalletId(wallet.getId(),pageable).map(t->new TxnView(t.getId(),t.getType().name(),t.getAmountCents(),t.getBalanceAfterCents(),t.getRelatedOrderId(),t.getMemo(),t.getCreatedAt()));
+        return new LegacyWalletView(true,wallet.getBalanceCents(),wallet.getCurrency(),transactions);
+    }
+
     private String nextNo(String prefix) {
         return "NUR-" + prefix + "-" + String.format("%06d", 1 + new java.security.SecureRandom().nextInt(999_999));
     }

@@ -3,12 +3,12 @@ package com.nurture.admin.api;
 import com.nurture.admin.app.AdminApplicationService;
 import com.nurture.identity.app.LoginThrottleService;
 import com.nurture.refund.app.RefundApplicationService;
-import com.nurture.refund.domain.RefundCase;
+
 import com.nurture.shared.audit.AuditLog;
 import com.nurture.shared.security.CallerContext;
 import com.nurture.verification.app.VerificationApplicationService;
 import com.nurture.payment.app.PaymentApplicationService;
-import com.nurture.verification.domain.VerificationCase;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -106,9 +106,7 @@ public class AdminController {
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        VerificationCase.VerificationStatus parsed = status == null ? null
-                : VerificationCase.VerificationStatus.valueOf(status);
-        return verificationService.listView(parsed, page(page,size,"createdAt"));
+        return verificationService.listViewByStatus(status, page(page,size,"createdAt"));
     }
 
     @PostMapping("/verification-cases/{caseId}:decide")

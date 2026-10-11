@@ -180,6 +180,7 @@
   padding: var(--space-5);
 }
 
+.secondary-card h2,
 .secondary-card h3 {
   margin: 0 0 var(--space-2);
   font-size: 1.05rem;

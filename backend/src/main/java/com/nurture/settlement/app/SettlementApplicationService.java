@@ -1,6 +1,6 @@
 package com.nurture.settlement.app;
 
-import com.nurture.order.domain.Order;
+import com.nurture.order.app.OrderApplicationService.OrderSnapshot;
 import com.nurture.settlement.domain.SettlementEntry;
 import com.nurture.settlement.infra.SettlementEntryRepository;
 import com.nurture.shared.config.PlatformConfigReader;
@@ -30,7 +30,7 @@ public class SettlementApplicationService {
 
     /** 供支付域在订单支付成功后调用：按平台抽成生成课酬结算条目。 */
     @Transactional
-    public SettlementEntry createEntryForPaidOrder(Order order) {
+    public SettlementEntry createEntryForPaidOrder(OrderSnapshot order) {
         BigDecimal feeRate = configReader.decimalValue("settlement.platform-fee-rate", BigDecimal.valueOf(0.15));
         long fee = BigDecimal.valueOf(order.getAmountCents())
                 .multiply(feeRate)
@@ -42,7 +42,7 @@ public class SettlementApplicationService {
 
     /** 必须与退款入账处于同一事务；锁定原收益以串行化并发红冲。 */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
-    public void reverseForRefund(Order order) {
+    public void reverseForRefund(OrderSnapshot order) {
         SettlementEntry earning = settlementRepository.lockEarning(order.getId(), SettlementEntry.EntryKind.EARNING)
                 .orElseThrow(() -> new IllegalStateException("订单缺少课酬条目，需运营核对后退款"));
         if (settlementRepository.findByReversesEntryId(earning.getId()).isPresent()) return;
@@ -53,7 +53,7 @@ public class SettlementApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public String refundNote(Order order) {
+    public String refundNote(OrderSnapshot order) {
         return settlementRepository.findByOrderIdAndEntryKind(order.getId(), SettlementEntry.EntryKind.EARNING)
                 .map(e -> e.getStatus() == SettlementEntry.SettlementStatus.PENDING
                         ? "退款执行时追加教师课酬红冲条目，待结算净额相应扣减 ¥" + String.format("%.2f", e.getNetCents() / 100.0)

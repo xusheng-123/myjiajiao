@@ -72,7 +72,7 @@ class BookingApplicationServiceTest {
         var futureSlot = new com.nurture.scheduling.domain.AvailabilitySlot(
                 teacherId, java.time.OffsetDateTime.now().plusHours(48),
                 java.time.OffsetDateTime.now().plusHours(49));
-        lenient().when(schedulingService.holdSlot(newSlotId, teacherId)).thenReturn(futureSlot);
+        lenient().when(schedulingService.holdSlotStartAt(newSlotId, teacherId)).thenReturn(futureSlot.getStartAt());
     }
 
     @AfterEach
@@ -129,7 +129,7 @@ class BookingApplicationServiceTest {
         Booking rescheduled = service.reschedule(confirmedBooking.getId(), newSlotId);
 
         assertThat(rescheduled.getSlotId()).isEqualTo(newSlotId);
-        verify(schedulingService).holdSlot(newSlotId, teacherId);
+        verify(schedulingService).holdSlotStartAt(newSlotId, teacherId);
         verify(schedulingService).releaseSlot(oldSlotId);
         verify(messagingService).notify(eq(teacherId), eq("RESCHEDULE"), any(), any());
     }
@@ -153,7 +153,7 @@ class BookingApplicationServiceTest {
         assertThatThrownBy(() -> service.reschedule(confirmedBooking.getId(), newSlotId))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("仅预约参与双方");
-        verify(schedulingService, never()).holdSlot(any(), any());
+        verify(schedulingService, never()).holdSlotStartAt(any(), any());
     }
 
     @Test
@@ -173,7 +173,7 @@ class BookingApplicationServiceTest {
         var pastSlot = new com.nurture.scheduling.domain.AvailabilitySlot(
                 teacherId, java.time.OffsetDateTime.now().minusHours(2),
                 java.time.OffsetDateTime.now().minusHours(1));
-        when(schedulingService.holdSlot(newSlotId, teacherId)).thenReturn(pastSlot);
+        when(schedulingService.holdSlotStartAt(newSlotId, teacherId)).thenReturn(pastSlot.getStartAt());
 
         assertThatThrownBy(() -> service.reschedule(confirmedBooking.getId(), newSlotId))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -194,7 +194,7 @@ class BookingApplicationServiceTest {
         assertThatThrownBy(() -> service.reschedule(requested.getId(), newSlotId))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("仅已确认");
-        verify(schedulingService, never()).holdSlot(any(), any());
+        verify(schedulingService, never()).holdSlotStartAt(any(), any());
     }
 
     @Test

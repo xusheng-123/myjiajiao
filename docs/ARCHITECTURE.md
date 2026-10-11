@@ -1,6 +1,6 @@
 # ARCHITECTURE — 真实架构速查（只描述当前存在，不做设计）
 
-> 引用方：`PROJECT_HANDOFF.md`。目录基准：`线上家教平台（功能）/`。核实更新：2026-10-11 阶段5重复档期与ICS。
+> 引用方：`PROJECT_HANDOFF.md`。目录基准：`线上家教平台（功能）/`。核实更新：2026-10-11 八阶段最终交付。
 
 ## 目录结构
 
@@ -17,10 +17,10 @@ backend/
     learning/        # V9 新增：成长中心/课后任务/课堂记录/档案/答疑（原4实体/4仓库；V15新增计划/目标/关联/历史4实体4仓库及独立app/api；V16错题/附件/容量3实体3仓库及相应服务）
   src/main/resources/
     application.yml  # 唯一配置文件；生产经 env 注入（NURTURE_*）
-    db/migration/    # Flyway V1–V17（V13试听限次、V14编号序列、V15学习计划、V16错题/文件/容量、V17重复档期）
+    db/migration/    # Flyway V1–V20（V13试听限次、V14编号序列、V15学习计划、V16错题/文件/容量、V17重复档期、V18客服、V19小测、V20咨询附件）
   src/test/java/com/nurture/
-    arch/ArchitectureTest.java          # ArchUnit 1.5.1，FreezingArchRule 空基线
-    it/                                 # 113 IT 用例（真 PostgreSQL nurture_test 库，当前verify证据）
+    arch/ArchitectureTest.java          # ArchUnit 1.5.1，5项全量严格规则/反例，无冻结豁免
+    it/                                 # 147 IT 用例（真 PostgreSQL nurture_test 库，当前verify证据）
     ...                                 # 单元测试 44 项
 frontend/
   src/app/
@@ -28,7 +28,7 @@ frontend/
     core/auth/ core/api/auth.interceptor.ts
     features/  landing/ auth/ teachers/ match/
                student/（dashboard/growth/archive/questions）
-               parent/ teacher/ admin/ messages/ refunds/ learning/（plans/mistakes/materials） scheduling/（series）
+               parent/ teacher/ admin/ messages/ refunds/ support/ learning/（plans/mistakes/materials/assessments） scheduling/（series）
     shared/components/teacher-compare.component.ts      # 真实资料最多3人对比
     shared/components/teacher-profile-editor.component.ts
     shared/components/garden-scene/     # 雨后竹林场景层（呼吸感动效宿主）
@@ -49,14 +49,16 @@ frontend/dist/nurture-frontend/browser/  # 生产构建产物（Pages 输出目�
 
 ## 请求路径（真实）
 
-本机：浏览器4200 → `/api`代理8080 → Spring Boot过滤器链（幂等 → 安全 → 审计）→ Controller（@PreAuthorize角色或SCOPE_）→ ApplicationService（业务 + 对象级授权）→ Repository → PostgreSQL（唯一事实源，源码Flyway V1–V17，ddl-auto=validate）。当前8080连接phase5隔离验收库V17，历史主库保持V10。
+本机：浏览器4200 → `/api`代理8080 → Spring Boot过滤器链（幂等 → 安全 → 审计）→ Controller（@PreAuthorize角色或SCOPE_）→ ApplicationService（业务 + 对象级授权）→ Repository → PostgreSQL（唯一事实源，源码Flyway V1–V20，ddl-auto=validate）。当前8080连接phase8隔离验收库V20，历史主库保持V10。
 
 部署目标仍为Cloudflare Pages前端/Tunnel API，但完整Staging尚未建立。已发布的owner-private Sites只托管静态Angular，没有Java/PostgreSQL/API，顶部明确提示接口未连接。
 
 ## 模块间纪律（约定与实际守门范围）
 
-- 约定：模块A只依赖模块B的app层，infra不跨模块，控制器不依赖仓储。当前ArchUnit两条实际规则只禁止跨模块infra和api依赖infra，尚未完整强制“跨模块只能app”；不得声称全部约定由测试覆盖。
-- 当前违规基线 = 0。learning/parent(LearningGateway) 均遵守（parent 经 gateway 调 learning.app）。
+- 业务模块间仅依赖对方app层，shared横切层按约定可访问；本模块app→infra允许，api不直连infra，domain不反向依赖app/api/infra。
+- 当前五项ArchUnit检查全量执行并包含坏/好依赖反例，不使用FreezingArchRule。历史自定义noClasses条件方向错误已修正，admin直连OrderRepository与跨domain依赖已消除。原冻结文件只保留历史，不参与本轮规则。
+- 跨模块订单/预约事实通过OrderSnapshot/BookingSnapshot只读记录；持有档期/打开会话返回标量；原交易转换、事务/悲观锁与无订单noRollbackFor保留。49单元/架构+147IT全过。
+
 
 ## 关键既有服务方法（新功能复用点）
 
@@ -70,8 +72,14 @@ frontend/dist/nurture-frontend/browser/  # 生产构建产物（Pages 输出目�
 - `TeacherRegistrationService`：身份注册与教师资料原子保存；ProfileView在事务内复制标签。
 - `SmsDelivery`：短信投递端口；默认Unavailable实现，能力false/503，不伪造可用OTP。
 
-公开教师端点只匿名允许白名单详情/列表，且要求账户有效、审核通过、在售；不包含联系方式或资质文件key。资质下载只运营、固定kind、附件无缓存并记录读审计。咨询沿用数据库文本消息+参与者权限、最新100/历史分页与已读；前端可见页面15秒轮询，未引入WebSocket或外部消息中间件。
+公开教师端点只匿名允许白名单详情/列表，且要求账户有效、审核通过、在售；不包含联系方式或资质文件key；公开分页当前全候选过滤排序，需另做投影/负载验证。资质下载只运营、固定kind、附件无缓存并记录读审计。咨询沿用数据库文本消息/私有附件+参与者权限、最新100/历史分页与已读；前端可见页面15秒轮询，未引入WebSocket或外部消息中间件。
 
 ## 测试拓扑
 
 单元（*Test，surefire）→ IT（*IT + `it` profile，nurture_test 库，failsafe `-Pintegration`）→ E2E（tools/e2e_test.py，需服务运行）→ 探针（probe_authz.py）→ 配置门禁（deploy/verify_config.py）。
+
+## V18–V20补充与工程契约
+
+admin模块的客服工单/回复/证据/容量支持四角色归属、版本行锁、审计/站内通知，无自动退款。learning新增测评/尝试两实体，题目存验证JSON，有限客观题/一次评分/教师批注/真实报告；messaging新增咨询文件/容量，与消息同事务记录attachment_id。文件类型/内容验证与受控下载复用shared存储，逻辑保留配额，病毒扫描/物理自动清理尚未提供。
+
+学生历史钱包只读接口经parent.app，按账户→既有parent_profile→wallet查询，不ensure创建、不转移。幂等过滤器要求规范36字符UUIDv4/RFC variant；合法大小写均接受。auth/landing/match品牌装饰按组件标签限定到styles/brand-presentation.css，声明保留、原预算零warning。

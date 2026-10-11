@@ -6,7 +6,7 @@ import com.nurture.booking.domain.TrialEntitlement;
 import com.nurture.booking.infra.TrialEntitlementRepository;
 import com.nurture.messaging.app.MessagingApplicationService;
 import com.nurture.order.app.OrderApplicationService;
-import com.nurture.order.domain.Order;
+import com.nurture.order.app.OrderApplicationService.OrderSnapshot;
 import com.nurture.refund.app.RefundApplicationService;
 import com.nurture.scheduling.app.SchedulingApplicationService;
 import com.nurture.shared.security.CallerContext;
@@ -74,8 +74,8 @@ public class BookingApplicationService {
         }
         // 质量加固：已过去的档期不得通过伪造请求新建预约（改期路径不受影响，维持既有行为）；
         // 校验失败抛异常由事务回滚释放已持有的档期。
-        var slot = schedulingService.holdSlot(slotId, teacherId);
-        if (slot.getStartAt().isBefore(OffsetDateTime.now())) {
+        var slotStartAt = schedulingService.holdSlotStartAt(slotId, teacherId);
+        if (slotStartAt.isBefore(OffsetDateTime.now())) {
             throw new IllegalArgumentException("不能预约已过去的时段");
         }
         // 价格在订单中心创建时按导师定价快照；预约侧记 0，试听课免费
@@ -160,11 +160,11 @@ public class BookingApplicationService {
             throw new IllegalStateException("新档期与当前档期相同，请选择其他时间");
         }
         // 先锁新档期（占用/冲突校验），成功后再释放旧档期：任一步失败整体回滚
-        var newSlot = schedulingService.holdSlot(newSlotId, booking.getTeacherId());
+        var newSlotStartAt = schedulingService.holdSlotStartAt(newSlotId, booking.getTeacherId());
         // 时间规则与新建预约一致（2026-10-10 决策）：目标档期必须尚未开始；
         // 仅约束目标，不约束源——已开始/已过去的 CONFIRMED 课程仍可改到未来（补救场景）。
         // 校验失败抛异常由事务回滚释放新档期，原档期保留。
-        if (newSlot.getStartAt().isBefore(OffsetDateTime.now())) {
+        if (newSlotStartAt.isBefore(OffsetDateTime.now())) {
             throw new IllegalArgumentException("不能改期到已过去的时段");
         }
         schedulingService.releaseSlot(booking.getSlotId());
@@ -182,13 +182,13 @@ public class BookingApplicationService {
     @Transactional
     public CancelPreview previewCancel(UUID bookingId, String reason) {
         Booking booking = requireCancellableByCaller(bookingId);
-        Order order = orderRepositorySafe(bookingId);
+        OrderSnapshot order = orderRepositorySafe(bookingId);
 
         long refundCents = 0;
         String orderStatus = "NO_ORDER";
         if (order != null) {
-            orderStatus = order.getStatus().name();
-            refundCents = order.getStatus() == Order.OrderStatus.PAID ? order.getAmountCents() : 0;
+            orderStatus = order.getStatus();
+            refundCents = "PAID".equals(order.getStatus()) ? order.getAmountCents() : 0;
         }
 
         Map<String, Object> impact = new LinkedHashMap<>();
@@ -215,10 +215,10 @@ public class BookingApplicationService {
         booking.cancel(reason);
         schedulingService.releaseSlot(booking.getSlotId());
 
-        Order order = orderRepositorySafe(bookingId);
-        if (order != null && order.getStatus() == Order.OrderStatus.PAID) {
+        OrderSnapshot order = orderRepositorySafe(bookingId);
+        if (order != null && "PAID".equals(order.getStatus())) {
             // 已付订单：取消即触发退款域自动全额退款闭环（与 Preview 展示的影响一致）
-            refundService.executeForBookingCancellation(order, reason);
+            refundService.refundForCancelledBooking(order, reason);
         }
         orderService.closeIfPresent(bookingId);
         return booking;
@@ -332,6 +332,16 @@ public class BookingApplicationService {
                 booking.getSubject(), booking.getStatus().name(), booking.getType().name());
     }
 
+    public record BookingSnapshot(UUID id,UUID studentId,UUID teacherId,UUID slotId,String subject,String status,String type,java.time.Instant createdAt){
+        public UUID getId(){return id;}public UUID getStudentId(){return studentId;}public UUID getTeacherId(){return teacherId;}public UUID getSlotId(){return slotId;}
+        public String getSubject(){return subject;}public String getStatus(){return status;}public String getType(){return type;}public java.time.Instant getCreatedAt(){return createdAt;}
+    }
+    private BookingSnapshot snapshot(Booking b){return new BookingSnapshot(b.getId(),b.getStudentId(),b.getTeacherId(),b.getSlotId(),b.getSubject(),b.getStatus().name(),b.getType().name(),b.getCreatedAt());}
+    @Transactional(readOnly=true)
+    public Page<BookingSnapshot> studentSnapshots(UUID student,org.springframework.data.domain.Pageable page){return ofStudent(student,page).map(this::snapshot);}
+    @Transactional(readOnly=true)
+    public Page<BookingSnapshot> requestSnapshots(UUID teacher,org.springframework.data.domain.Pageable page){return requestsForTeacher(teacher,page).map(this::snapshot);}
+
     /** 学生 upcoming 课程视图（student 控制台课程表与专注模式消费；type 供前端区分试听/正式展示）。 */
     public record UpcomingBookingView(UUID bookingId, String subject, String status, String type,
                                       OffsetDateTime startAt, OffsetDateTime endAt, UUID teacherId) {
@@ -412,9 +422,9 @@ public class BookingApplicationService {
         return booking;
     }
 
-    private Order orderRepositorySafe(UUID bookingId) {
+    private OrderSnapshot orderRepositorySafe(UUID bookingId) {
         try {
-            return orderService.getByBooking(bookingId);
+            return orderService.getByBookingSnapshot(bookingId);
         } catch (IllegalArgumentException e) {
             return null;
         }

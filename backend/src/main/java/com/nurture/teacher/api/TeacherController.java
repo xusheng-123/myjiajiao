@@ -116,14 +116,14 @@ public class TeacherController {
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "0") int page,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size) {
         UUID me = CallerContext.require().accountId();
-        return bookingService.requestsForTeacher(me, org.springframework.data.domain.PageRequest.of(page, size))
+        return bookingService.requestSnapshots(me, org.springframework.data.domain.PageRequest.of(page, size))
                 .getContent().stream()
                 .map(b -> java.util.Map.<String, Object>of(
                         "bookingId", b.getId(),
                         "studentId", b.getStudentId(),
                         "subject", b.getSubject(),
-                        "type", b.getType().name(),
-                        "status", b.getStatus().name(),
+                        "type", b.getType(),
+                        "status", b.getStatus(),
                         "createdAt", b.getCreatedAt().toString()))
                 .toList();
     }

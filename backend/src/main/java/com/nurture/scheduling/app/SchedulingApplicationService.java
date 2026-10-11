@@ -70,6 +70,9 @@ public class SchedulingApplicationService {
 
     /** 供 booking 域调用：占用/释放时段。 */
     @Transactional
+    public java.time.OffsetDateTime holdSlotStartAt(UUID slot,UUID teacher){return holdSlot(slot,teacher).getStartAt();}
+
+    @Transactional
     public AvailabilitySlot holdSlot(UUID slotId, UUID requestingTeacherId) {
         AvailabilitySlot slot = slotRepository.findById(slotId)
                 .orElseThrow(() -> new IllegalArgumentException("档期时段不存在"));
