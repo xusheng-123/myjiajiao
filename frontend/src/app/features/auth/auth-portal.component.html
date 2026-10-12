@@ -167,72 +167,78 @@
       }
 
       @if (channel() === 'password') {
-        <div class="field">
-          <label for="account">账号</label>
-          <input
-            id="account"
-            name="account"
-            type="text"
-            autocomplete="username"
-            placeholder="手机号或账号编号"
-            [value]="account()"
-            (input)="account.set(accountInput.value)"
-            #accountInput
-            required
-          />
-        </div>
-        <div class="field" [class.field--error]="password().length > 0 && password().length < 8">
-          <label for="password">密码</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="至少 8 位"
-            [value]="password()"
-            (input)="password.set(pwInput.value)"
-            #pwInput
-            required
-          />
+        <div class="field-row">
+          <div class="field">
+            <label for="account">账号</label>
+            <input
+              id="account"
+              name="account"
+              type="text"
+              autocomplete="username"
+              placeholder="手机号或账号编号"
+              [value]="account()"
+              (input)="account.set(accountInput.value)"
+              #accountInput
+              required
+            />
+          </div>
+          <div class="field" [class.field--error]="password().length > 0 && password().length < 8">
+            <label for="password">密码</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="至少 8 位"
+              [value]="password()"
+              (input)="password.set(pwInput.value)"
+              #pwInput
+              required
+            />
+          </div>
         </div>
       }
 
       @if (isRegister()) {
-        <div class="field">
-          <label for="display-name">称呼</label>
-          <input
-            id="display-name"
-            name="displayName"
-            type="text"
-            placeholder="{{ activeRole() === Role.TEACHER ? '导师姓名或教学称号' : '学生姓名或昵称' }}"
-            [value]="displayName()"
-            (input)="displayName.set(nameInput.value)"
-            #nameInput
-            required
-          />
-        </div>
-        <div class="field">
-          <label for="reg-password">设置密码</label>
-          <input
-            id="reg-password"
-            name="regPassword"
-            type="password"
-            autocomplete="new-password"
-            placeholder="至少 8 位，建议字母与数字组合"
-            [value]="password()"
-            (input)="password.set(regPwInput.value)"
-            #regPwInput
-            required
-          />
-        </div>
-        @if (activeRole() === Role.TEACHER) {
+        <div class="field-row">
           <div class="field">
-            <label for="school">毕业/任职院校</label>
-            <input id="school" name="school" type="text" placeholder="如：华东师范大学" [value]="school()" (input)="school.set(schoolInput.value)" #schoolInput required />
+            <label for="display-name">称呼</label>
+            <input
+              id="display-name"
+              name="displayName"
+              type="text"
+              placeholder="{{ activeRole() === Role.TEACHER ? '导师姓名或教学称号' : '学生姓名或昵称' }}"
+              [value]="displayName()"
+              (input)="displayName.set(nameInput.value)"
+              #nameInput
+              required
+            />
           </div>
           <div class="field">
-            <label for="degree">最高学历</label>
-            <input id="degree" name="degree" type="text" placeholder="如：硕士研究生" [value]="highestDegree()" (input)="highestDegree.set(degreeInput.value)" #degreeInput required />
+            <label for="reg-password">设置密码</label>
+            <input
+              id="reg-password"
+              name="regPassword"
+              type="password"
+              autocomplete="new-password"
+              placeholder="至少 8 位，字母数字组合"
+              [value]="password()"
+              (input)="password.set(regPwInput.value)"
+              #regPwInput
+              required
+            />
+          </div>
+        </div>
+        @if (activeRole() === Role.TEACHER) {
+          <div class="field-row">
+            <div class="field">
+              <label for="school">毕业/任职院校</label>
+              <input id="school" name="school" type="text" placeholder="如：华东师范大学" [value]="school()" (input)="school.set(schoolInput.value)" #schoolInput required />
+            </div>
+            <div class="field">
+              <label for="degree">最高学历</label>
+              <input id="degree" name="degree" type="text" placeholder="如：硕士研究生" [value]="highestDegree()" (input)="highestDegree.set(degreeInput.value)" #degreeInput required />
+            </div>
           </div>
           <p class="field-hint">
             <span aria-hidden="true">◆</span> 提交后将进入资质认证审核流程，审核结果将在导师工作台展示。

@@ -42,7 +42,7 @@
   align-items: center;
   justify-content: space-between;
   max-width: var(--container-max);
-  margin: 0 clamp(20px, 3vw, 56px) 0 auto;
+  margin: 0 auto;
   padding: 18px var(--space-5);
 }
 
@@ -118,12 +118,12 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(400px, 460px);
+  grid-template-columns: minmax(0, 1fr) minmax(480px, 560px);
   align-items: center;
-  gap: clamp(32px, 6vw, 96px);
+  gap: clamp(28px, 4vw, 56px);
   max-width: var(--container-max);
   min-height: calc(100vh - 72px);
-  margin: 0 clamp(20px, 3vw, 56px) 0 auto;
+  margin: 0 auto;
   padding: var(--space-7) var(--space-5) var(--space-8);
 }
 
@@ -302,11 +302,6 @@
 }
 
 @media (max-width: 1024px) {
-  .garden-nav,
-  .hero-chamber {
-    margin: 0 auto;
-  }
-
   .hero-chamber {
     grid-template-columns: 1fr;
     gap: var(--space-7);
