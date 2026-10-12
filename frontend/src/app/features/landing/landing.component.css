@@ -438,56 +438,73 @@
   line-height: 2;
 }
 
-/* ============ 结尾 CTA：雾青底 + 漏窗小图（月洞门拱形画框） ============ */
-.cta-inner {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: var(--space-8);
+/* ============ 结尾 CTA：庭院粉墙背景 · 居中排版（2026-10-12 第九屏改版，撤漏窗画框） ============ */
+.nur-section.cta {
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  min-height: 760px;
+  /* 内容视觉中心落在区块高度约 45%：底部留白多一档，整体略偏上 */
+  padding-bottom: calc(clamp(64px, 9vw, 112px) + 88px);
+}
+
+.cta-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.cta .cta-inner {
+  max-width: 900px;
+}
+
+.cta-copy .nur-kicker {
+  margin-bottom: 20px;
 }
 
 .cta-title {
   margin: 0;
   font-family: var(--font-serif);
-  font-weight: 600;
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 700;
+  font-size: 44px;
   letter-spacing: 0.08em;
   color: var(--text-title);
-  line-height: 1.5;
+  line-height: 1.35;
 }
 
 .cta-lead {
-  margin: var(--space-4) 0 0;
+  margin: 20px 0 0;
   color: var(--color-gold-text);
   font-family: var(--font-serif);
-  font-size: 1.1rem;
+  font-size: 18px;
+  line-height: 1.7;
   letter-spacing: 0.1em;
 }
 
 .cta-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
-  margin-top: var(--space-6);
+  justify-content: center;
+  gap: 16px;
+  margin-top: 34px;
 }
 
-.cta-frame {
-  margin: 0;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 999px 999px 24px 24px; /* 月洞门拱形 */
-  box-shadow: var(--shadow-subtle);
+.cta-actions .nur-btn {
+  height: 52px;
+  min-height: 52px;
+  padding-inline: 30px;
 }
 
-.cta-frame picture,
-.cta-frame img {
-  display: block;
-  width: 100%;
-}
+@media (max-width: 1279px) {
+  .cta-title {
+    font-size: 36px;
+  }
 
-.cta-frame img {
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
+  .cta .cta-inner {
+    max-width: 760px;
+  }
 }
 
 /* ============ 移动端 <768px：图上文下，不叠渐变 ============ */
@@ -555,13 +572,26 @@
   .services-grid,
   .teachers-grid,
   .steps-grid,
-  .voices-grid,
-  .cta-inner {
+  .voices-grid {
     grid-template-columns: 1fr;
   }
 
-  .cta-inner {
-    gap: var(--space-6);
+  /* 第九屏居中版式移动档：标题降档、边距 20px、按钮上下排列 */
+  .nur-section.cta {
+    min-height: 0;
+  }
+
+  .cta .cta-inner {
+    padding-inline: 20px;
+  }
+
+  .cta-title {
+    font-size: clamp(28px, 7vw, 34px);
+  }
+
+  .cta-actions {
+    flex-direction: column;
+    align-items: center;
   }
 }
 

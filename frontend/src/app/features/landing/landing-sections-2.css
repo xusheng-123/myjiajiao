@@ -44,11 +44,11 @@
   background-position: center 45%;
 }
 
-/* 第 9 屏 · 最终行动：暖白庭院段，底部湿青石反光略压保按钮区干净 */
+/* 第 9 屏 · 最终行动：暖白庭院段（左门檐/中粉墙/右竹/下青石同框服务居中文字） */
 .nur-section.cta {
   background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.36) 0%, rgba(242, 243, 238, 0.26) 45%, rgba(242, 243, 238, 0.48) 100%), url('/assets/home/section-courtyard.webp');
   background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.36) 0%, rgba(242, 243, 238, 0.26) 45%, rgba(242, 243, 238, 0.48) 100%), image-set(url('/assets/home/section-courtyard.avif') type('image/avif'), url('/assets/home/section-courtyard.webp') type('image/webp'));
-  background-position: center 38%;
+  background-position: center 48%;
 }
 
 /* 第 5–7 屏摄影背景上给区块标题一片羽化柔光留白（沿用 2–4 屏手法，无硬边） */
@@ -131,6 +131,6 @@
   .nur-section.cta {
     background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.48) 0%, rgba(242, 243, 238, 0.42) 45%, rgba(242, 243, 238, 0.56) 100%), url('/assets/home/section-courtyard.webp');
     background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.48) 0%, rgba(242, 243, 238, 0.42) 45%, rgba(242, 243, 238, 0.56) 100%), image-set(url('/assets/home/section-courtyard.avif') type('image/avif'), url('/assets/home/section-courtyard.webp') type('image/webp'));
-    background-position: 55% 35%;
+    background-position: 50% 35%;
   }
 }
