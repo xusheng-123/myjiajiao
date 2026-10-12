@@ -290,15 +290,15 @@
   margin: var(--space-7) 0 0;
 }
 
-/* 第 4 屏摄影背景上给底部链接一层柔光 pill，保证可读 */
+/* 第 4 屏摄影背景上给底部链接一层柔光 pill，保证可读（2026-10-12 撤 backdrop 模糊改提纯 pill 底色） */
 .teachers-more .nur-link-arrow {
   padding: 8px 18px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.62);
-  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.72);
 }
 
-/* 第 3/4 屏摄影背景上给区块标题一片羽化柔光留白（无硬边，画面保持清透） */
+/* 第 3/4 屏摄影背景上给区块标题一片羽化柔光留白（无硬边，画面保持清透；
+   2026-10-12 撤 backdrop 模糊改纯色羽化并微升底色补可读性） */
 #services,
 #teachers {
   overflow-x: clip;
@@ -315,8 +315,7 @@
   position: absolute;
   inset: -28px -56px;
   pointer-events: none;
-  background: rgba(247, 248, 244, 0.5);
-  backdrop-filter: blur(3px) brightness(1.04);
+  background: rgba(247, 248, 244, 0.58);
   mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 72%);
 }
 
