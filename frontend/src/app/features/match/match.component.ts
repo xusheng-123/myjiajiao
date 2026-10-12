@@ -114,6 +114,12 @@ export class MatchComponent implements OnInit {
     }
   }
 
+  /** 右栏「可约时间」事实行文案 */
+  timeFilterLabel(): string {
+    const f = this.timeFilter();
+    return f === 'today' ? '今日可约' : f === '3d' ? '3 天内可约' : f === '7d' ? '7 天内可约' : '不限时段';
+  }
+
   // ---------- 步骤一业务 ----------
   onProceedFromDemand(): void {
     this.search();

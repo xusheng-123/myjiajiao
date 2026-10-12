@@ -1,5 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { TeacherCompareComponent, CompareTeacher } from '../../shared/components/teacher-compare.component';
 
 export interface TeacherCandidate extends CompareTeacher {
@@ -23,7 +24,7 @@ export type TimeFilter = 'any' | 'today' | '3d' | '7d';
 @Component({
   selector: 'nur-match-recommend-step',
   standalone: true,
-  imports: [DatePipe, TeacherCompareComponent],
+  imports: [DatePipe, RouterLink, TeacherCompareComponent],
   template: `
     <section class="recommend-step" aria-labelledby="step2-title">
       <!-- 头部与时间筛选 -->
@@ -118,103 +119,123 @@ export type TimeFilter = 'any' | 'today' | '3d' | '7d';
             <li class="candidate-card nur-card nur-card--interactive">
               <div class="candidate-body">
                 <div class="candidate-header">
-                  <div class="candidate-meta-col">
-                    <div class="candidate-name-row">
+                  <div class="candidate-name-row">
+                    <span class="cand-avatar-wrap">
                       <span class="nur-avatar cand-avatar" aria-hidden="true">{{ t.displayName.slice(0, 1) }}</span>
-                      <div>
+                      @if (t.verificationApproved) {
+                        <span class="cand-verify-badge" aria-hidden="true">✓</span>
+                      }
+                    </span>
+                    <div>
+                      <div class="cand-name-line">
                         <h3 class="cand-name nur-serif">{{ t.displayName }} · {{ t.subject }}</h3>
-                        <p class="cand-sub">
-                          {{ t.school || '高等院校' }} · {{ t.highestDegree || '学士' }} · {{ t.yearsOfTeaching }} 年教龄
-                        </p>
+                        @if (t.verificationApproved) {
+                          <span class="nur-cert nur-cert--ok"><span aria-hidden="true">✓</span> 已认证</span>
+                        } @else {
+                          <span class="nur-cert nur-cert--pending"><span aria-hidden="true">◔</span> 审核中</span>
+                        }
                       </div>
+                      <p class="cand-sub">
+                        {{ t.school || '高等院校' }} · {{ t.highestDegree || '学士' }} · {{ t.yearsOfTeaching }} 年教龄
+                      </p>
                     </div>
                   </div>
 
-                  <div class="candidate-badges">
-                    @if (t.verificationApproved) {
-                      <span class="nur-cert nur-cert--ok"><span aria-hidden="true">✓</span> 已认证</span>
-                    } @else {
-                      <span class="nur-cert nur-cert--pending"><span aria-hidden="true">◔</span> 审核中</span>
-                    }
+                  <div class="candidate-side">
                     @if (t.averageRating !== null) {
                       <span class="cand-rating">
                         <span aria-hidden="true">★</span> {{ t.averageRating }}
-                        <small>({{ t.reviewCount }} 评)</small>
+                        <small>({{ t.reviewCount }} 评价)</small>
                       </span>
                     }
+                    <span class="cand-price">
+                      ¥{{ (t.pricePerHourCents / 100).toFixed(0) }}<small>/课时</small>
+                    </span>
                   </div>
                 </div>
 
-                <div class="cand-details-row">
-                  <span class="cand-price">
-                    ¥{{ (t.pricePerHourCents / 100).toFixed(0) }}<small>/课时</small>
-                  </span>
-                  <span class="cand-grade">{{ t.gradeBand ?? '学段不限' }}</span>
-                  @if (t.nextOpenSlotAt) {
-                    <span class="cand-slot">
-                      <span aria-hidden="true">◔</span> 最近可约 {{ t.nextOpenSlotAt | date: 'M月d日 HH:mm' }}
-                    </span>
-                  } @else {
-                    <span class="cand-slot-none">近期档期暂未开放</span>
+                <div class="cand-tags">
+                  <span class="cand-tag cand-tag--grade">{{ t.gradeBand ?? '学段不限' }}</span>
+                  @for (tag of t.styleTags.slice(0, 4); track tag) {
+                    <span class="cand-tag">{{ tag }}</span>
                   }
                 </div>
 
-                @if (t.reasons && t.reasons.length > 0) {
-                  <div class="cand-reasons">
-                    <p class="reason-line">
-                      <span class="reason-bullet">✦</span> 匹配依据：{{ t.reasons[0] }}
-                    </p>
-                    @if (t.reasons.length > 1) {
-                      <p class="reason-line">
-                        <span class="reason-bullet">✦</span> {{ t.reasons[1] }}
-                      </p>
+                <div class="cand-info-band">
+                  <div class="info-cell">
+                    <p class="info-cell-title"><span class="info-icon" aria-hidden="true">✦</span> 匹配依据</p>
+                    @if (t.reasons && t.reasons.length > 0) {
+                      <p class="reason-line">{{ t.reasons[0] }}</p>
+                      @if (t.reasons.length > 1) {
+                        <p class="reason-line">{{ t.reasons[1] }}</p>
+                      }
+                    } @else {
+                      <p class="reason-line reason-empty">按科目与空档与你匹配</p>
                     }
                   </div>
-                }
+                  <div class="info-cell info-cell--slot">
+                    <p class="info-cell-title"><span class="info-icon" aria-hidden="true">◔</span> 最近可约</p>
+                    @if (t.nextOpenSlotAt) {
+                      <p class="slot-line">{{ t.nextOpenSlotAt | date: 'M月d日 EEE HH:mm' }}</p>
+                    } @else {
+                      <p class="reason-empty">近期档期暂未开放</p>
+                    }
+                  </div>
+                </div>
               </div>
 
               <!-- 卡片操作区 -->
               <footer class="candidate-actions">
-                <button
-                  type="button"
-                  class="nur-btn nur-btn--primary"
-                  (click)="onSelect(t, 'TRIAL')"
-                >
-                  预约免费试听
-                </button>
-                <button
-                  type="button"
-                  class="nur-btn nur-btn--ghost"
-                  (click)="onSelect(t, 'FORMAL')"
-                >
-                  预约正式课
-                </button>
-                <button
-                  type="button"
-                  class="nur-btn nur-btn--ghost nur-btn--sm"
-                  [disabled]="consultBusy()"
-                  (click)="consult.emit(t)"
-                >
-                  课前咨询
-                </button>
-                <button
-                  type="button"
-                  class="nur-btn nur-btn--ghost nur-btn--sm"
-                  [class.btn-active]="isCompared(t.teacherId)"
-                  (click)="toggleCompare.emit(t)"
-                >
-                  {{ isCompared(t.teacherId) ? '✓ 已对比' : '+ 对比' }}
-                </button>
-                <button
-                  type="button"
-                  class="btn-fav-icon"
-                  [class.btn-fav-icon--active]="isFavorite(t.teacherId)"
-                  [disabled]="favBusyIds().has(t.teacherId)"
-                  [attr.aria-label]="(isFavorite(t.teacherId) ? '取消收藏 ' : '收藏 ') + t.displayName"
-                  (click)="toggleFavorite.emit(t)"
-                >
-                  {{ isFavorite(t.teacherId) ? '♥' : '♡' }}
-                </button>
+                <div class="actions-left">
+                  <button
+                    type="button"
+                    class="nur-btn nur-btn--ghost nur-btn--sm"
+                    [class.btn-active]="isCompared(t.teacherId)"
+                    (click)="toggleCompare.emit(t)"
+                  >
+                    {{ isCompared(t.teacherId) ? '✓ 已加入对比' : '+ 加入对比' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-fav-icon"
+                    [class.btn-fav-icon--active]="isFavorite(t.teacherId)"
+                    [disabled]="favBusyIds().has(t.teacherId)"
+                    [attr.aria-label]="(isFavorite(t.teacherId) ? '取消收藏 ' : '收藏 ') + t.displayName"
+                    (click)="toggleFavorite.emit(t)"
+                  >
+                    {{ isFavorite(t.teacherId) ? '♥' : '♡' }}
+                  </button>
+                </div>
+                <div class="actions-right">
+                  <button
+                    type="button"
+                    class="nur-btn nur-btn--ghost nur-btn--sm"
+                    [disabled]="consultBusy()"
+                    (click)="consult.emit(t)"
+                  >
+                    课前咨询
+                  </button>
+                  <a
+                    class="nur-btn nur-btn--ghost nur-btn--sm cand-detail-link"
+                    [routerLink]="['/teachers', t.teacherId]"
+                  >
+                    查看详情
+                  </a>
+                  <button
+                    type="button"
+                    class="nur-btn nur-btn--ghost"
+                    (click)="onSelect(t, 'FORMAL')"
+                  >
+                    预约正式课
+                  </button>
+                  <button
+                    type="button"
+                    class="nur-btn nur-btn--primary"
+                    (click)="onSelect(t, 'TRIAL')"
+                  >
+                    预约免费试听
+                  </button>
+                </div>
               </footer>
             </li>
           }
@@ -331,10 +352,38 @@ export type TimeFilter = 'any' | 'today' | '3d' | '7d';
       gap: var(--space-3);
     }
 
+    .cand-avatar-wrap {
+      position: relative;
+      flex: none;
+    }
+
     .cand-avatar {
-      width: 48px;
-      height: 48px;
-      font-size: 1.2rem;
+      width: 56px;
+      height: 56px;
+      font-size: 1.35rem;
+    }
+
+    .cand-verify-badge {
+      position: absolute;
+      right: -3px;
+      bottom: -3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: #fff;
+      font-size: 0.72rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--bg-card);
+    }
+
+    .cand-name-line {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
     }
 
     .cand-name {
@@ -349,90 +398,137 @@ export type TimeFilter = 'any' | 'today' | '3d' | '7d';
       color: var(--text-muted);
     }
 
-    .candidate-badges {
+    .candidate-side {
       display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex: none;
     }
 
     .cand-rating {
       color: var(--color-gold-text);
       font-weight: 600;
-      font-size: 0.95rem;
+      font-size: 1.05rem;
+      font-family: var(--font-serif);
     }
 
     .cand-rating small {
       color: var(--text-muted);
       font-weight: normal;
-    }
-
-    .cand-details-row {
-      display: flex;
-      align-items: baseline;
-      gap: var(--space-3);
-      margin-top: var(--space-3);
-      flex-wrap: wrap;
+      font-size: 0.8rem;
+      font-family: var(--font-sans);
     }
 
     .cand-price {
-      font-size: 1.25rem;
+      font-size: 1.4rem;
       font-weight: 600;
       color: var(--color-primary);
+      font-family: var(--font-serif);
     }
 
     .cand-price small {
       font-size: 0.8rem;
       font-weight: normal;
       color: var(--text-muted);
+      font-family: var(--font-sans);
     }
 
-    .cand-grade {
-      font-size: 0.82rem;
-      padding: 1px 8px;
+    .cand-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+    }
+
+    .cand-tag {
+      font-size: 0.8rem;
+      padding: 2px 10px;
       border-radius: var(--radius-pill);
+      background: var(--color-primary-soft);
+      color: var(--color-primary);
+    }
+
+    .cand-tag--grade {
       background: var(--bg-page);
+      border: 1px solid var(--line);
       color: var(--text-muted);
     }
 
-    .cand-slot {
-      font-size: 0.85rem;
-      color: var(--color-primary);
-      background: var(--color-primary-soft);
-      padding: 2px 10px;
-      border-radius: var(--radius-pill);
-    }
-
-    .cand-slot-none {
-      font-size: 0.82rem;
-      color: var(--text-placeholder);
-    }
-
-    .cand-reasons {
-      margin-top: var(--space-3);
-      padding: var(--space-3);
+    /* 双格信息带：匹配依据 | 最近可约 */
+    .cand-info-band {
+      margin-top: var(--space-4);
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
       border-radius: var(--radius-control);
       background: var(--bg-page);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .info-cell {
+      padding: var(--space-3) var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-cell--slot {
+      border-left: 1px solid var(--line);
+    }
+
+    .info-cell-title {
+      margin: 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-icon {
+      color: var(--color-gold);
     }
 
     .reason-line {
       margin: 0;
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       color: var(--text-main);
       line-height: 1.6;
     }
 
-    .reason-bullet {
-      color: var(--color-gold);
+    .reason-empty {
+      color: var(--text-placeholder);
+    }
+
+    .slot-line {
+      margin: 0;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--color-primary);
     }
 
     .candidate-actions {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: var(--space-2);
       padding-top: var(--space-3);
       border-top: 1px solid var(--line);
       flex-wrap: wrap;
+    }
+
+    .actions-left,
+    .actions-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .cand-detail-link {
+      text-decoration: none;
     }
 
     .btn-active {
@@ -443,7 +539,6 @@ export type TimeFilter = 'any' | 'today' | '3d' | '7d';
     }
 
     .btn-fav-icon {
-      margin-left: auto;
       min-width: 38px;
       height: 38px;
       border-radius: 50%;
@@ -516,16 +611,33 @@ export type TimeFilter = 'any' | 'today' | '3d' | '7d';
       .candidate-header {
         flex-direction: column;
       }
+      .candidate-side {
+        flex-direction: row;
+        align-items: baseline;
+        gap: var(--space-3);
+      }
+      .cand-info-band {
+        grid-template-columns: 1fr;
+      }
+      .info-cell--slot {
+        border-left: none;
+        border-top: 1px solid var(--line);
+      }
       .candidate-actions {
         flex-direction: column;
         align-items: stretch;
       }
-      .candidate-actions .nur-btn {
+      .actions-left,
+      .actions-right {
         width: 100%;
       }
+      .actions-right .nur-btn {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+      }
       .btn-fav-icon {
-        margin-left: 0;
-        width: 100%;
+        flex: 1;
         border-radius: var(--radius-pill);
       }
     }
