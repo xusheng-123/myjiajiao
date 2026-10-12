@@ -1,0 +1,366 @@
+{
+ "vw": 375,
+ "scrollW": 375,
+ "shell": {
+  "max-width": "860px",
+  "width": "375px"
+ },
+ "sections": [
+  {
+   "pt": "0px",
+   "pr": "0px",
+   "pb": "0px",
+   "pl": "0px",
+   "box": {
+    "x": 16,
+    "right": 359,
+    "w": 343,
+    "h": 744
+   }
+  },
+  {
+   "pt": "0px",
+   "pr": "0px",
+   "pb": "0px",
+   "pl": "0px",
+   "box": {
+    "x": 16,
+    "right": 359,
+    "w": 343,
+    "h": 2889.8
+   }
+  },
+  {
+   "pt": "0px",
+   "pr": "0px",
+   "pb": "0px",
+   "pl": "0px",
+   "box": {
+    "x": 16,
+    "right": 359,
+    "w": 343,
+    "h": 2560.3
+   }
+  },
+  {
+   "pt": "0px",
+   "pr": "0px",
+   "pb": "0px",
+   "pl": "0px",
+   "box": {
+    "x": 16,
+    "right": 359,
+    "w": 343,
+    "h": 215.1
+   }
+  }
+ ],
+ "heads": [
+  {
+   "title": {
+    "box": {
+     "x": 17,
+     "right": 283.3,
+     "w": 266.3,
+     "h": 34
+    },
+    "font-size": "20px",
+    "font-weight": "600"
+   },
+   "desc": {
+    "box": {
+     "x": 17,
+     "right": 283.3,
+     "w": 266.3,
+     "h": 46.2
+    },
+    "font-size": "13.6px",
+    "margin-top": "2px",
+    "line-height": "23.12px"
+   },
+   "badge": {
+    "box": {
+     "x": 295.3,
+     "right": 358,
+     "w": 62.7,
+     "h": 46.2
+    },
+    "font-size": "13.6px"
+   },
+   "headMB": {
+    "margin-bottom": "16px"
+   }
+  },
+  {
+   "title": {
+    "box": {
+     "x": 17,
+     "right": 276.1,
+     "w": 259.1,
+     "h": 34
+    },
+    "font-size": "20px",
+    "font-weight": "600"
+   },
+   "desc": {
+    "box": {
+     "x": 17,
+     "right": 276.1,
+     "w": 259.1,
+     "h": 46.2
+    },
+    "font-size": "13.6px",
+    "margin-top": "2px",
+    "line-height": "23.12px"
+   },
+   "badge": {
+    "box": {
+     "x": 288.1,
+     "right": 358,
+     "w": 69.9,
+     "h": 25.2
+    },
+    "font-size": "12.48px"
+   },
+   "headMB": {
+    "margin-bottom": "16px"
+   }
+  },
+  {
+   "title": {
+    "box": {
+     "x": 17,
+     "right": 275.1,
+     "w": 258.1,
+     "h": 34
+    },
+    "font-size": "20px",
+    "font-weight": "600"
+   },
+   "desc": {
+    "box": {
+     "x": 17,
+     "right": 275.1,
+     "w": 258.1,
+     "h": 46.2
+    },
+    "font-size": "13.6px",
+    "margin-top": "2px",
+    "line-height": "23.12px"
+   },
+   "badge": {
+    "box": {
+     "x": 287.1,
+     "right": 358,
+     "w": 70.9,
+     "h": 46.2
+    },
+    "font-size": "13.6px"
+   },
+   "headMB": {
+    "margin-bottom": "16px"
+   }
+  },
+  {
+   "title": {
+    "box": {
+     "x": 17,
+     "right": 238.6,
+     "w": 221.6,
+     "h": 68
+    },
+    "font-size": "20px",
+    "font-weight": "600"
+   },
+   "desc": null,
+   "badge": {
+    "box": {
+     "x": 250.6,
+     "right": 358,
+     "w": 107.4,
+     "h": 25.2
+    },
+    "font-size": "12.48px"
+   },
+   "headMB": {
+    "margin-bottom": "16px"
+   }
+  }
+ ],
+ "childCard": {
+  "padding": "16px",
+  "gap": "12px",
+  "pill": {
+   "font-size": "12.48px"
+  }
+ },
+ "bind": {
+  "padding": "16px",
+  "gap": "8px",
+  "titleFs": {
+   "font-size": "15.2px"
+  },
+  "noteFs": {
+   "font-size": "13.6px"
+  },
+  "rowMt": {
+   "margin-top": "4px"
+  },
+  "rowGap": {
+   "gap": "12px"
+  },
+  "inputH": 45.2,
+  "btnFs": {
+   "font-size": "14.4px"
+  }
+ },
+ "wallet": {
+  "row": {
+   "padding": "16px"
+  },
+  "label": {
+   "font-size": "13.12px"
+  },
+  "number": {
+   "font-size": "35.2px"
+  },
+  "groupGap": {
+   "gap": "8px"
+  },
+  "btn": {
+   "h": 37,
+   "font-size": "14.4px"
+  }
+ },
+ "walletTable": {
+  "fs": {
+   "font-size": "14.08px"
+  },
+  "th": {
+   "font-size": "13.12px",
+   "font-weight": "500",
+   "padding": "12px",
+   "box": {
+    "x": 17,
+    "right": 61.5,
+    "w": 44.5,
+    "h": 113.8
+   }
+  },
+  "td": {
+   "padding": "12px",
+   "line-height": "23.936px",
+   "font-size": "14.08px"
+  },
+  "rowH": 120.2,
+  "pill": {
+   "font-size": "12.48px"
+  }
+ },
+ "familyTable": {
+  "fs": {
+   "font-size": "14.08px"
+  },
+  "ths": [
+   {
+    "w": 157,
+    "font-size": "13.12px",
+    "font-weight": "500"
+   },
+   {
+    "w": 87.3,
+    "font-size": "13.12px",
+    "font-weight": "500"
+   },
+   {
+    "w": 97.3,
+    "font-size": "13.12px",
+    "font-weight": "500"
+   },
+   {
+    "w": 38.7,
+    "font-size": "13.12px",
+    "font-weight": "500"
+   }
+  ],
+  "tds": [
+   {
+    "padding": "12px",
+    "font-size": "13.6px",
+    "font-variant-numeric": "normal"
+   },
+   {
+    "padding": "12px",
+    "font-size": "16px",
+    "font-variant-numeric": "normal"
+   },
+   {
+    "padding": "12px",
+    "font-size": "14.08px",
+    "font-variant-numeric": "normal"
+   },
+   {
+    "padding": "12px",
+    "font-size": "14.08px",
+    "font-variant-numeric": "normal"
+   }
+  ],
+  "rowH": 145,
+  "amountFs": {
+   "font-size": "16px"
+  },
+  "monoFs": {
+   "font-size": "13.6px"
+  },
+  "statusFs": {
+   "font-size": "12.48px"
+  },
+  "guideFs": null,
+  "quietFs": {
+   "font-size": "13.6px"
+  }
+ },
+ "orderBar": {
+  "padding": "16px",
+  "gap": "12px",
+  "labelFs": {
+   "font-size": "13.6px"
+  },
+  "selectH": 41,
+  "btnH": 40,
+  "btnFs": {
+   "font-size": "14.4px"
+  }
+ },
+ "progress": {
+  "note": {
+   "font-size": "13.6px",
+   "line-height": "23.12px",
+   "max-width": "none"
+  }
+ },
+ "notice": {
+  "padding": "12px 24px",
+  "font-size": "15.2px",
+  "box": {
+   "x": 17,
+   "right": 358,
+   "w": 341,
+   "h": 46
+  }
+ },
+ "noticeCard": {
+  "x": 16,
+  "right": 359,
+  "w": 343,
+  "h": 48
+ },
+ "smBtn": {
+  "h": 37,
+  "font-size": "14.4px"
+ },
+ "sub": {
+  "font-size": "16px",
+  "margin-top": "24px"
+ }
+}

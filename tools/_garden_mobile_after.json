@@ -1,0 +1,82 @@
+{
+ "student": {
+  "url": "/student/dashboard",
+  "vw": 375,
+  "scrollW": 375,
+  "backdrop": {
+   "height": "300px",
+   "opacity": "0.45",
+   "filter": "none",
+   "pointerEvents": "none",
+   "bgImage": "url(\"http://localhost:4200/assets/hero/hero.avif\")",
+   "bgSize": "cover",
+   "bgRepeat": "repeat",
+   "bgPosition": "70% 28%",
+   "maskImage": "linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0))"
+  },
+  "after": {
+   "background": "linear-gradient(90deg, rgba(242, 243, 238, 0.9), rgba(242, 243, 238, 0.4) 55%, rgba(242, 243, 238, 0.8))"
+  },
+  "pageBg": "rgb(242, 243, 238)"
+ },
+ "teacher": {
+  "url": "/teacher/dashboard",
+  "vw": 375,
+  "scrollW": 375,
+  "backdrop": {
+   "height": "300px",
+   "opacity": "0.45",
+   "filter": "none",
+   "pointerEvents": "none",
+   "bgImage": "url(\"http://localhost:4200/assets/hero/hero.avif\")",
+   "bgSize": "cover",
+   "bgRepeat": "repeat",
+   "bgPosition": "70% 28%",
+   "maskImage": "linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0))"
+  },
+  "after": {
+   "background": "linear-gradient(90deg, rgba(242, 243, 238, 0.9), rgba(242, 243, 238, 0.4) 55%, rgba(242, 243, 238, 0.8))"
+  },
+  "pageBg": "rgb(242, 243, 238)"
+ },
+ "parent": {
+  "url": "/parent/dashboard",
+  "vw": 375,
+  "scrollW": 375,
+  "backdrop": {
+   "height": "300px",
+   "opacity": "0.45",
+   "filter": "none",
+   "pointerEvents": "none",
+   "bgImage": "url(\"http://localhost:4200/assets/hero/hero.avif\")",
+   "bgSize": "cover",
+   "bgRepeat": "repeat",
+   "bgPosition": "70% 28%",
+   "maskImage": "linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0))"
+  },
+  "after": {
+   "background": "linear-gradient(90deg, rgba(242, 243, 238, 0.9), rgba(242, 243, 238, 0.4) 55%, rgba(242, 243, 238, 0.8))"
+  },
+  "pageBg": "rgb(242, 243, 238)"
+ },
+ "admin": {
+  "url": "/admin/dashboard",
+  "vw": 375,
+  "scrollW": 375,
+  "backdrop": {
+   "height": "300px",
+   "opacity": "0.45",
+   "filter": "none",
+   "pointerEvents": "none",
+   "bgImage": "url(\"http://localhost:4200/assets/hero/hero.avif\")",
+   "bgSize": "cover",
+   "bgRepeat": "repeat",
+   "bgPosition": "70% 28%",
+   "maskImage": "linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0))"
+  },
+  "after": {
+   "background": "linear-gradient(90deg, rgba(242, 243, 238, 0.9), rgba(242, 243, 238, 0.4) 55%, rgba(242, 243, 238, 0.8))"
+  },
+  "pageBg": "rgb(242, 243, 238)"
+ }
+}
