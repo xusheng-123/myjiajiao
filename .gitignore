@@ -51,3 +51,6 @@ backend/data/files/
 __pycache__/
 .walk/
 .edge-tmp/
+
+# Edge headless CDP 临时浏览器档案（验收工具产物，勿入库）
+.edge-tmp-*/
