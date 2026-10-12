@@ -128,9 +128,11 @@
 🔵 教育合规（ICP / 协议 / 未成年人条款）——正式运营最大前置
 🔵 生产备份调度、AI 上层能力（均规划中）
 
-## 4. 当前工作现场（2026-10-12 首页 2–4 屏背景 v2 替换轮快照）
+## 4. 当前工作现场（2026-10-12 首页 5–9 屏生图背景接入轮快照）
 
-**本轮（v2 中部净化重做 + 替换）**：用户要求重做三屏生图，重点「中间区域净化/弱化」为文字让路。三条统一系列 prompt 并行生成一次通过：v2 图景观全部退到边缘角落（左月洞门翠竹/右亭角；左书廊纵深/右下灯笼；左临窗书斋一角/右远月洞门），中央大面雾白粉墙/照壁/水面留白。PIL 转码**同名覆盖** assets/home 三屏 webp/avif（较 v1 更轻），CSS/取景/面纱零改动，走查重跑全过（三屏断言 ✓、375 无溢出 ✓、hero 无损 ✓）。v1 源图保留在 docs/ui-redesign-2026-10-11/images/home-sections/ 不删。
+**本轮（5–9 屏生图 + 接入，c6e9213+锁基线提交）**：用户指令「直接调用生图 Skill 首次生成第 5–9 屏五张背景，延续第一轮园林方向，中部净化为文字让路」→ 五条统一系列 prompt 并行生成一次通过零返工（书斋暖光/雨后曲廊/池塘石桥/远山晨雾/明亮庭院，游园动线 4→9 连续，上下缘亮雾白便于滚动衔接；源图 1672×941 存 docs/ui-redesign-2026-10-11/images/home-sections/section{5..9}-*.png）→ 用户指令「接入首页」→ PIL 转码 avif(51–190KB)/webp 入 assets/home/section-{subjects,pathway,pond,horizon,courtyard}；新增 **landing-sections-2.css**（styleUrls 三文件治理预算，landing.component.css 零改动），映射 #subjects 32%/#process 50%+左廊横向提亮/#voices 55%/.vision 45%（最轻面纱）/.cta 38%；#subjects/#process/#voices 标题柔光+overflow-x:clip，**#process 步骤区裸文字→整区羽化柔光**；移动档五屏面纱加强，CTA 两轮微调压墙基亮带。验收：ng build 零错误零警告；home_sections_walkthrough.py 扩展 8 屏断言全过（hasImg/取景/375 scrollW=375/hero 回归无损）；1920 逐屏裁切+375 逐屏视口截图复核文字全锐利。**新坑**：CDP Runtime.evaluate 顶层 const 跨调用残留须 IIFE 隔离；captureBeyondViewport 全页拼接在 vh 布局下底部串帧为采集伪影（DOM 探测 heroes=1/footer 正常佐证），移动验收以视口截图为准（新工具 home_mobile_sections_check.py/home_mobile_bottom_check.py）。品牌锁 argv(c6e9213) PASS（876 条，files 纳入 landing-sections-2.css）→ 基线 10f00fe→c6e9213。
+
+**上一轮（v2 中部净化重做 + 替换，24b552d）**：用户要求重做三屏生图，重点「中间区域净化/弱化」为文字让路。三条统一系列 prompt 并行生成一次通过：v2 图景观全部退到边缘角落（左月洞门翠竹/右亭角；左书廊纵深/右下灯笼；左临窗书斋一角/右远月洞门），中央大面雾白粉墙/照壁/水面留白。PIL 转码**同名覆盖** assets/home 三屏 webp/avif（较 v1 更轻），CSS/取景/面纱零改动，走查重跑全过（三屏断言 ✓、375 无溢出 ✓、hero 无损 ✓）。v1 源图保留在 docs/ui-redesign-2026-10-11/images/home-sections/ 不删。
 
 **上一轮（生图 v1 + 接入首页，2 提交）**：① 按用户规格用本地生图 Skill 产出第 2/3/4 屏纯背景图（先读首屏 hero 取锚 → 第 2 屏定锚 → 串行生成 3/4 → 三联画同框验收无断裂）；② `10f00fe` 接入落地：三屏 `#philosophy/#services/#teachers` 背景 image-set（avif 优先），按实渲尺寸（1920 下 574/628/910px）调取景（28%/60%/46%）与面纱；**用户反馈「太模糊」→ 面纱减半提亮**；标题区羽化柔光留白（::before+径向 mask，文字子元素 position:relative 抬层；⚠️ z-index:-1 会被 section 背景盖住）、底部链接玻面 pill、sections overflow-x:clip 修柔光外溢（375 scrollW 407→375）；landing 拆 styleUrls 双文件（新增 landing-sections.css）治理预算，ng build 零警告。→ `a8c3c32` 品牌锁基线 01f8f43→10f00fe（824 条 PASS，files 纳入 landing-sections.css）。验收：tools/home_sections_walkthrough.py 双视口截图断言全过，首屏 hero 零改动无损。源图与对比证据在 docs/ui-redesign-2026-10-11/images/home-sections/。
 
