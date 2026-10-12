@@ -290,6 +290,42 @@
   margin: var(--space-7) 0 0;
 }
 
+/* 第 4 屏摄影背景上给底部链接一层柔光 pill，保证可读 */
+.teachers-more .nur-link-arrow {
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(6px);
+}
+
+/* 第 3/4 屏摄影背景上给区块标题一片羽化柔光留白（无硬边，画面保持清透） */
+#services,
+#teachers {
+  overflow-x: clip;
+}
+
+#services .nur-section-head,
+#teachers .nur-section-head {
+  position: relative;
+}
+
+#services .nur-section-head::before,
+#teachers .nur-section-head::before {
+  content: '';
+  position: absolute;
+  inset: -28px -56px;
+  pointer-events: none;
+  background: rgba(247, 248, 244, 0.5);
+  backdrop-filter: blur(3px) brightness(1.04);
+  mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 72%);
+}
+
+/* 标题文字抬到柔光之上，保持锐利 */
+#services .nur-section-head > *,
+#teachers .nur-section-head > * {
+  position: relative;
+}
+
 /* ============ 学科门类 ============ */
 .subject-list {
   display: flex;

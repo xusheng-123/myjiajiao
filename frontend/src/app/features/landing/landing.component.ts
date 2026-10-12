@@ -27,7 +27,7 @@ import { PRINCIPLES, PROCESS_STEPS, SERVICES, SUBJECTS, VOICES } from './landing
     RouterLink,
   ],
   templateUrl: './landing.component.html',
-  styleUrl: './landing.component.css',
+  styleUrls: ['./landing.component.css', './landing-sections.css'],
 })
 export class LandingComponent implements OnInit {
   private readonly router = inject(Router);

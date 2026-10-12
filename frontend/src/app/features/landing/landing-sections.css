@@ -1,0 +1,56 @@
+/* ============================================================
+ * 首页 · 第 2–4 屏园林摄影背景（2026-10-12 生图接入，首屏 hero 不动）
+ * 同一座园林连续空间三景：办学理念=雾墙竹影 / 服务体系=竹影书廊 / 精选导师=临窗庭院
+ * 面纱只提亮保文字可读，维持方向 D 浅色体系；
+ * anyComponentStyle 预算治理：与 landing.component.css 拆分（styleUrls 双文件）
+ * ============================================================ */
+
+#philosophy,
+#services,
+#teachers {
+  background-color: var(--bg-mist);
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* 第 2 屏 · 办学理念：取雾面粉墙竹影段，底部湿石水面略压深 */
+#philosophy {
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.38) 0%, rgba(242, 243, 238, 0.28) 45%, rgba(242, 243, 238, 0.5) 100%), url('/assets/home/section-philosophy.webp');
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.38) 0%, rgba(242, 243, 238, 0.28) 45%, rgba(242, 243, 238, 0.5) 100%), image-set(url('/assets/home/section-philosophy.avif') type('image/avif'), url('/assets/home/section-philosophy.webp') type('image/webp'));
+  background-position: center 28%;
+}
+
+/* 第 3 屏 · 服务体系：取长廊纵深段，顶部面纱加强压暗廊柱保标题可读 */
+#services {
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.66) 0%, rgba(242, 243, 238, 0.4) 30%, rgba(242, 243, 238, 0.28) 45%, rgba(242, 243, 238, 0.45) 100%), url('/assets/home/section-corridor.webp');
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.66) 0%, rgba(242, 243, 238, 0.4) 30%, rgba(242, 243, 238, 0.28) 45%, rgba(242, 243, 238, 0.45) 100%), image-set(url('/assets/home/section-corridor.avif') type('image/avif'), url('/assets/home/section-corridor.webp') type('image/webp'));
+  background-position: center 60%;
+}
+
+/* 第 4 屏 · 精选导师：取临窗书斋+庭院水面段，底部面纱加强保链接可读 */
+#teachers {
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.36) 0%, rgba(242, 243, 238, 0.26) 45%, rgba(242, 243, 238, 0.6) 100%), url('/assets/home/section-study.webp');
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.36) 0%, rgba(242, 243, 238, 0.26) 45%, rgba(242, 243, 238, 0.6) 100%), image-set(url('/assets/home/section-study.avif') type('image/avif'), url('/assets/home/section-study.webp') type('image/webp'));
+  background-position: center 46%;
+}
+
+/* 窄屏微调：取景偏向雾墙亮区、面纱整体加强保文字可读 */
+@media (max-width: 767px) {
+  #philosophy {
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.45) 0%, rgba(242, 243, 238, 0.35) 45%, rgba(242, 243, 238, 0.55) 100%), url('/assets/home/section-philosophy.webp');
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.45) 0%, rgba(242, 243, 238, 0.35) 45%, rgba(242, 243, 238, 0.55) 100%), image-set(url('/assets/home/section-philosophy.avif') type('image/avif'), url('/assets/home/section-philosophy.webp') type('image/webp'));
+    background-position: center 24%;
+  }
+
+  #services {
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.55) 0%, rgba(242, 243, 238, 0.4) 45%, rgba(242, 243, 238, 0.5) 100%), url('/assets/home/section-corridor.webp');
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.55) 0%, rgba(242, 243, 238, 0.4) 45%, rgba(242, 243, 238, 0.5) 100%), image-set(url('/assets/home/section-corridor.avif') type('image/avif'), url('/assets/home/section-corridor.webp') type('image/webp'));
+    background-position: 55% 45%;
+  }
+
+  #teachers {
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.5) 0%, rgba(242, 243, 238, 0.38) 45%, rgba(242, 243, 238, 0.52) 100%), url('/assets/home/section-study.webp');
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.5) 0%, rgba(242, 243, 238, 0.38) 45%, rgba(242, 243, 238, 0.52) 100%), image-set(url('/assets/home/section-study.avif') type('image/avif'), url('/assets/home/section-study.webp') type('image/webp'));
+    background-position: 55% 44%;
+  }
+}
