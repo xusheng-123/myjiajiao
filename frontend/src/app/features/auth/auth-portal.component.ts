@@ -90,6 +90,29 @@ export class AuthPortalComponent implements OnInit {
     }
   }
 
+  /** 一键演示体验：免密以指定角色身份快速进入控制台走查 */
+  quickDemoLogin(role: Role): void {
+    const names: Record<Role, string> = {
+      [Role.STUDENT]: '林微雨 (学生)',
+      [Role.PARENT]: '林家长 (家长)',
+      [Role.TEACHER]: '沈观澜 (导师)',
+      [Role.ADMIN]: '平台运营主管 (运营)',
+    };
+    const mockRes = {
+      accountNo: `${role}-DEMO-2026`,
+      displayName: names[role],
+      role: role,
+      accessToken: 'demo-mock-jwt-token-2026',
+      refreshToken: 'demo-mock-refresh-token-2026',
+      expiresAtEpochMs: Date.now() + 86400000 * 30,
+    };
+    this.auth.establishSession(mockRes);
+    this.formStatus.set({ type: 'success', text: `已免密进入${this.roleLabels[role]}控制台…` });
+    setTimeout(() => {
+      this.auth.navigateToRoleHome(role);
+    }, 150);
+  }
+
   switchRole(role: Role): void {
     if (role === this.activeRole()) {
       return;

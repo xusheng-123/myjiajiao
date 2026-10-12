@@ -1,4 +1,19 @@
 <header class="site-header" [class.site-header--scrolled]="scrolled()">
+  @if (demoBannerVisible()) {
+    <aside class="sh-demo-banner" aria-label="静态展示版提示">
+      <div class="sh-demo-inner nur-container">
+        <span class="sh-demo-text">
+          <strong class="sh-demo-tag">静态演示版</strong>
+          已加载拟真数据，支持免密体验学生、家长、导师、运营四大控制台
+        </span>
+        <div class="sh-demo-actions">
+          <a routerLink="/auth" class="sh-demo-link">切换/体验角色</a>
+          <button type="button" class="sh-demo-close" (click)="closeBanner()" aria-label="关闭演示提示">✕</button>
+        </div>
+      </div>
+    </aside>
+  }
+
   <div class="sh-inner nur-container">
     <a routerLink="/" class="sh-brand" aria-label="润物细无声 Nurture 首页">
       <span class="sh-brand-cn" aria-hidden="true">润物细无声</span>
@@ -16,7 +31,16 @@
     </nav>
 
     <div class="sh-actions">
-      <a routerLink="/auth" class="nur-btn nur-btn--ghost nur-btn--sm sh-login">登录</a>
+      @if (auth.isLoggedIn()) {
+        <a [routerLink]="roleHome()" class="nur-btn nur-btn--primary nur-btn--sm sh-console-btn">
+          {{ roleLabel() }}工作台
+        </a>
+        <button type="button" class="nur-btn nur-btn--ghost nur-btn--sm sh-logout" (click)="logout()">
+          退出
+        </button>
+      } @else {
+        <a routerLink="/auth" class="nur-btn nur-btn--ghost nur-btn--sm sh-login">登录 / 体验</a>
+      }
       <button
         type="button"
         class="sh-burger"
@@ -46,9 +70,18 @@
           </a>
         }
       }
-      <a routerLink="/auth" class="nur-btn nur-btn--primary sh-mobile-login" (click)="closeMenu()">
-        登录 / 注册
-      </a>
+      @if (auth.isLoggedIn()) {
+        <a [routerLink]="roleHome()" class="nur-btn nur-btn--primary sh-mobile-login" (click)="closeMenu()">
+          进入{{ roleLabel() }}工作台
+        </a>
+        <button type="button" class="nur-btn nur-btn--ghost sh-mobile-login" (click)="logout(); closeMenu()">
+          退出登录
+        </button>
+      } @else {
+        <a routerLink="/auth" class="nur-btn nur-btn--primary sh-mobile-login" (click)="closeMenu()">
+          登录 / 体验
+        </a>
+      }
     </nav>
   }
 </header>

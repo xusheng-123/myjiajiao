@@ -33,6 +33,7 @@ deploy/dist/
 # ---- 个人开发环境文件 ----
 .vscode/
 .idea/
+.zcode/
 *.swp
 *.swo
 

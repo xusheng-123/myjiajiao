@@ -65,6 +65,41 @@
     <h1 id="portal-title" class="portal-title">统一登录门户</h1>
     <p class="portal-subtitle">因材施以微雨 · 静候学海生花</p>
 
+    <!-- 静态演示模式：一键免密快速体验各角色控制台 -->
+    <div class="demo-showcase-box" role="region" aria-label="静态展示快速体验">
+      <div class="demo-box-header">
+        <span class="demo-sparkle" aria-hidden="true">✨</span>
+        <span class="demo-title">静态演示专区 · 免密一键体验</span>
+      </div>
+      <p class="demo-desc">纯静态展示环境已内置拟真数据，点击下方角色即可直接进入对应端控制台：</p>
+      <div class="demo-btn-grid">
+        <button type="button" class="demo-role-btn" (click)="quickDemoLogin(Role.STUDENT)" aria-label="免密进入学生端">
+          <span class="demo-icon">🎓</span>
+          <span class="demo-name">学生端</span>
+          <span class="demo-sub">林微雨</span>
+        </button>
+        <button type="button" class="demo-role-btn" (click)="quickDemoLogin(Role.PARENT)" aria-label="免密进入家长端">
+          <span class="demo-icon">👨‍👩‍👦</span>
+          <span class="demo-name">家长端</span>
+          <span class="demo-sub">家庭钱包</span>
+        </button>
+        <button type="button" class="demo-role-btn" (click)="quickDemoLogin(Role.TEACHER)" aria-label="免密进入导师端">
+          <span class="demo-icon">👨‍🏫</span>
+          <span class="demo-name">导师端</span>
+          <span class="demo-sub">沈观澜</span>
+        </button>
+        <button type="button" class="demo-role-btn" (click)="quickDemoLogin(Role.ADMIN)" aria-label="免密进入运营端">
+          <span class="demo-icon">🛡️</span>
+          <span class="demo-name">运营端</span>
+          <span class="demo-sub">大盘治理</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="demo-divider-or" aria-hidden="true">
+      <span>或使用常规账号表单登录</span>
+    </div>
+
     <div class="role-tabs" role="tablist" aria-label="选择登录角色">
       @for (role of roles; track role) {
         <button

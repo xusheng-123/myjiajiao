@@ -84,6 +84,11 @@ export class AuthService {
     void this.router.navigateByUrl(ROLE_HOME[role]);
   }
 
+  /** 静态展示模式：直接注入演示会话并建立状态 */
+  establishSession(res: AuthResponse): void {
+    this.establish(res);
+  }
+
   private establish(res: AuthResponse): void {
     // 令牌仅在内存信号中留存；Cookie 由后端在响应中下发（HttpOnly）
     this.sessionSignal.set(res);

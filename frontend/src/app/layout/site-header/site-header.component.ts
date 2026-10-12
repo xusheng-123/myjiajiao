@@ -1,5 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/auth/auth.service';
+import { ROLE_HOME, ROLE_LABELS } from '../../core/auth/auth.models';
 
 interface NavItem {
   label: string;
@@ -34,9 +36,21 @@ const NAV_ITEMS: NavItem[] = [
   },
 })
 export class SiteHeaderComponent {
+  readonly auth = inject(AuthService);
   readonly navItems = NAV_ITEMS;
   readonly scrolled = signal(false);
   readonly menuOpen = signal(false);
+  readonly demoBannerVisible = signal(true);
+
+  readonly roleHome = computed(() => {
+    const r = this.auth.role();
+    return r ? ROLE_HOME[r] : '/auth';
+  });
+
+  readonly roleLabel = computed(() => {
+    const r = this.auth.role();
+    return r ? ROLE_LABELS[r] : '';
+  });
 
   onWindowScroll(): void {
     this.scrolled.set(window.scrollY > 40); /* 方向 D 规格：40px 阈值 */
@@ -48,5 +62,13 @@ export class SiteHeaderComponent {
 
   closeMenu(): void {
     this.menuOpen.set(false);
+  }
+
+  closeBanner(): void {
+    this.demoBannerVisible.set(false);
+  }
+
+  logout(): void {
+    this.auth.logout();
   }
 }

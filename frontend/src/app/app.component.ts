@@ -64,6 +64,17 @@ export class AppComponent {
   readonly fadeName = computed(() => (this.navigationCount() % 2 === 0 ? 'routeInA' : 'routeInB'));
 
   constructor() {
+    // 静态托管环境 SPA 深链重定向恢复
+    try {
+      const redirect = sessionStorage.getItem('nurture_spa_redirect');
+      if (redirect) {
+        sessionStorage.removeItem('nurture_spa_redirect');
+        void this.router.navigateByUrl(redirect);
+      }
+    } catch {
+      // 忽略存储读取异常
+    }
+
     this.router.events
       .pipe(
         filter((e) => e instanceof NavigationEnd),

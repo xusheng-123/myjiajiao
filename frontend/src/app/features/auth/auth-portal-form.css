@@ -239,8 +239,108 @@
   }
 }
 
+/* ---------- 静态演示模式快捷体验卡片 ---------- */
+.demo-showcase-box {
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  background: rgba(243, 237, 226, 0.78);
+  border: 1px solid rgba(168, 135, 90, 0.35);
+  border-radius: var(--radius-control);
+  text-align: left;
+}
+
+.demo-box-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--color-gold-text);
+  margin-bottom: 4px;
+}
+
+.demo-sparkle {
+  font-size: 1rem;
+}
+
+.demo-desc {
+  margin: 0 0 var(--space-3) 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.demo-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.demo-role-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  min-height: 52px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all var(--duration-enter) var(--ease);
+}
+
+.demo-role-btn:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-subtle);
+}
+
+.demo-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.demo-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.demo-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.demo-divider-or {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: var(--space-4) 0;
+  color: var(--text-placeholder);
+  font-size: 0.78rem;
+}
+
+.demo-divider-or::before,
+.demo-divider-or::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px dashed var(--line);
+}
+
+.demo-divider-or span {
+  padding: 0 var(--space-3);
+}
+
 /* ---------- ≤640px：卡片通栏，表单优先于品牌区 ---------- */
 @media (max-width: 640px) {
+  .demo-btn-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
   .portal-card {
     order: -1;
     max-width: none;
