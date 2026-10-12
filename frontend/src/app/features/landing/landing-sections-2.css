@@ -1,0 +1,136 @@
+/* ============================================================
+ * 首页 · 第 5–9 屏园林摄影背景（2026-10-12 生图接入，与 2–4 屏同一座园林）
+ * 游园动线：学科门类=书斋暖光 / 学习流程=雨后曲廊 / 学习场景=池塘石桥
+ *          品牌愿景=远山晨雾 / 最终行动=明亮庭院
+ * 中部净化源图 + 面纱只提亮保文字可读，维持方向 D 浅色体系；
+ * anyComponentStyle 预算治理：landing-sections.css（2–4 屏）与本文件（5–9 屏）分立
+ * ============================================================ */
+
+#subjects,
+#process,
+#voices,
+.nur-section.vision,
+.nur-section.cta {
+  background-color: var(--bg-mist);
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* 第 5 屏 · 学科门类：取书斋晨光粉墙段，底部地板反光略压 */
+#subjects {
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.34) 0%, rgba(242, 243, 238, 0.24) 45%, rgba(242, 243, 238, 0.44) 100%), url('/assets/home/section-subjects.webp');
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.34) 0%, rgba(242, 243, 238, 0.24) 45%, rgba(242, 243, 238, 0.44) 100%), image-set(url('/assets/home/section-subjects.avif') type('image/avif'), url('/assets/home/section-subjects.webp') type('image/webp'));
+  background-position: center 32%;
+}
+
+/* 第 6 屏 · 学习流程：曲廊步道段；裸文字步骤区需加强面纱，左廊柱横向提亮 */
+#process {
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.6) 0%, rgba(242, 243, 238, 0.42) 30%, rgba(242, 243, 238, 0.4) 60%, rgba(242, 243, 238, 0.5) 100%), linear-gradient(90deg, rgba(247, 248, 244, 0.4) 0%, rgba(247, 248, 244, 0) 45%), url('/assets/home/section-pathway.webp');
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.6) 0%, rgba(242, 243, 238, 0.42) 30%, rgba(242, 243, 238, 0.4) 60%, rgba(242, 243, 238, 0.5) 100%), linear-gradient(90deg, rgba(247, 248, 244, 0.4) 0%, rgba(247, 248, 244, 0) 45%), image-set(url('/assets/home/section-pathway.avif') type('image/avif'), url('/assets/home/section-pathway.webp') type('image/webp'));
+  background-position: center 50%, center 50%, center 50%;
+}
+
+/* 第 7 屏 · 学习场景：取池塘石桥段，底部花丛略压保卡片投影干净 */
+#voices {
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.32) 0%, rgba(242, 243, 238, 0.24) 45%, rgba(242, 243, 238, 0.42) 100%), url('/assets/home/section-pond.webp');
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.32) 0%, rgba(242, 243, 238, 0.24) 45%, rgba(242, 243, 238, 0.42) 100%), image-set(url('/assets/home/section-pond.avif') type('image/avif'), url('/assets/home/section-pond.webp') type('image/webp'));
+  background-position: center 55%;
+}
+
+/* 第 8 屏 · 品牌愿景：远山晨雾段，源图中央已是大片雾白留白，面纱最轻 */
+.nur-section.vision {
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.24) 0%, rgba(242, 243, 238, 0.16) 45%, rgba(242, 243, 238, 0.3) 100%), url('/assets/home/section-horizon.webp');
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.24) 0%, rgba(242, 243, 238, 0.16) 45%, rgba(242, 243, 238, 0.3) 100%), image-set(url('/assets/home/section-horizon.avif') type('image/avif'), url('/assets/home/section-horizon.webp') type('image/webp'));
+  background-position: center 45%;
+}
+
+/* 第 9 屏 · 最终行动：暖白庭院段，底部湿青石反光略压保按钮区干净 */
+.nur-section.cta {
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.36) 0%, rgba(242, 243, 238, 0.26) 45%, rgba(242, 243, 238, 0.48) 100%), url('/assets/home/section-courtyard.webp');
+  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.36) 0%, rgba(242, 243, 238, 0.26) 45%, rgba(242, 243, 238, 0.48) 100%), image-set(url('/assets/home/section-courtyard.avif') type('image/avif'), url('/assets/home/section-courtyard.webp') type('image/webp'));
+  background-position: center 38%;
+}
+
+/* 第 5–7 屏摄影背景上给区块标题一片羽化柔光留白（沿用 2–4 屏手法，无硬边） */
+#subjects,
+#process,
+#voices {
+  overflow-x: clip;
+}
+
+#subjects .nur-section-head,
+#process .nur-section-head,
+#voices .nur-section-head {
+  position: relative;
+}
+
+#subjects .nur-section-head::before,
+#process .nur-section-head::before,
+#voices .nur-section-head::before {
+  content: '';
+  position: absolute;
+  inset: -28px -56px;
+  pointer-events: none;
+  background: rgba(247, 248, 244, 0.5);
+  backdrop-filter: blur(3px) brightness(1.04);
+  mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, black 30%, transparent 72%);
+}
+
+/* 标题文字抬到柔光之上，保持锐利 */
+#subjects .nur-section-head > *,
+#process .nur-section-head > *,
+#voices .nur-section-head > * {
+  position: relative;
+}
+
+/* 学习流程步骤为裸文字（无卡片底），步骤区整体一片羽化柔光保可读 */
+#process .steps-grid {
+  position: relative;
+}
+
+#process .steps-grid::before {
+  content: '';
+  position: absolute;
+  inset: -24px -48px;
+  pointer-events: none;
+  background: rgba(247, 248, 244, 0.42);
+  backdrop-filter: blur(3px) brightness(1.03);
+  mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, black 35%, transparent 75%);
+}
+
+#process .steps-grid > * {
+  position: relative;
+}
+
+/* 窄屏微调：面纱整体加强保文字可读，取景偏向亮区 */
+@media (max-width: 767px) {
+  #subjects {
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.44) 0%, rgba(242, 243, 238, 0.34) 45%, rgba(242, 243, 238, 0.52) 100%), url('/assets/home/section-subjects.webp');
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.44) 0%, rgba(242, 243, 238, 0.34) 45%, rgba(242, 243, 238, 0.52) 100%), image-set(url('/assets/home/section-subjects.avif') type('image/avif'), url('/assets/home/section-subjects.webp') type('image/webp'));
+    background-position: center 30%;
+  }
+
+  #process {
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.66) 0%, rgba(242, 243, 238, 0.5) 35%, rgba(242, 243, 238, 0.48) 65%, rgba(242, 243, 238, 0.58) 100%), url('/assets/home/section-pathway.webp');
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.66) 0%, rgba(242, 243, 238, 0.5) 35%, rgba(242, 243, 238, 0.48) 65%, rgba(242, 243, 238, 0.58) 100%), image-set(url('/assets/home/section-pathway.avif') type('image/avif'), url('/assets/home/section-pathway.webp') type('image/webp'));
+    background-position: 45% 50%;
+  }
+
+  #voices {
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.42) 0%, rgba(242, 243, 238, 0.32) 45%, rgba(242, 243, 238, 0.5) 100%), url('/assets/home/section-pond.webp');
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.42) 0%, rgba(242, 243, 238, 0.32) 45%, rgba(242, 243, 238, 0.5) 100%), image-set(url('/assets/home/section-pond.avif') type('image/avif'), url('/assets/home/section-pond.webp') type('image/webp'));
+    background-position: 50% 55%;
+  }
+
+  .nur-section.vision {
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.32) 0%, rgba(242, 243, 238, 0.24) 45%, rgba(242, 243, 238, 0.38) 100%), url('/assets/home/section-horizon.webp');
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.32) 0%, rgba(242, 243, 238, 0.24) 45%, rgba(242, 243, 238, 0.38) 100%), image-set(url('/assets/home/section-horizon.avif') type('image/avif'), url('/assets/home/section-horizon.webp') type('image/webp'));
+    background-position: center 45%;
+  }
+
+  .nur-section.cta {
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.48) 0%, rgba(242, 243, 238, 0.42) 45%, rgba(242, 243, 238, 0.56) 100%), url('/assets/home/section-courtyard.webp');
+    background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.48) 0%, rgba(242, 243, 238, 0.42) 45%, rgba(242, 243, 238, 0.56) 100%), image-set(url('/assets/home/section-courtyard.avif') type('image/avif'), url('/assets/home/section-courtyard.webp') type('image/webp'));
+    background-position: 55% 35%;
+  }
+}

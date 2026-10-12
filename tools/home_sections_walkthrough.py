@@ -52,16 +52,16 @@ try:
             await page("Runtime.evaluate", {"expression": "window.scrollTo(0, 0); 'ok'"})
             time.sleep(1.2)
             meas = await page("Runtime.evaluate", {"expression": """
-                JSON.stringify(['philosophy','services','teachers'].map(id=>{
-                  const el=document.getElementById(id);
+                JSON.stringify(['#philosophy','#services','#teachers','#subjects','#process','#voices','.nur-section.vision','.nur-section.cta'].map(sel=>{
+                  const el=document.querySelector(sel);
                   const r=el.getBoundingClientRect();
                   const cs=getComputedStyle(el);
-                  return {id, top: Math.round(r.top + scrollY), height: Math.round(r.height),
+                  return {sel, top: Math.round(r.top + scrollY), height: Math.round(r.height),
                           pos: cs.backgroundPosition, hasImg: cs.backgroundImage.includes('section-')};
                 }))""", "returnByValue": True})
             print("sections =>", meas.get("result", {}).get("value"))
             shot = await page("Page.captureScreenshot", {"format": "png", "captureBeyondViewport": True})
-            open(OUT + "/home-sections-1920-2026-10-12.png", "wb").write(base64.b64decode(shot["data"]))
+            open(OUT + "/home-sections-9-1920-2026-10-12.png", "wb").write(base64.b64decode(shot["data"]))
             # 首屏回归
             shot = await page("Page.captureScreenshot", {"format": "png"})
             open(OUT + "/home-hero-regression-2026-10-12.png", "wb").write(base64.b64decode(shot["data"]))
@@ -79,7 +79,7 @@ try:
                                 vw: document.documentElement.clientWidth})""", "returnByValue": True})
             print("mobile =>", m.get("result", {}).get("value"))
             shot = await page("Page.captureScreenshot", {"format": "png", "captureBeyondViewport": True})
-            open(OUT + "/home-sections-375-2026-10-12.png", "wb").write(base64.b64decode(shot["data"]))
+            open(OUT + "/home-sections-9-375-2026-10-12.png", "wb").write(base64.b64decode(shot["data"]))
     import asyncio
     asyncio.run(main())
 finally:
