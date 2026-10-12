@@ -1,0 +1,310 @@
+/* 导师详情 · 课程/档期/评价/骨架屏（自 teacher-detail.component.css 拆分，样式预算治理） */
+.offerings-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+.offering-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--bg-card);
+  transition: border-color var(--duration-rise) var(--ease),
+              box-shadow var(--duration-rise) var(--ease);
+}
+
+.offering-item:hover {
+  border-color: rgba(30, 77, 62, 0.3);
+  box-shadow: var(--shadow-subtle);
+}
+
+.offering-info {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.offering-name {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--text-title);
+  font-weight: 600;
+}
+
+.offering-band {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-page);
+}
+
+.offering-price {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--text-title);
+}
+
+.price-symbol {
+  font-size: 0.9rem;
+  color: var(--color-primary);
+}
+
+.price-amount {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.price-unit {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.slots-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.slot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.slot-dot {
+  color: var(--color-primary);
+}
+
+.empty-slots,
+.empty-reviews {
+  padding: var(--space-6);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-control);
+  background: var(--bg-page);
+  text-align: center;
+}
+
+.empty-text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.review-summary-pill {
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-gold-bg);
+  color: var(--color-gold-text);
+  font-size: 0.88rem;
+}
+
+.review-summary-pill strong {
+  font-size: 1rem;
+}
+
+.review-status {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.review-item {
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--bg-card);
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.review-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  color: var(--line);
+  font-size: 1rem;
+}
+
+.star--filled {
+  color: var(--color-gold);
+}
+
+.star-num {
+  margin-inline-start: var(--space-2);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-gold-text);
+}
+
+.review-time {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.review-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.review-tag {
+  font-size: 0.78rem;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.review-comment {
+  margin: 0;
+  font-size: 0.93rem;
+  line-height: 1.7;
+  color: var(--text-main);
+}
+
+.review-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--line);
+}
+
+.pager-text {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.skeleton-card {
+  padding: var(--space-6);
+  min-height: 180px;
+}
+
+.skeleton-profile {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.skeleton-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  animation: sk-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  animation: sk-pulse 1.4s ease-in-out infinite;
+}
+
+.line-title { width: 35%; height: 22px; }
+.line-subtitle { width: 60%; }
+.line-text { width: 85%; }
+
+@keyframes sk-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-avatar, .skeleton-line {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .detail-rail {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .detail-backdrop {
+    height: 300px;
+  }
+  .profile-top {
+    flex-direction: column;
+  }
+  .profile-actions {
+    width: 100%;
+  }
+  .profile-actions .nur-btn {
+    width: 100%;
+  }
+  .offering-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .offering-action .nur-btn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .offerings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .offerings-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

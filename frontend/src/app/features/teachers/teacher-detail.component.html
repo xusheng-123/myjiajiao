@@ -1,7 +1,9 @@
 <nur-site-header />
 
 <main class="detail-page">
+  <div class="detail-backdrop" aria-hidden="true"></div>
   <div class="nur-container">
+    <p class="detail-eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>NURTURE · 导师档案 · 真实资质透明可查</p>
     <!-- 面包屑导航 -->
     <nav aria-label="面包屑" class="detail-breadcrumb">
       <a routerLink="/teachers" class="back-link">
@@ -19,13 +21,17 @@
     }
 
     @if (detail(); as t) {
-      <div class="detail-content">
+      <div class="detail-grid">
+      <div class="detail-main">
         <!-- 导师核心资料卡 -->
         <section class="nur-card profile-card" aria-label="导师基本信息">
           <div class="profile-top">
             <div class="profile-identity">
-              <span class="nur-avatar profile-avatar" aria-hidden="true">
-                {{ t.displayName.slice(0, 1) }}
+              <span class="profile-avatar-wrap">
+                <span class="nur-avatar profile-avatar" aria-hidden="true">
+                  {{ t.displayName.slice(0, 1) }}
+                </span>
+                <span class="avatar-verify" aria-hidden="true">✓</span>
               </span>
               <div class="profile-info">
                 <div class="profile-name-row">
@@ -231,6 +237,34 @@
             }
           }
         </section>
+      </div>
+
+      <aside class="detail-rail" aria-label="平台保障与预约流程">
+        <section class="rail-card">
+          <span class="rail-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+          </span>
+          <h2 class="rail-title nur-serif">平台保障</h2>
+          <ul class="rail-facts">
+            <li><span class="rail-check" aria-hidden="true">✓</span>实名认证 · 身份与学历已核验</li>
+            <li><span class="rail-check" aria-hidden="true">✓</span>课时资金平台存管</li>
+            <li><span class="rail-check" aria-hidden="true">✓</span>未上课课时随心退</li>
+          </ul>
+        </section>
+
+        <section class="rail-card">
+          <span class="rail-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </span>
+          <h2 class="rail-title nur-serif">预约流程</h2>
+          <ol class="rail-steps">
+            <li>课前咨询，对齐学习目标</li>
+            <li>选择导师已发布的档期</li>
+            <li>锁定预约，资金平台存管</li>
+            <li>按约上课，课后反馈留存</li>
+          </ol>
+        </section>
+      </aside>
       </div>
     } @else if (loading()) {
       <!-- 骨架屏 -->

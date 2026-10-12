@@ -43,7 +43,7 @@ interface ReviewItem {
   standalone: true,
   imports: [RouterLink, DatePipe, SiteHeaderComponent, SiteFooterComponent],
   templateUrl: './teacher-detail.component.html',
-  styleUrl: './teacher-detail.component.css',
+  styleUrls: ['./teacher-detail.component.css', './teacher-detail-lists.css'],
 })
 export class TeacherDetailComponent implements OnInit {
   private readonly http = inject(HttpClient);
