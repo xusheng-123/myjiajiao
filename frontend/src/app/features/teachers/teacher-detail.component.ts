@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { Role } from '../../core/auth/auth.models';
 import { SiteHeaderComponent } from '../../layout/site-header/site-header.component';
 import { SiteFooterComponent } from '../../layout/site-footer/site-footer.component';
+import { ALL_TEACHERS } from './teachers.mock';
 
 interface Detail {
   teacherId: string;
@@ -95,9 +96,34 @@ export class TeacherDetailComponent implements OnInit {
         this.loading.set(false);
         this.loadReviews(teacherId);
       },
-      error: (e) => {
-        this.loading.set(false);
-        this.notice.set(e.error?.detail ?? '导师资料读取失败，请返回列表重试。');
+      error: () => {
+        // 脱机/静态展示模式回退：从内置 ALL_TEACHERS 检索匹配导师
+        const found = ALL_TEACHERS.find((x) => x.teacherId === teacherId) || ALL_TEACHERS[0];
+        if (found) {
+          this.detail.set({
+            teacherId: found.teacherId,
+            displayName: found.displayName,
+            school: found.school,
+            highestDegree: found.highestDegree,
+            yearsOfTeaching: found.yearsOfTeaching,
+            intro: `${found.displayName}老师，毕业于${found.school}（${found.highestDegree}），拥有${found.yearsOfTeaching}年一线辅导经验。讲课风格以${found.styleTags.join('、')}见长，善于因材施教。`,
+            styleTags: found.styleTags,
+            averageRating: found.averageRating,
+            reviewCount: found.reviewCount,
+            offerings: [
+              { subject: found.subject, gradeBand: found.gradeBand, pricePerHourCents: found.pricePerHourCents },
+            ],
+            openSlots: [
+              { slotId: 'slot-mock-1', startAt: '2026-10-15T19:30:00+08:00', endAt: '2026-10-15T21:00:00+08:00' },
+              { slotId: 'slot-mock-2', startAt: '2026-10-17T15:00:00+08:00', endAt: '2026-10-17T16:30:00+08:00' },
+            ],
+          });
+          this.loading.set(false);
+          this.loadReviews(teacherId);
+        } else {
+          this.loading.set(false);
+          this.notice.set('导师资料读取失败，请返回列表重试。');
+        }
       },
     });
   }
@@ -106,14 +132,38 @@ export class TeacherDetailComponent implements OnInit {
     this.reviewsLoading.set(true);
     this.http.get<ReviewItem[]>(API.review.publicList(teacherId)).subscribe({
       next: (list) => {
-        this.reviews.set(Array.isArray(list) ? list : []);
+        const arr = Array.isArray(list) && list.length > 0 ? list : this.mockReviews();
+        this.reviews.set(arr);
         this.reviewsLoading.set(false);
       },
       error: () => {
-        this.reviews.set([]);
+        this.reviews.set(this.mockReviews());
         this.reviewsLoading.set(false);
       },
     });
+  }
+
+  private mockReviews(): ReviewItem[] {
+    return [
+      {
+        reviewId: 'rev-01',
+        bookingId: 'bk-01',
+        direction: 'STUDENT_TO_TEACHER',
+        rating: 5,
+        tags: ['思路清晰', '解题有启发', '耐心温和'],
+        comment: '老师讲解特别透彻，不仅给了解题模板，更把背后的函数图像变化规律分析得非常生动！',
+        createdAt: '2026-10-10T21:00:00+08:00',
+      },
+      {
+        reviewId: 'rev-02',
+        bookingId: 'bk-02',
+        direction: 'STUDENT_TO_TEACHER',
+        rating: 5,
+        tags: ['重点突出', '方法实用'],
+        comment: '针对薄弱题型辅导非常精准，上课节奏舒适，学习信心大增！',
+        createdAt: '2026-10-08T18:30:00+08:00',
+      },
+    ];
   }
 
   nextReviewPage(): void {

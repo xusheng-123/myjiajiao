@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>润物细无声 · Nurture</title>
+  <script>
+    // GitHub Pages / 静态托管平台 SPA 深链 404 自动回退
+    var pathSegments = window.location.pathname.split('/').filter(Boolean);
+    var path = window.location.pathname;
+    var search = window.location.search;
+    var hash = window.location.hash;
+    sessionStorage.setItem('nurture_spa_redirect', path + search + hash);
+    window.location.replace('/');
+  </script>
+</head>
+<body>
+  <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; margin-top: 25vh; color: #1E4D3E;">
+    正在进入页面…
+  </p>
+</body>
+</html>
