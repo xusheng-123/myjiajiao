@@ -130,7 +130,7 @@
 
 ## 4. 当前工作现场（2026-10-12 登录页园林背景重构轮快照）
 
-**分支与提交**：仍在 **`remake__front`** 分支（未推送 origin，合并/推送待用户指令）。本轮登录页重构 2 提交：`600d4e0` 登录门户园林摄影背景深化（生图 login-garden + 左区提亮 + 样式拆分）→ `6c7dd1b` 品牌锁基线 16f13f1→600d4e0（files 清单纳入 auth-portal-form.css，锁覆盖 621→752 条 PASS）。前一轮内页深化 5 提交 `16f13f1`→`0fb9816`+文档 `7056b88`/`4485971`，见历史快照。
+**分支与提交**：仍在 **`remake__front`** 分支（未推送 origin，合并/推送待用户指令）。本轮登录页重构 4 提交：`600d4e0` 园林摄影背景深化（生图 login-garden + 左区提亮 + 样式拆分）→ `6c7dd1b` 品牌锁基线 16f13f1→600d4e0（files 清单纳入 auth-portal-form.css，锁覆盖 621→752 条 PASS）→ `fa135ba` 用户反馈微调（内容整体右移收拢右侧留白+品牌正文 --text-muted→--text-main 加深加粗）→ `23c34b4` 品牌锁基线 → `22da9f2` 第二轮微调（右移过度回收居中，登录卡加宽 560px + 账号+密码/称呼+密码/院校+学历三组 .field-row 双列对排）→ `041765c` 品牌锁基线 fa135ba→22da9f2（758 条 PASS）。前一轮内页深化 5 提交 `16f13f1`→`0fb9816`+文档 `7056b88`/`4485971`，见历史快照。
 
 **本轮要点**：用户指认登录页太丑 → 按用户提供的完整提示词用本地生图 Skill（gpt-image-2.5）生成「雨后苏州园林月洞门」全屏背景（左 0-18% 月洞门/中央 20-55% 净墙品牌区/右 55-90% 净墙登录卡区/右上黛瓦檐角）。素材：`frontend/public/assets/auth/login-garden.avif 104KB` / webp 169KB + 移动版 49/85KB（CSS image-set avif 优先 webp 兜底，≤768px 切移动素材）。布局保持品牌左/卡片右恰落画面留白区；登录卡升级玻面白卡（rgba(255,255,255,.86)+backdrop blur 16px+白边 0.7+深影）；三张服务卡玻面 0.62+blur 10px。**用户走查反馈左区底色太深压字** → 修复：水平面纱加强（90deg 0.34→0.58 阶梯+顶部导航带）+ 品牌区羽化柔光留白（`.brand-story::before`：rgba(247,248,244,.42)+backdrop blur 3px+径向 mask 羽化无硬边）。anyComponentStyle 预算治理：auth 样式拆分 component.css（背景/品牌/布局）+ auth-portal-form.css（卡片/表单），styleUrls 双文件。交互零改动（角色 Tab/双通道/注册入驻/就地容错/hero-rise/reduced-motion 全保留）。
 
@@ -264,7 +264,7 @@ python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 | 优先 | 工作 | 首查文件与可执行下一步 | 验收 |
 |---|---|---|---|
 | P0（待用户决策） | remake__front 分支收口：合并 main 并推送 origin（或继续迭代） | `git log --oneline remake__front`（14 提交 ed0c636→6c7dd1b）；推送前用户确认；推送沿用 xusheng-123 账号 | 远程可见；不回撤历史、不强推 |
-| P1（进行中） | 内页视觉深化（总纲 Phase 5，方向 D 令牌内，首页第一屏绝对不动）：① 导师匹配 ✅ 16f13f1 → ② 导师详情 ✅ 11e17b4 → ③-⑥ 四端工作台 ✅ 50f70a4 → ⑦ 师资检索 Hero ✅ 0fb9816 → ⑧ 登录门户园林背景 ✅ 600d4e0+6c7dd1b | 参考=用户 16:9 庭院雅境内页样图+docs/ui-redesign-2026-10-11/design-system-d.md；每页闭环：实现→ng build→真浏览器截图→提交→首页无损复核；新园林素材用 local-image-gen（127.0.0.1:8317 gpt-image-2.5）生成并优化为 AVIF/WebP；剩余候选=学习互动/消息/客服/退款页视觉统一（视用户要求） | 截图对照参考图；品牌锁 PASS；零虚构数据/假按钮 |
+| P1（进行中） | 内页视觉深化（总纲 Phase 5，方向 D 令牌内，首页第一屏绝对不动）：① 导师匹配 ✅ 16f13f1 → ② 导师详情 ✅ 11e17b4 → ③-⑥ 四端工作台 ✅ 50f70a4 → ⑦ 师资检索 Hero ✅ 0fb9816 → ⑧ 登录门户园林背景 ✅ 600d4e0+6c7dd1b+fa135ba+23c34b4（含两轮用户走查微调：左区提亮、整体右移+正文加深） | 参考=用户 16:9 庭院雅境内页样图+docs/ui-redesign-2026-10-11/design-system-d.md；每页闭环：实现→ng build→真浏览器截图→提交→首页无损复核；新园林素材用 local-image-gen（127.0.0.1:8317 gpt-image-2.5）生成并优化为 AVIF/WebP；剩余候选=学习互动/消息/客服/退款页视觉统一（视用户要求） | 截图对照参考图；品牌锁 PASS；零虚构数据/假按钮 |
 | P1 | 移动端 375px 全站走查（本轮仅首屏/移动 Hero 验证过） | docs/ui-redesign-2026-10-11/mobile-check.html（8090 服务 iframe 包装） | 无横向溢出、触控热区 ≥44px |
 | P1 | 后端配套小缺口（不阻断 UI）：GET /admin/configs 列表端点（D1 目前无回读）、ReviewView 补 createdAt、家长代管预约取消鉴权放开（后端 403 故前端未接） | 见 docs/交付报告_无UI功能清单_2026-10-11.md 与本文件 §3 本轮行 | IT + 前端接真数据 |
 | P2 | 性能对比与 Lighthouse 复测（本轮聚焦视觉与交互，LCP/字体子集化未仪器实测） | hero.avif 已 164KB + preload + fetchpriority；宋体回退栈未子集化 | 指标如实记录，不虚构 |
