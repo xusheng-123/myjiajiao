@@ -4,11 +4,36 @@
 
 :host {
   display: block;
+  position: relative;
   min-height: 100vh;
   background-color: var(--bg-page);
 }
 
+.dash-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background-image: url('/assets/hero/hero.avif');
+  background-size: cover;
+  background-position: 70% 28%;
+  opacity: 0.45;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), transparent);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.85), transparent);
+}
+
+.dash-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(242, 243, 238, 0.9), rgba(242, 243, 238, 0.4) 55%, rgba(242, 243, 238, 0.8));
+}
+
 .dashboard-shell {
+  position: relative;
+  z-index: 1;
   max-width: var(--container-max, 1120px);
   margin: 0 auto;
   padding: var(--space-6) var(--space-4) var(--space-9);
