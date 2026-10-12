@@ -1,38 +1,85 @@
-/* 页脚 — 方向 D：雾青浅底收尾，黛瓦文字，暖金点缀（禁深色区块） */
+/* 页脚 — 方向 D：雨后晨雾收尾（2026-10-12 改版：青石渐隐 · 竹影收尾 · 晨雾过渡，禁深色区块）
+   顶部 #F5F4ED 与第九屏渐隐层无缝衔接，竹影/苔石取自第九屏庭院源图裁切，径向羽化融入 */
 
 .site-footer {
-  background: var(--bg-mist);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(58% 44% at 50% 24%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 72%),
+    linear-gradient(180deg, #f5f4ed 0%, #eff2e9 55%, #e7eee8 100%);
   color: var(--text-main);
-  border-top: 1px solid var(--line);
+}
+
+/* 右上角淡竹叶与竹影 */
+.site-footer::before {
+  content: '';
+  position: absolute;
+  top: -24px;
+  right: -36px;
+  width: clamp(260px, 26vw, 430px);
+  aspect-ratio: 542 / 630;
+  background: url('/assets/home/footer-bamboo.webp') center / cover no-repeat;
+  opacity: 0.5;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse 64% 58% at 64% 30%, #000 32%, transparent 74%);
+  mask-image: radial-gradient(ellipse 64% 58% at 64% 30%, #000 32%, transparent 74%);
+}
+
+/* 左下角苔藓、湿润石材与太湖石 */
+.site-footer::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: -28px;
+  width: clamp(230px, 22vw, 370px);
+  aspect-ratio: 452 / 381;
+  background: url('/assets/home/footer-stone.webp') center / cover no-repeat;
+  transform: scaleX(-1);
+  opacity: 0.42;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse 60% 62% at 44% 56%, #000 28%, transparent 72%);
+  mask-image: radial-gradient(ellipse 60% 62% at 44% 56%, #000 28%, transparent 72%);
+}
+
+/* 内容抬到装饰之上，文字区域保持干净明亮 */
+.sf-grid,
+.sf-bottom {
+  position: relative;
+  z-index: 1;
 }
 
 .sf-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-columns: 1.3fr 1fr 1.2fr;
   gap: var(--space-7);
-  padding-block: var(--space-8) var(--space-7);
+  padding-block: 64px 56px;
+}
+
+.site-footer .nur-container {
+  max-width: 1200px;
 }
 
 /* ---------- 品牌区 ---------- */
 .sf-logo {
   margin: 0 0 var(--space-2);
   font-family: var(--font-serif);
-  font-size: 1.5rem;
+  font-size: 24px;
   font-weight: 600;
   letter-spacing: 0.16em;
-  color: var(--text-title);
+  color: #244638;
 }
 
 .sf-slogan {
   margin: 0 0 var(--space-2);
-  color: var(--text-muted);
-  font-size: 0.92rem;
+  color: #61766b;
+  font-size: 14px;
   letter-spacing: 0.14em;
+  line-height: 20px;
 }
 
 .sf-en {
   margin: 0;
-  color: var(--color-gold);
+  color: #b28b57;
   font-family: var(--font-serif);
   font-size: 0.68rem;
   letter-spacing: 0.42em;
@@ -41,9 +88,9 @@
 /* ---------- 栏目 ---------- */
 .sf-col-title {
   margin: 0 0 var(--space-4);
-  color: var(--text-title);
+  color: #244638;
   font-family: var(--font-serif);
-  font-size: 1rem;
+  font-size: 17px;
   letter-spacing: 0.2em;
 }
 
@@ -58,9 +105,9 @@
 .sf-link {
   display: inline-flex;
   align-items: center;
-  min-height: var(--touch-target);
-  color: var(--text-muted);
-  font-size: 0.92rem;
+  color: #61766b;
+  font-size: 14px;
+  line-height: 20px;
   letter-spacing: 0.08em;
   text-decoration: none;
   transition: color 200ms var(--ease);
@@ -73,15 +120,15 @@
 .sf-list--text li {
   display: flex;
   align-items: center;
-  min-height: var(--touch-target);
-  color: var(--text-muted);
-  font-size: 0.92rem;
+  color: #61766b;
+  font-size: 14px;
+  line-height: 20px;
   letter-spacing: 0.06em;
 }
 
 /* ---------- 底栏 ---------- */
 .sf-bottom {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid rgba(47, 78, 60, 0.08);
 }
 
 .sf-bottom-inner {
@@ -90,26 +137,49 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2) var(--space-5);
-  padding-block: var(--space-5);
+  height: 64px;
 }
 
 .sf-bottom-inner p {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 0.8rem;
+  color: #61766b;
+  font-size: 14px;
   letter-spacing: 0.08em;
 }
 
 .sf-verse {
   font-family: var(--font-serif);
-  color: var(--color-gold-text);
   letter-spacing: 0.24em;
+}
+
+/* 提权压过 .sf-bottom-inner p 的正文色，暖金点缀按 2026-10-12 参数表落地 */
+.sf-bottom-inner .sf-verse {
+  color: #b28b57;
 }
 
 /* ---------- 响应式（收敛断点：768px） ---------- */
 @media (max-width: 768px) {
   .sf-grid {
     grid-template-columns: 1fr;
-    gap: var(--space-6);
+    gap: 28px;
+    padding-block: 48px 40px;
+  }
+
+  /* 移动档装饰进一步弱化，保文字可读 */
+  .site-footer::before {
+    width: 200px;
+    opacity: 0.26;
+  }
+
+  .site-footer::after {
+    width: 180px;
+    opacity: 0.22;
+  }
+
+  .sf-bottom-inner {
+    height: auto;
+    min-height: 64px;
+    padding-block: 12px;
+    justify-content: flex-start;
   }
 }
