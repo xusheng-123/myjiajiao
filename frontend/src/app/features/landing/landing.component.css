@@ -209,7 +209,7 @@
 }
 
 .philosophy-text {
-  max-width: 620px;
+  max-width: 650px; /* 2026-10-12 第二屏右移参数表：620→650 */
   margin: var(--space-5) 0 0;
   color: var(--text-muted);
   line-height: 2;
@@ -219,6 +219,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-5);
+  max-width: 1100px; /* 2026-10-12 第二屏右移参数表：三组理念容器上限 */
   margin: var(--space-7) 0 0;
   padding: var(--space-6) 0 0;
   list-style: none;

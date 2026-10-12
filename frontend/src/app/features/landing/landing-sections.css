@@ -20,6 +20,16 @@
   background-position: center 28%;
 }
 
+/* 第 2 屏桌面档文字右移（2026-10-12）：月洞门居左约 23% 视口宽且随视口等比移动，
+   文字左缘按 ~24.7% 同步右移，落在中央粉墙亮区（1700 视口实测 X≈417，参数表目标 420）。
+   560px − 25.3vw 反解自「容器左缘 + padding = 24.7% 布局宽」；>2120px 视口容器左缘
+   已自然越过门洞，回落 24px 兜底。≤1279 档维持原响应式布局不动，≤767 手机档零改动。 */
+@media (min-width: 1280px) {
+  .philosophy {
+    padding-left: max(calc(560px - 25.3vw), 24px);
+  }
+}
+
 /* 第 3 屏 · 服务体系：取长廊纵深段，顶部面纱加强压暗廊柱保标题可读 */
 #services {
   background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.66) 0%, rgba(242, 243, 238, 0.4) 30%, rgba(242, 243, 238, 0.28) 45%, rgba(242, 243, 238, 0.45) 100%), url('/assets/home/section-corridor.webp');
