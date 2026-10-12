@@ -12,7 +12,11 @@
 /* ---------- 页首 Hero ---------- */
 .tq-hero {
   padding: var(--space-7) 0 var(--space-5);
-  background: linear-gradient(180deg, var(--bg-mist) 0%, var(--bg-page) 100%);
+  background:
+    linear-gradient(180deg, rgba(242, 243, 238, 0.2) 0%, rgba(242, 243, 238, 0.72) 62%, var(--bg-page) 100%),
+    linear-gradient(90deg, rgba(242, 243, 238, 0.9) 0%, rgba(242, 243, 238, 0.38) 55%, rgba(242, 243, 238, 0.72) 100%),
+    url('/assets/hero/hero.avif') right 30% / cover no-repeat,
+    var(--bg-mist);
   border-bottom: 1px solid var(--line);
 }
 
