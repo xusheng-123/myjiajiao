@@ -1,16 +1,43 @@
-/* 统一鉴权门户 · 方向 D 浅色（2026-10-11 重构）；契约：docs/ui-redesign-2026-10-11/design-system-d.md
+/* 统一鉴权门户 · 方向 D 浅色（2026-10-11 重构；2026-10-12 园林摄影背景深化）；契约：docs/ui-redesign-2026-10-11/design-system-d.md
+   本文件：背景/导航/品牌叙事/布局；表单与登录卡样式见 auth-portal-form.css（样式预算拆分）。
    交互结构不变：角色 Tab / 双通道 / 注册入驻 / 就地容错 / hero-rise 入场。 */
 
 :host {
   display: block;
   min-height: 100vh;
-  background:
-    radial-gradient(1200px 480px at 85% -10%, rgba(168, 135, 90, 0.08), transparent 60%),
-    linear-gradient(180deg, var(--bg-page) 0%, var(--bg-mist) 100%);
+  position: relative;
+  background: var(--bg-page);
+}
+
+/* ---------- 园林摄影背景（雨后月洞门，生图素材 login-garden） ---------- */
+.portal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--bg-mist);
+  background-size: cover;
+  background-position: left center;
+  background-image:
+    linear-gradient(180deg, rgba(242, 243, 238, 0.62) 0px, rgba(242, 243, 238, 0.28) 150px, rgba(242, 243, 238, 0.06) 260px),
+    linear-gradient(90deg, rgba(242, 243, 238, 0.34) 0%, rgba(242, 243, 238, 0.52) 30%, rgba(242, 243, 238, 0.5) 58%, rgba(242, 243, 238, 0.58) 100%),
+    url('/assets/auth/login-garden.webp');
+  background-image:
+    linear-gradient(180deg, rgba(242, 243, 238, 0.62) 0px, rgba(242, 243, 238, 0.28) 150px, rgba(242, 243, 238, 0.06) 260px),
+    linear-gradient(90deg, rgba(242, 243, 238, 0.34) 0%, rgba(242, 243, 238, 0.52) 30%, rgba(242, 243, 238, 0.5) 58%, rgba(242, 243, 238, 0.58) 100%),
+    image-set(url('/assets/auth/login-garden.avif') type('image/avif'), url('/assets/auth/login-garden.webp') type('image/webp'));
+  animation: backdrop-in 900ms var(--ease) both;
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ---------- 顶部导航（浅色水榭） ---------- */
 .garden-nav {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -66,6 +93,8 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text-main);
   font-size: 0.92rem;
   letter-spacing: 0.06em;
@@ -84,11 +113,12 @@
   background: var(--color-gold);
 }
 
-/* ---------- 主区双栏 ---------- */
+/* ---------- 主区双栏（品牌区落画面中留白墙，登录卡落右侧净墙） ---------- */
 .hero-chamber {
   position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: 1fr minmax(400px, 480px);
+  grid-template-columns: minmax(0, 1fr) minmax(400px, 460px);
   align-items: center;
   gap: clamp(32px, 6vw, 96px);
   max-width: var(--container-max);
@@ -98,6 +128,24 @@
 }
 
 /* ---------- 品牌叙事区 ---------- */
+/* 柔光留白：文字区背后的羽化光晕，压住院景保证阅读舒适（无卡片硬边） */
+.brand-story {
+  position: relative;
+}
+
+.brand-story::before {
+  content: '';
+  position: absolute;
+  inset: -56px -72px;
+  z-index: -1;
+  border-radius: 64px;
+  background: rgba(247, 248, 244, 0.42);
+  backdrop-filter: blur(3px) brightness(1.05);
+  -webkit-backdrop-filter: blur(3px) brightness(1.05);
+  -webkit-mask-image: radial-gradient(ellipse 100% 100% at 44% 50%, rgba(0, 0, 0, 1) 34%, transparent 74%);
+  mask-image: radial-gradient(ellipse 100% 100% at 44% 50%, rgba(0, 0, 0, 1) 34%, transparent 74%);
+}
+
 .hero-aux-line {
   display: flex;
   align-items: center;
@@ -153,6 +201,7 @@
   padding: 8px;
   border: 1.5px solid var(--color-gold);
   border-radius: 10px;
+  background: rgba(255, 255, 255, 0.35);
   color: var(--color-gold-text);
   font-family: var(--font-serif);
   font-size: 0.95rem;
@@ -188,7 +237,7 @@
   display: block;
 }
 
-/* ---------- 三项服务指标（素笺卡） ---------- */
+/* ---------- 三项服务指标（素笺卡，玻面浮于粉墙） ---------- */
 .metrics-shrine-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -199,8 +248,10 @@
 
 .shrine-card {
   padding: var(--space-4);
-  background: var(--bg-card);
-  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: var(--radius-control);
   box-shadow: var(--shadow-subtle);
 }
@@ -231,214 +282,6 @@
   line-height: 1.6;
 }
 
-/* ---------- 登录素笺卡 ---------- */
-.portal-card {
-  width: 100%;
-  background: var(--bg-card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  padding: clamp(24px, 3vw, 36px);
-  box-shadow: var(--shadow-hover);
-}
-
-.portal-title {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-weight: 600;
-  font-size: 1.5rem;
-  letter-spacing: 0.12em;
-  color: var(--text-title);
-}
-
-.portal-subtitle {
-  margin: 8px 0 0;
-  color: var(--color-gold-text);
-  font-family: var(--font-serif);
-  font-size: 0.9rem;
-  letter-spacing: 0.14em;
-}
-
-/* ---------- 角色 Tab（分段控件） ---------- */
-.role-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  margin-top: var(--space-5);
-  padding: 4px;
-  background: var(--bg-mist);
-  border-radius: var(--radius-pill);
-}
-
-.role-tab {
-  min-height: 40px;
-  border: none;
-  border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.92rem;
-  letter-spacing: 0.04em;
-  transition: background-color 200ms var(--ease), color 200ms var(--ease), box-shadow 200ms var(--ease);
-}
-
-.role-tab--active {
-  background: var(--bg-card);
-  color: var(--color-primary);
-  font-weight: 600;
-  box-shadow: var(--shadow-subtle);
-}
-
-/* ---------- 通道切换 ---------- */
-.channel-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
-}
-
-.channel-pill {
-  min-height: 38px;
-  padding: 0 var(--space-4);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  background: var(--bg-card);
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  transition: border-color 200ms var(--ease), color 200ms var(--ease), background-color 200ms var(--ease);
-}
-
-.channel-pill--active {
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.channel-pill--accent.channel-pill--active {
-  border-color: var(--color-gold);
-  background: var(--color-gold-bg);
-  color: var(--color-gold-text);
-}
-
-.channel-pill:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* ---------- 表单 ---------- */
-.auth-form {
-  margin-top: var(--space-5);
-}
-
-.field {
-  margin-bottom: var(--space-4);
-}
-
-.field label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text-title);
-}
-
-.field input {
-  width: 100%;
-  min-height: 48px;
-}
-
-.field-hint {
-  margin: 8px 0 0;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  line-height: 1.7;
-}
-
-.sms-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--space-2);
-}
-
-.btn-send-code {
-  min-height: 48px;
-  padding: 0 var(--space-4);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-control);
-  background: transparent;
-  color: var(--color-primary);
-  font-size: 0.88rem;
-  white-space: nowrap;
-  transition: background-color 200ms var(--ease), color 200ms var(--ease);
-}
-
-.btn-send-code:hover:not(:disabled) {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.btn-send-code:disabled {
-  border-color: var(--line);
-  color: var(--text-muted);
-  cursor: not-allowed;
-}
-
-/* ---------- 状态条（双通道：图标 + 文字 + 色底） ---------- */
-.form-status {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin: var(--space-4) 0;
-  padding: 10px 14px;
-  border-radius: var(--radius-control);
-  font-size: 0.88rem;
-  line-height: 1.6;
-}
-
-.form-status--success { background: var(--color-success-bg); color: var(--color-success); }
-.form-status--error { background: var(--color-danger-bg); color: var(--color-danger); }
-.form-status--info { background: var(--color-primary-soft); color: var(--color-primary); }
-
-/* ---------- 提交按钮（黛绿胶囊，方向 D 起影） ---------- */
-.btn-submit {
-  width: 100%;
-  min-height: 52px;
-  margin-top: var(--space-2);
-  border: none;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  box-shadow: var(--shadow-primary);
-  transition: background-color 200ms var(--ease), transform 200ms var(--ease), box-shadow 200ms var(--ease);
-}
-
-.btn-submit:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-hover);
-}
-
-.btn-submit:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.btn-submit:disabled {
-  background: var(--color-secondary-bg);
-  color: var(--text-muted);
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-.portal-footnote {
-  margin: var(--space-5) 0 0;
-  font-size: 0.76rem;
-  color: var(--text-muted);
-  line-height: 1.8;
-  text-align: center;
-}
-
 /* ---------- 入场（保留原节奏：rise + d-1..d-8 阶梯） ---------- */
 .hero-rise {
   animation: portal-rise var(--duration-enter) var(--ease) both;
@@ -456,6 +299,7 @@
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
 @media (max-width: 1024px) {
   .hero-chamber {
     grid-template-columns: 1fr;
@@ -480,25 +324,31 @@
   .metrics-shrine-grid {
     margin-inline: auto;
   }
-
-  .portal-card {
-    max-width: 480px;
-    margin: 0 auto;
-  }
 }
 
 @media (max-width: 768px) {
-  .metrics-shrine-grid {
-    grid-template-columns: 1fr;
+  .portal-backdrop {
+    background-position: 22% center;
+    background-image:
+      linear-gradient(180deg, rgba(242, 243, 238, 0.62), rgba(242, 243, 238, 0.45)),
+      url('/assets/auth/login-garden-mobile.webp');
+    background-image:
+      linear-gradient(180deg, rgba(242, 243, 238, 0.62), rgba(242, 243, 238, 0.45)),
+      image-set(url('/assets/auth/login-garden-mobile.avif') type('image/avif'), url('/assets/auth/login-garden-mobile.webp') type('image/webp'));
   }
 
-  .role-tabs {
-    grid-template-columns: repeat(2, 1fr);
+  .metrics-shrine-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 /* ---------- reduced-motion：动画瞬完且内容默认可见（双保险） ---------- */
 @media (prefers-reduced-motion: reduce) {
+  .portal-backdrop {
+    animation: none;
+    opacity: 1;
+  }
+
   .hero-rise {
     animation: none;
     opacity: 1;

@@ -21,7 +21,7 @@ interface FieldStatus {
   standalone: true,
   imports: [],
   templateUrl: './auth-portal.component.html',
-  styleUrl: './auth-portal.component.css',
+  styleUrls: ['./auth-portal.component.css', './auth-portal-form.css'],
 })
 export class AuthPortalComponent implements OnInit {
   private readonly auth = inject(AuthService);
