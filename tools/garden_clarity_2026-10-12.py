@@ -1,11 +1,12 @@
-"""首页 2–9 屏背景清晰度统一验收（2026-10-12）：真实浏览器抓屏 + 结构/毛玻璃/面纱断言。
+"""首页 2–9 屏背景清晰度二轮验收（2026-10-12）：真实浏览器抓屏 + 结构/衬托/面纱断言。
 
 --before 模式：只抓基线截图与量测（写 tools/_garden_clarity_baseline.json）。
-默认模式：改后断言——
+默认模式：改后断言（用户定稿「图片保持原摄影感，文字衬托加回」）——
   · 各屏 offsetTop/height 与基线逐字段相等（结构性零改动）；
-  · 6 处毛玻璃 computed backdrop-filter == none（人工模糊已撤）；
-  · 桌面档整屏面纱最大 alpha ≤ 0.40（非文字区目标 0–0.20、屏间过渡 ≤0.30）；
-  · hero 视口截图与基线逐字节一致（第一屏绝对不动）。
+  · 7 处文字衬托（6 处 ::before 羽化 + 1 处 pill 元素底）backgroundColor 与设计值相等
+    且 backdrop-filter == none（::before 级探测，修元素级读数盲区）；
+  · 桌面档 2–9 屏整屏白面纱清零（background-image 无任何 linear-gradient 纱层）；
+  · hero 视口截图与基线感知级一致（第一屏绝对不动）。
 """
 import base64, json, os, re, subprocess, sys, time, urllib.request
 
@@ -21,10 +22,17 @@ SECTIONS = [("hero", ".hero"), ("philosophy", "#philosophy"), ("services", "#ser
             ("voices", "#voices"), ("vision", ".nur-section.vision"),
             ("cta", ".nur-section.cta"), ("footer", "nur-site-footer")]
 MOBILE_KEYS = ["philosophy", "process", "vision", "cta", "footer"]
-FROST_SELS = ["#services .nur-section-head", "#teachers .nur-section-head",
-              "#subjects .nur-section-head", "#process .nur-section-head",
-              "#voices .nur-section-head", "#process .steps-grid",
-              ".teachers-more .nur-link-arrow"]
+# 文字衬托清单：::before 羽化层按伪元素探测，pill 为真元素底（值=设计锁定值）
+FROST_PSEUDO = {"#services .nur-section-head": "rgba(247, 248, 244, 0.58)",
+                "#teachers .nur-section-head": "rgba(247, 248, 244, 0.58)",
+                "#subjects .nur-section-head": "rgba(247, 248, 244, 0.58)",
+                "#process .nur-section-head": "rgba(247, 248, 244, 0.58)",
+                "#voices .nur-section-head": "rgba(247, 248, 244, 0.58)",
+                "#process .steps-grid": "rgba(247, 248, 244, 0.52)",
+                ".nur-section.vision .vision-inner": "rgba(247, 248, 244, 0.72)"}
+FROST_ELEMENT = {".teachers-more .nur-link-arrow": "rgba(255, 255, 255, 0.72)"}
+# 整屏白面纱必须清零的桌面档摄影屏（hero 不动、footer 自有渐变不在列）
+VEIL_KEYS = ["philosophy", "services", "teachers", "subjects", "process", "voices", "vision", "cta"]
 
 os.makedirs(OUT, exist_ok=True)
 proc = subprocess.Popen([edge, "--headless=new", "--remote-debugging-port=9228",
@@ -88,10 +96,17 @@ try:
                           if ({'true' if w == 1700 else 'false'}) {{
                             data.bgImg = getComputedStyle(el).backgroundImage;
                             data.frost = {{}};
-                            const sels = {json.dumps(FROST_SELS)};
-                            for (const fs of sels) {{
+                            for (const [fs] of Object.entries({json.dumps(FROST_PSEUDO)})) {{
                               const fe = document.querySelector(fs);
-                              data.frost[fs] = fe ? getComputedStyle(fe).backdropFilter : 'NOEL';
+                              if (!fe) {{ data.frost[fs] = 'NOEL'; continue; }}
+                              const cs = getComputedStyle(fe, '::before');
+                              data.frost[fs] = cs.backgroundColor + ' | bf=' + cs.backdropFilter;
+                            }}
+                            for (const [fs] of Object.entries({json.dumps(FROST_ELEMENT)})) {{
+                              const fe = document.querySelector(fs);
+                              if (!fe) {{ data.frost[fs] = 'NOEL'; continue; }}
+                              const cs = getComputedStyle(fe);
+                              data.frost[fs] = cs.backgroundColor + ' | bf=' + cs.backdropFilter;
                             }}
                           }}
                           return JSON.stringify(data);
@@ -131,12 +146,19 @@ try:
                         if m.get("scrollW", 0) > m.get("clientW", 0):
                             fails.append(f"OVERFLOW {tier}/{key}: scrollW={m.get('scrollW')} clientW={m.get('clientW')}")
                 for key, m in base["desktop"].items():
-                    for fs, bf in (m.get("frost") or {}).items():
+                    expected = {**FROST_PSEUDO, **FROST_ELEMENT}
+                    for fs, val in (m.get("frost") or {}).items():
+                        if val == 'NOEL':
+                            fails.append(f"FROST {key}: {fs} element missing")
+                            continue
+                        bg, _, bf = val.partition(' | bf=')
                         if bf != "none":
                             fails.append(f"BLUR {key}: {fs} backdrop-filter={bf}")
+                        if bg.replace(' ', '') != expected[fs].replace(' ', ''):
+                            fails.append(f"SCRIM {key}: {fs} bg={bg} expected={expected[fs]}")
                     stops = [float(a) for a in re.findall(r"rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d.]+)\)", m.get("bgImg", ""))]
-                    if stops and max(stops) > 0.40:
-                        fails.append(f"VEIL {key}: max alpha {max(stops)}")
+                    if key in VEIL_KEYS and stops:
+                        fails.append(f"VEIL {key}: veil stops remain {stops[:4]}")
                 # hero 视口截图与基线一致性（第一屏绝对不动）：
                 # 跨 Edge 会话存在确定性光栅化抖动（同状态两轮逐字节相同、跨状态零几何偏移但
                 # 高对比边缘 1–2 级 AA 差），故采用感知级判据：标题区行/列投影 shift0 相关 ≥0.999
@@ -146,6 +168,9 @@ try:
                     da = Image.open(pa).convert("RGB"); db = Image.open(pb).convert("RGB")
                     if da.size != db.size:
                         return {"fatal": "size mismatch"}
+                    # 只对比 hero 本体（secH=900）：视口 950 底部 50px 是第二屏顶部条带，
+                    # 面纱撤除后该条带必然变化，不计入 hero 一致性
+                    da = da.crop((0, 0, da.size[0], 900)); db = db.crop((0, 0, db.size[0], 900))
                     ga, gb = da.convert("L"), db.convert("L")
                     box = (290, 260, 830, 360)
                     W = box[2] - box[0]; H = box[3] - box[1]
