@@ -2,8 +2,8 @@
  * 首页 · 第 2–4 屏园林摄影背景（2026-10-12 生图接入，首屏 hero 不动）
  * 同一座园林连续空间三景：办学理念=雾墙竹影 / 服务体系=竹影书廊 / 精选导师=临窗庭院
  * 面纱只提亮保文字可读，维持方向 D 浅色体系；
- * 2026-10-12 清晰度统一（用户授权，对齐第一屏摄影质感）：桌面档面纱 α 内收
- * 至非文字区 ≈0.12–0.20、屏间过渡 ≤0.30，文字可读改由标题柔光罩承担；
+ * 2026-10-12 清晰度二轮（用户定稿「图片保持原摄影感，文字衬托加回」）：桌面档整屏
+ * 白面纱彻底撤除，背景即纯摄影图；文字区局部衬托与文字排版不动；
  * ≤767 移动档面纱维持原值不动。
  * anyComponentStyle 预算治理：与 landing.component.css 拆分（styleUrls 双文件）
  * ============================================================ */
@@ -16,10 +16,10 @@
   background-repeat: no-repeat;
 }
 
-/* 第 2 屏 · 办学理念：取雾面粉墙竹影段，底部湿石水面略压深 */
+/* 第 2 屏 · 办学理念：取雾面粉墙竹影段（桌面档无面纱，纯摄影图） */
 #philosophy {
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.2) 0%, rgba(242, 243, 238, 0.14) 45%, rgba(242, 243, 238, 0.28) 100%), url('/assets/home/section-philosophy.webp');
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.2) 0%, rgba(242, 243, 238, 0.14) 45%, rgba(242, 243, 238, 0.28) 100%), image-set(url('/assets/home/section-philosophy.avif') type('image/avif'), url('/assets/home/section-philosophy.webp') type('image/webp'));
+  background-image: url('/assets/home/section-philosophy.webp');
+  background-image: image-set(url('/assets/home/section-philosophy.avif') type('image/avif'), url('/assets/home/section-philosophy.webp') type('image/webp'));
   background-position: center 28%;
 }
 
@@ -50,17 +50,17 @@
   }
 }
 
-/* 第 3 屏 · 服务体系：取长廊纵深段，顶部面纱加强压暗廊柱保标题可读 */
+/* 第 3 屏 · 服务体系：取长廊纵深段（桌面档无面纱） */
 #services {
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.3) 0%, rgba(242, 243, 238, 0.18) 30%, rgba(242, 243, 238, 0.14) 45%, rgba(242, 243, 238, 0.26) 100%), url('/assets/home/section-corridor.webp');
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.3) 0%, rgba(242, 243, 238, 0.18) 30%, rgba(242, 243, 238, 0.14) 45%, rgba(242, 243, 238, 0.26) 100%), image-set(url('/assets/home/section-corridor.avif') type('image/avif'), url('/assets/home/section-corridor.webp') type('image/webp'));
+  background-image: url('/assets/home/section-corridor.webp');
+  background-image: image-set(url('/assets/home/section-corridor.avif') type('image/avif'), url('/assets/home/section-corridor.webp') type('image/webp'));
   background-position: center 60%;
 }
 
-/* 第 4 屏 · 精选导师：取临窗书斋+庭院水面段，底部面纱加强保链接可读 */
+/* 第 4 屏 · 精选导师：取临窗书斋+庭院水面段（桌面档无面纱） */
 #teachers {
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.2) 0%, rgba(242, 243, 238, 0.14) 45%, rgba(242, 243, 238, 0.3) 100%), url('/assets/home/section-study.webp');
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.2) 0%, rgba(242, 243, 238, 0.14) 45%, rgba(242, 243, 238, 0.3) 100%), image-set(url('/assets/home/section-study.avif') type('image/avif'), url('/assets/home/section-study.webp') type('image/webp'));
+  background-image: url('/assets/home/section-study.webp');
+  background-image: image-set(url('/assets/home/section-study.avif') type('image/avif'), url('/assets/home/section-study.webp') type('image/webp'));
   background-position: center 46%;
 }
 

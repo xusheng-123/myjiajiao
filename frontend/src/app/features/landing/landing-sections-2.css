@@ -2,10 +2,10 @@
  * 首页 · 第 5–9 屏园林摄影背景（2026-10-12 生图接入，与 2–4 屏同一座园林）
  * 游园动线：学科门类=书斋暖光 / 学习流程=雨后曲廊 / 学习场景=池塘石桥
  *          品牌愿景=远山晨雾 / 最终行动=明亮庭院
- * 中部净化源图 + 面纱只提亮保文字可读，维持方向 D 浅色体系；
- * 2026-10-12 清晰度统一（用户授权，对齐第一屏摄影质感）：桌面档面纱 α 内收
- * 至非文字区 ≈0.08–0.18、屏间过渡 ≤0.30，标题/步骤柔光罩撤 backdrop 模糊
- * 改纯色羽化（α 微升补可读性）；≤767 移动档面纱与柔光维持原值不动。
+ * 中部净化源图 + 维持方向 D 浅色体系；
+ * 2026-10-12 清晰度二轮（用户定稿「图片保持原摄影感，文字衬托加回」）：桌面档整屏
+ * 白面纱彻底撤除，背景即纯摄影图；文字背后羽化衬托（无模糊纯色羽化）全部保留，
+ * 摄影细节只在衬托之外展开；≤767 移动档面纱维持原值不动。
  * anyComponentStyle 预算治理：landing-sections.css（2–4 屏）与本文件（5–9 屏）分立
  * ============================================================ */
 
@@ -19,37 +19,37 @@
   background-repeat: no-repeat;
 }
 
-/* 第 5 屏 · 学科门类：取书斋晨光粉墙段，底部地板反光略压 */
+/* 第 5 屏 · 学科门类：取书斋晨光粉墙段（桌面档无面纱） */
 #subjects {
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.18) 0%, rgba(242, 243, 238, 0.12) 45%, rgba(242, 243, 238, 0.24) 100%), url('/assets/home/section-subjects.webp');
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.18) 0%, rgba(242, 243, 238, 0.12) 45%, rgba(242, 243, 238, 0.24) 100%), image-set(url('/assets/home/section-subjects.avif') type('image/avif'), url('/assets/home/section-subjects.webp') type('image/webp'));
+  background-image: url('/assets/home/section-subjects.webp');
+  background-image: image-set(url('/assets/home/section-subjects.avif') type('image/avif'), url('/assets/home/section-subjects.webp') type('image/webp'));
   background-position: center 32%;
 }
 
-/* 第 6 屏 · 学习流程：曲廊步道段；裸文字步骤区需加强面纱，左廊柱横向提亮 */
+/* 第 6 屏 · 学习流程：曲廊步道段（桌面档无面纱；标题/步骤文字背后留羽化衬托） */
 #process {
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.3) 0%, rgba(242, 243, 238, 0.18) 30%, rgba(242, 243, 238, 0.16) 60%, rgba(242, 243, 238, 0.26) 100%), linear-gradient(90deg, rgba(247, 248, 244, 0.18) 0%, rgba(247, 248, 244, 0) 45%), url('/assets/home/section-pathway.webp');
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.3) 0%, rgba(242, 243, 238, 0.18) 30%, rgba(242, 243, 238, 0.16) 60%, rgba(242, 243, 238, 0.26) 100%), linear-gradient(90deg, rgba(247, 248, 244, 0.18) 0%, rgba(247, 248, 244, 0) 45%), image-set(url('/assets/home/section-pathway.avif') type('image/avif'), url('/assets/home/section-pathway.webp') type('image/webp'));
-  background-position: center 50%, center 50%, center 50%;
+  background-image: url('/assets/home/section-pathway.webp');
+  background-image: image-set(url('/assets/home/section-pathway.avif') type('image/avif'), url('/assets/home/section-pathway.webp') type('image/webp'));
+  background-position: center 50%;
 }
 
-/* 第 7 屏 · 学习场景：取池塘石桥段，底部花丛略压保卡片投影干净 */
+/* 第 7 屏 · 学习场景：取池塘石桥段（桌面档无面纱） */
 #voices {
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.16) 0%, rgba(242, 243, 238, 0.12) 45%, rgba(242, 243, 238, 0.22) 100%), url('/assets/home/section-pond.webp');
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.16) 0%, rgba(242, 243, 238, 0.12) 45%, rgba(242, 243, 238, 0.22) 100%), image-set(url('/assets/home/section-pond.avif') type('image/avif'), url('/assets/home/section-pond.webp') type('image/webp'));
+  background-image: url('/assets/home/section-pond.webp');
+  background-image: image-set(url('/assets/home/section-pond.avif') type('image/avif'), url('/assets/home/section-pond.webp') type('image/webp'));
   background-position: center 55%;
 }
 
 /* 第 8 屏 · 品牌愿景：远山晨雾段（2026-10-12 生图重生成：构图光线色调承旧，山脊/亭桥/水面
-   细节恢复清晰，晨雾只留山脚；面纱最轻） */
+   细节恢复清晰，晨雾只留山脚；桌面档无面纱，居中文字背后留羽化衬托） */
 .nur-section.vision {
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.12) 0%, rgba(242, 243, 238, 0.08) 45%, rgba(242, 243, 238, 0.16) 100%), url('/assets/home/section-horizon.webp');
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.12) 0%, rgba(242, 243, 238, 0.08) 45%, rgba(242, 243, 238, 0.16) 100%), image-set(url('/assets/home/section-horizon.avif') type('image/avif'), url('/assets/home/section-horizon.webp') type('image/webp'));
+  background-image: url('/assets/home/section-horizon.webp');
+  background-image: image-set(url('/assets/home/section-horizon.avif') type('image/avif'), url('/assets/home/section-horizon.webp') type('image/webp'));
   background-position: center 45%;
 }
 
-/* 第 8 屏源图重生成后细节恢复，居中文字背后加一片羽化柔光保可读（2026-10-12：
-   无模糊无硬边，仅局部抬亮，摄影细节在柔光外保持清晰） */
+/* 第 8 屏源图重生成后细节恢复，居中文字背后加一片羽化衬托保可读（2026-10-12：
+   无模糊无硬边，仅局部抬亮，摄影细节在衬托外保持清晰） */
 .nur-section.vision {
   overflow-x: clip;
 }
@@ -71,11 +71,11 @@
   position: relative;
 }
 
-/* 第 9 屏 · 最终行动：暖白庭院段（左门檐/中粉墙/右竹/下青石同框服务居中文字） */
+/* 第 9 屏 · 最终行动：暖白庭院段（左门檐/中粉墙/右竹/下青石同框服务居中文字；桌面档无面纱） */
 .nur-section.cta {
   position: relative;
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.2) 0%, rgba(242, 243, 238, 0.14) 45%, rgba(242, 243, 238, 0.28) 100%), url('/assets/home/section-courtyard.webp');
-  background-image: linear-gradient(180deg, rgba(242, 243, 238, 0.2) 0%, rgba(242, 243, 238, 0.14) 45%, rgba(242, 243, 238, 0.28) 100%), image-set(url('/assets/home/section-courtyard.avif') type('image/avif'), url('/assets/home/section-courtyard.webp') type('image/webp'));
+  background-image: url('/assets/home/section-courtyard.webp');
+  background-image: image-set(url('/assets/home/section-courtyard.avif') type('image/avif'), url('/assets/home/section-courtyard.webp') type('image/webp'));
   background-position: center 48%;
 }
 
