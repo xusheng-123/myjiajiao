@@ -1,5 +1,7 @@
 # 润物细无声 · NURTURE — Release Runbook（运维手册）
 
+> 2026-10-12本地功能交付包由tools/package_delivery.py从独立验收构建生成，包含V1–V22 JAR、同源/api前端、源码及去敏证据。见docs/交付说明_2026-10-12.md。此包与下文Cloudflare双域Staging流程不同；外部资源未提供，不能把打包/模板或旧Sites静态页当线上部署成功。package-staging.sh本轮仅更正旧V1–V8说明，未执行它替换运行中的JAR。
+
 > 适用：Staging 与 Production。本手册由 Release Implementation 轮建立，STAGING 收口轮统一为**双主机名架构**并随部署形态演进维护。
 > 架构基线（双主机名，无 Worker）：
 >

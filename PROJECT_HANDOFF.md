@@ -7,6 +7,8 @@
 
 ## 1. 项目基本信息
 
+> **2026-10-12 全功能交付验收最新事实**：实际源码和主库均V1–V22，AGENTS已同步。最终49单元/架构+164IT零失败/错误/跳过，新库E2E220/0、越权19拒绝/0漏洞、production构建零warning、品牌1006条PASS、配置门禁全过；12套网页旅程/33页面双尺寸/111张成功截图。修复沙箱关闭仍允许模拟支付、课堂内部备忘泄露、375px对比与材料表单溢出。主库3钱包合计3640000分/150订单前后守恒；8080 PID6572与4200 PID19932未替换。本轮优先于新增功能计划，允许本地功能交付；外部短信/支付/全栈部署仍未完成。开始HEAD42239b2含用户未提交UI，期间用户另会话提交至5e6fd5d；交付按源码逐文件哈希核实，不以旧HEAD概括。详见docs/交付报告_全功能验收_2026-10-12.md与交付说明。
+
 | 项 | 内容 |
 |---|---|
 | 项目 | 润物细无声 / NURTURE — 线上家教与学习服务平台 |
@@ -34,7 +36,7 @@
 | `docs/FEATURE_ROADMAP.md` | 功能增补路线图（缺口复核 / A-F 新功能评估 / 四阶段顺序） | 规划下一批功能时 |
 | `README.md`（功能根目录） | 构建与启动命令速查 | 启动环境时 |
 
-## 3. 当前开发进度总表（2026-10-11 方向 D 全站 UI 重构轮验收）
+## 3. 当前开发进度总表（2026-10-12 全功能本地交付验收；下列UI轮次描述为历史）
 
 状态图例：✅已完成且已验证 · 🟡已实现未充分验证 · 🔶部分实现 · 🔵规划中 · ⛔阻塞
 
@@ -42,6 +44,7 @@
 
 | 本轮补缺 | 状态 | 新验证证据 |
 |---|---|---|
+| 全功能本地交付验收与四项修复 | ✅本地范围 | 49+164全部通过、E2E220/0、19拒绝/0漏洞；12网页旅程、33路由×1280/375、111成功截图；sandbox=false禁模拟发起/回调并保留线下确认；课堂note仅记录作者；手机grid/input限宽；原主库与服务保护；报告/交付说明/逐文件哈希包；外部能力维持未完成 |
 | 四角色工作台园林背景优化「景观清晰，内容柔和」（学生/导师/家长/运营，remake__front 工作树未提交） | ✅ | 四个 dashboard css 纯增量（全 ≥1024/1280 媒体查询，≤767 零改动）：撤整层 opacity 0.45 与重白横幕→`filter: contrast(1.05) saturate(0.95)` 零 blur 真实材质、景观带 400px（运营 380）、mask 末端渐隐 180px 融入 --bg-page、::after 左→右分区蒙层 0.72/0.48/0.25（运营 0.78/0.54/0.30 更克制）；根因=泛白来自整层透明+重白横幕而非 blur，hero.avif 2560×1440 源图清晰无需生图；tools/garden_backdrop_2026-10-12.py **105/105**（含 375 四角色改前改后快照零差异）；ng build 零警告；品牌锁 PASS 1001@c336d71；视觉验收 6/6 pass；截图 docs/screenshots-2026-10-12-garden/ |
 | 家长端整页桌面排版修复（8 模块全链：子女/绑定表单/钱包/对账表/课程订单/家庭订单表/进度保障/通知，remake__front 工作树未提交） | ✅ | 家长端两组件 css 纯增量（全部 ≥1024/1280 媒体查询，≤767 零改动）：模块 28px(上下)/32px(左右)、标题 22px/700、说明 15px/1.7 限宽 1060、徽标/药丸 14px、表格 15px+表头 15px/600+单元格 16×18+行高 ≥56+金额 17px+tabular-nums、家庭订单表列宽 30/22/20/28%、绑定输入框 48px、按钮 15px/40px、通知卡（共享组件 :host ::ng-deep 家长端作用域覆盖）20×24px/16px；tools/parent_typography_2026-10-12.py **154/154**（1700/1440/1280 断言+1024 中档+375 改前改后快照零差异）；ng build 零警告；品牌锁 PASS 998；视觉验收 5/5 pass；截图 docs/screenshots-2026-10-12-parent/ |
 | 四角色工作台桌面间距精修（贴边/对齐线/节奏统一，remake__front 工作树未提交） | ✅ | 7 文件纯增量（5 css + 1 ts 内联 + 1 ts 内联改一字符）：裸 nur-card 主模块补内边距 ≥1280 左右 32/上下 24、1024–1279 档 24；学生 7 裸模块（bookings/notice/profile×2/schedule/quick-ask/legacy-wallet）+家长 4 模块（`section.nur-card` 子选择器）+admin 面板 24/32+指标卡 20px；头部节奏 card-desc 8px/card-head 20px；预约双列 gap 20/24、筛选栏-内容 20px；教师栅格 18→20；钱包/绑定/订单条 24 档；工具 spacing_polish_verify_2026-10-12.py **20/20**（四尺寸×四角色 padding/对齐共线 ±1.5px/badge 右距 ≥28/gap/零溢出）+ spacing_probe_mobile.py 改前后 375 基线**零差异**；ng build 零警告；品牌锁 PASS 998 条（并行会话新基线 43b823b，本轮零锁内文件）；视觉代理 8/8 pass；截图 spacing-*.png 8 张 |
@@ -133,6 +136,12 @@
 🔵 生产备份调度、AI 上层能力（均规划中）
 
 ## 4. 当前工作现场（2026-10-12 首页 2–9 屏清晰度统一 + 四端园林背景 + 家长端整页排版 + 间距精修 + 第二屏定稿 + 四角色宽屏 + 页脚晨雾过渡多轮快照）
+
+**全功能交付验收最新现场（优先于以下历史快照）**：scope入口`backend/target/delivery-current-scope.json`，证据根`backend/target/delivery-acceptance-20261012_205821/`；构建副本`build/backend`、`build/frontend`，前端node_modules为原目录junction，不要递归移动/删除。312后端源码/144前端源码/28public文件与副本字节一致。验收主库`nurture_gap_acceptance_delivery_20261012_205821`，IT库`nurture_gap_acceptance_delivery_it_20261012_205821`，最终E2E库主名+`_4`。本机4202(PID3964)→8082(PID47316)沙箱开启；4203(PID46672)→8083(PID26824)沙箱关闭；8084(PID48808)最终新库API。均仅回环，需停进程时重新核实归属，PID可能变更。原8080/4200为用户服务，不能运行写测试或替换。Docker deploy-postgres-1健康，主库只读V22/3钱包3640000分/150订单未变。
+
+最终日志`backend-verify-delivery.log`(22:09:50，49+164)、`e2e-delivery.log`(220/0)、`authz-delivery.log`(19/0)、`frontend-build-final.log`、`brand-delivery.log`、`config-delivery.log`；网页日志与真实改动见最新报告。未清理失败诊断日志；仅111张成功截图及去敏summary随包。交付包路径`deploy/dist/nurture-delivery-20261012_205821.zip`，校验见旁边sha256与证据目录package-result.json。
+
+保护用户根目录`gpt-image-2.5_test.png`、`package.json`、`package-lock.json`、`测试账号.md`；既有`tools/settlement_walkthrough.png`SHA256仍为8976A50CCB0A3A0DF2E4C0E669FED5FED8CE24C4AD9E47023A18B621D382CD98。本轮未推送远端。以下“未提交”“V10”等按当轮历史阅读。
 
 **推送轮（2026-10-12，全量更新 GitHub origin=xusheng-123/myjiajiao，main=remake__front=6d26175 已推送）**：四轮待提交前端改动入库 34819ac（园林背景/家长排版/间距/宽屏 11 文件 +602/−1，合并态 ng build 零警告）→ 验收工具与快照 338af03 → 证据截图 6d26175（约 45M）→ .gitignore 忽略 .edge-tmp-*/（85a8a8a）；main 快进 93dda8c→6d26175 后双分支推送，ls-remote 验证一致。不入库：根目录 package.json/package-lock.json（杂散待定夺）与 gpt-image-2.5_test.png。⚠️ 交付前全功能验收轮（另一会话）进行中，其 HANDOFF 批注未提交，待其自行提交推送。
 
@@ -230,6 +239,8 @@
 
 ## 5. 当前运行与验证方式（PowerShell，本轮实测）
 
+**2026-10-12本轮优先命令**：先核实scope与端口归属，独立build/backend中执行Java25 `mvn.cmd -B -s C:/Users/lxs/apps/maven-settings.xml -Pintegration -Dspring.datasource.url=jdbc:postgresql://localhost:5432/nurture_gap_acceptance_delivery_it_20261012_205821 verify`，49+164通过。独立build/frontend执行`.\node_modules\.bin\ng.cmd build --configuration production`零warning。原仓库`python tools/delivery_acceptance.py prepare`后，`run delivery_transactions_walkthrough`/`delivery_purchase_walkthrough`/`delivery_offline_walkthrough`/`delivery_operations_walkthrough`/`delivery_legacy_walkthrough`均通过；`serve`/`serve-offline`提供4202/4203生产产物同源代理。最终API环境变量NURTURE_E2E_BASE=http://127.0.0.1:8084/api/v1，执行证据根tools/e2e_test.py、tools/probe_authz.py分别220/0和19/0；原脚本FRONT=4200，必须使用prepare生成的4202副本。完整E2E复跑须新库。品牌`node tools/verify_brand_css.cjs`1006PASS；配置`python deploy/verify_config.py`全过。打包`python tools/package_delivery.py`，拒绝覆盖已有包，校验源码副本及全包哈希。新机器范围与配置见交付说明，不把模板命令冒充已部署。
+
 **性能轮命令（2026-10-11 实测通过）**：
 
 ```powershell
@@ -243,7 +254,7 @@ python tools/load_perf_run.py mixed --port 8081 --workers 32 --seconds 900 --lab
 python tools/load_perf_run.py coldstart --port 8081   # 需先重启 PG 容器+应用
 # E2E/探针指向非 8080 实例（本轮因用户实例占用 8080 而指向 8082 验收库）
 $env:NURTURE_E2E_BASE='http://127.0.0.1:8082/api/v1' ; python tools/e2e_test.py ; python tools/probe_authz.py
-# 构建：运行 jar 被外部进程锁定时用临时 finalName（改 pom → package → git checkout pom.xml）
+# 构建：运行jar锁定时使用独立源码/构建副本，不修改pom或回退用户工作树；本轮见交付报告
 ```
 
 
@@ -293,13 +304,15 @@ python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 
 ## 7. 下一步开发计划（按优先级，2026-10-10 负责人补缺后更新）
 
+**用户本轮要求全功能验收，已优先完成。下一步是交付已验证本地包并由接收方核对报告范围**：使用deploy/dist中20261012_205821包及sha256，先看交付说明，进入独立环境，不覆盖8080/4200或主库。无需为本地交付新增资源。真实短信/支付/全栈部署仍等资源；其余增强不自动加入本轮。
+
 退款红冲与三人对比已按原优先顺序完成；正式课/咨询/退款/受控材料等经用户“负责人逐步补齐”授权一并收口。既有阶段一、试听免费、改期安全与SUM修复保持已完成。下面只列接续工作，不将本轮未实现能力标绿。
 
 | 优先 | 工作 | 首查文件与可执行下一步 | 验收 |
 |---|---|---|---|
-| P0（待用户决策） | remake__front 分支收口：合并 main 并推送 origin（或继续迭代） | `git log --oneline remake__front`（14 提交 ed0c636→6c7dd1b）；推送前用户确认；推送沿用 xusheng-123 账号 | 远程可见；不回撤历史、不强推 |
+| 已完成（其他会话，2026-10-12） | 既有remake__front合并main并推送origin | 旧UI提交已至5e6fd5d，见Git历史；本轮交付修复仅本地保护，若用户另要求再推送 | 不回撤、不强推、保护用户工作 |
 | P1（进行中） | 内页视觉深化（总纲 Phase 5，方向 D 令牌内，首页第一屏绝对不动）：① 导师匹配 ✅ 16f13f1 → ② 导师详情 ✅ 11e17b4 → ③-⑥ 四端工作台 ✅ 50f70a4 → ⑦ 师资检索 Hero ✅ 0fb9816 → ⑧ 登录门户园林背景 ✅ 600d4e0+6c7dd1b+fa135ba+23c34b4（含两轮用户走查微调：左区提亮、整体右移+正文加深） | 参考=用户 16:9 庭院雅境内页样图+docs/ui-redesign-2026-10-11/design-system-d.md；每页闭环：实现→ng build→真浏览器截图→提交→首页无损复核；新园林素材用 local-image-gen（127.0.0.1:8317 gpt-image-2.5）生成并优化为 AVIF/WebP；剩余候选=学习互动/消息/客服/退款页视觉统一（视用户要求）+ 共享业务页桌面宽屏统一（learning/messages/support/refunds 现 960–1160px 壳，四角色工作台已 1560，视用户要求） | 截图对照参考图；品牌锁 PASS；零虚构数据/假按钮 |
-| P1 | 移动端 375px 全站走查（本轮仅首屏/移动 Hero 验证过） | docs/ui-redesign-2026-10-11/mobile-check.html（8090 服务 iframe 包装） | 无横向溢出、触控热区 ≥44px |
+| 已完成基础检查 / P1增强 | 375px共33角色页面加载/权限/横向溢出已验收；完整键盘、触控热区与多设备无障碍仍可专项复测 | 交付报告/routes-all-final.log/111截图；不能把此次功能走查解释成所有44px/读屏标准已测 | 现有路径无溢出；专项设备/读屏未验收 |
 | P1 | 后端配套小缺口（不阻断 UI）：GET /admin/configs 列表端点（D1 目前无回读）、ReviewView 补 createdAt、家长代管预约取消鉴权放开（后端 403 故前端未接） | 见 docs/交付报告_无UI功能清单_2026-10-11.md 与本文件 §3 本轮行 | IT + 前端接真数据 |
 | P2 | 性能对比与 Lighthouse 复测（本轮聚焦视觉与交互，LCP/字体子集化未仪器实测） | hero.avif 已 164KB + preload + fetchpriority；宋体回退栈未子集化 | 指标如实记录，不虚构 |
 | 已完成（2026-10-11 重构轮） | 补齐「有后端无前端入口」功能：A1/A2/A3 交易闭环 + B1-B7/C1/D1/D2 | 全部随方向 D 重构落地；6 项重复旧入口按调研结论未补 UI | 四角色真浏览器走查通过，见 §4 快照 |
@@ -321,6 +334,8 @@ python tools/legacy_refund_rehearsal.py nurture_gap_acceptance_20261010_legacy
 完整状态与细化步骤见 `docs/补缺执行清单_2026-10-10.md`。Sites静态预览为前端交付，资源阻塞的全栈部署仍未完成。
 
 ## 8. 风险与限制
+
+- **2026-10-12最新覆盖**：主库已V22，旧V10/V21现场按历史阅读；本轮完整本地范围已复验并完成取消/付款/退款终态写操作（仅隔离库），移动33路由已测。当前UI以方向D契约为准，分支远端推送历史看git log；本轮修复未推送。旧Sites预览未更新且无后端；真实短信/支付/退款提现/全栈部署未完成。P95门槛未达与病毒扫描等限制不因功能验收消失。原8080/4200仍为验收前版本，访问4202才是本轮版本。
 
 - **UI 重构轮（2026-10-11，remake__front）**：品牌语言已由用户拍板从「竹林暗色+楷体」切到方向 D（黛绿暖金浅色+宋体标题），原「不改品牌/深色主题」硬约束自此解除并以 design-system-d.md 为准；品牌锁基线已更新 38682ba（618 条），改品牌仍需走基线更新。分支未推送 origin（待用户指令）；走查仅用 preview 只读接口，未执行取消终态/未建真实预约；家长代管预约取消因后端 403 未接 UI；LCP/字体子集化/移动端全站 375px 未仪器实测。
 - **性能轮（2026-10-11）**：V22 改变公开检索执行结构（两阶段/去重/四列trgm索引），语义经 validate 七次与 162 IT/E2E 全量收口；改排序 SQL 时须记得外层重申 ORDER BY、LEFT JOIN 聚合表须 coalesce（DESC 排序 NULLS FIRST 教训，均已修复）。本机同代码墙钟波动 3-10 倍（外部 UI 负载 + 电池降频），跨窗对比无效；P95 门槛未达成、无生产 SLA；科目两字筛选（pg_trgm 三字符下限）走全表扫描为保留契约的已知成本；深分页 OFFSET 固有成本保留；未引入缓存/搜索引擎。

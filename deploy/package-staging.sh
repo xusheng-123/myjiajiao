@@ -3,7 +3,7 @@
 # 润物细无声 · NURTURE — Staging 部署包打包器（STAGING 收口轮）
 # 用法：bash deploy/package-staging.sh
 # 产出：deploy/dist/nurture-staging-package-<时间戳>.zip
-#   ├─ backend/nurture-backend-1.0.0.jar   （后端可执行 jar，含 V1–V8 迁移）
+#   ├─ backend/nurture-backend-1.0.0.jar   （后端可执行 jar，当前源码含 V1–V22 迁移；打包前核实构建）
 #   ├─ deploy/…                             （compose 三层 + env 模板 + 备份/恢复/门禁脚本 + RUNBOOK）
 #   ├─ frontend-src.txt                     （前端构建说明：Pages 以 NURTURE_API_HOST 从源码构建）
 #   └─ MANIFEST.txt                         （包清单与校验信息）
@@ -38,7 +38,7 @@ EOF
 {
   echo "NURTURE Staging 部署包 @ $STAMP"
   echo "jar: $(sha256sum "$PKG_DIR/backend/nurture-backend-1.0.0.jar" | cut -d' ' -f1)"
-  echo "内容物：backend jar（含 Flyway V1-V8）/ deploy 编排与脚本 / RUNBOOK / 前端构建说明"
+  echo "内容物：backend jar（迁移版本须按实际构建核实，当前源码V1-V22）/ deploy 编排与脚本 / RUNBOOK / 前端构建说明"
   echo "执行顺序：deploy/RUNBOOK.md 第 7 节（17 步 Checklist）"
 } > "$PKG_DIR/MANIFEST.txt"
 

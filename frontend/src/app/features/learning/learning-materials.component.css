@@ -28,7 +28,8 @@
 .section-badge{font-size:.78rem;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--color-gold-bg);color:var(--color-gold-text)}
 .section-title{font-size:1.25rem}
 .upload-form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.form-field{display:flex;flex-direction:column;gap:6px}
+.form-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.form-field>input,.form-field>select{min-width:0;max-width:100%;box-sizing:border-box}
 .form-field label{font-size:.88rem;font-weight:600}
 .files-flow{display:flex;flex-direction:column;gap:10px}
 .file-item-card{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 16px;background:var(--bg-page);border:1px solid var(--line);border-radius:var(--radius-control)}

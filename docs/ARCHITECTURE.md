@@ -1,6 +1,8 @@
 # ARCHITECTURE — 真实架构速查（只描述当前存在，不做设计）
 
-> 引用方：`PROJECT_HANDOFF.md`。目录基准：`线上家教平台（功能）/`。核实更新：2026-10-11 三项续作最终交付。
+> 引用方：`PROJECT_HANDOFF.md`。目录基准：`线上家教平台（功能）/`。核实更新：2026-10-12 全功能本地验收，49单元/架构+164IT。
+
+当前读取边界：课堂记录公开反馈可进入学生及授权授课教师档案；note内部备忘仅记录作者TEACHER返回。支付网关统一在sandbox=false时拒绝全部模拟适配器及回调，运营线下确认独立保留。无新增Migration或核心交易链路重写。
 
 ## 目录结构
 
@@ -17,10 +19,10 @@ backend/
     learning/        # V9 新增：成长中心/课后任务/课堂记录/档案/答疑（原4实体/4仓库；V15新增计划/目标/关联/历史4实体4仓库及独立app/api；V16错题/附件/容量3实体3仓库及相应服务）
   src/main/resources/
     application.yml  # 唯一配置文件；生产经 env 注入（NURTURE_*）
-    db/migration/    # Flyway V1–V21（V13试听限次、V14编号序列、V15学习计划、V16错题/文件/容量、V17重复档期、V18客服、V19小测、V20咨询附件、V21公开读取索引）
+    db/migration/    # Flyway V1–V22（V13试听限次、V14编号序列、V15学习计划、V16错题/文件/容量、V17重复档期、V18客服、V19小测、V20咨询附件、V21公开读取索引、V22检索trgm索引）
   src/test/java/com/nurture/
     arch/ArchitectureTest.java          # ArchUnit 1.5.1，5项全量严格规则/反例，无冻结豁免
-    it/                                 # 162 IT 用例（真PostgreSQL nurture_test，最终完整verify）
+    it/                                 # 164 IT（真PostgreSQL独立delivery_it库，最终完整verify）
     ...                                 # 单元测试 44 项
 frontend/
   src/app/

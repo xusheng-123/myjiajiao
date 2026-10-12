@@ -20,7 +20,7 @@
 ## 3. 用户明确提出的硬约束（违反即返工）
 
 1. 技术栈锁定：Angular / Java 25 / Spring Boot / PostgreSQL。禁微服务化、Redis、Kafka、OpenSearch、Kubernetes、Ceph、自研 RTC、大模型 API（AI 上层能力均规划中）。
-2. 不改品牌（润物细无声 / NURTURE）、不改「雨后竹林」深色视觉体系、不把现有布局改回概念稿。
+2. 不改品牌（润物细无声 / NURTURE）。用户2026-10-11已批准方向D黛绿暖金浅色，现以docs/ui-redesign-2026-10-11/design-system-d.md及品牌锁为准；原深色约束为历史，不把现有布局改回概念稿。
 3. 不重写 Booking / Order / Payment / 认证 / 已稳定核心链路；新功能必须接入时才允许最小触碰。
 4. 安全不妥协：「不要为了通过测试降低安全校验」；家长 A 不能操作 B 家庭学生；PostgreSQL 5432 不得暴露公网。
 5. 不得擅自生产部署 / 修改生产数据库 / 接入真实支付（需用户决策与商户资质）。

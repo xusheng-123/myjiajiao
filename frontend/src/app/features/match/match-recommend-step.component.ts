@@ -250,6 +250,10 @@ export type TimeFilter = 'any' | 'today' | '3d' | '7d';
     </section>
   `,
   styles: [`
+    :host {
+      display: block;
+      min-width: 0;
+    }
     .recommend-step {
       display: flex;
       flex-direction: column;
