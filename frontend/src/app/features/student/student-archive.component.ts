@@ -550,6 +550,14 @@ interface HistoryItem {
       padding: var(--space-5) 0;
       text-align: center;
     }
+
+    /* ============ 桌面宽屏（仅 ≥1024px 生效，手机端零改动）：统一 1560px 容器 ============ */
+    @media (min-width: 1024px) {
+      .archive-shell {
+        width: calc(100% - 80px);
+        max-width: 1560px;
+      }
+    }
   `],
 })
 export class StudentArchiveComponent implements OnInit {

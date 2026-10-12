@@ -272,3 +272,140 @@
   font-weight: 500;
   color: var(--text-title);
 }
+
+/* ============================================================
+ * 桌面宽屏适配（仅 ≥1024px 生效，≤767px 手机端零改动）
+ * 统一规格：主容器 1560px / calc(100% - 80px) 居中；
+ * ≥1280px 业务表单双列，避免手机式窄容器拉伸。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .dashboard-shell {
+    width: calc(100% - 80px);
+    max-width: 1560px;
+  }
+}
+
+@media (min-width: 1280px) {
+  /* 专注卡：进入课堂按钮不再通栏，保持可点击的合理宽度 */
+  .btn-enter-class {
+    width: auto;
+    min-width: 280px;
+  }
+
+  /* 双卡片分栏内的编辑表单：短字段并排，长文本/多选与操作按钮占满整行 */
+  .student-profile-card .profile-edit-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) 24px;
+    align-items: start;
+  }
+
+  .student-profile-card .profile-edit-form .form-group:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .learning-profile-card .profile-edit-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) 24px;
+    align-items: start;
+  }
+
+  .learning-profile-card .profile-edit-form .form-group:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .profile-edit-form .form-actions-inline {
+    grid-column: 1 / -1;
+  }
+
+  /* 宽屏下提示性正文限制阅读宽度，避免单行过长 */
+  .card-desc,
+  .quiet-note {
+    max-width: 880px;
+  }
+
+  /* 空状态居中盒子不收窄 */
+  .empty-box .quiet-note,
+  .quiet-box .quiet-note {
+    max-width: none;
+  }
+}
+
+/* ============================================================
+ * 桌面间距精修（仅 ≥1024px 生效，≤767px 手机端零改动）：
+ * 裸 nur-card 主模块此前无内边距，标题/筛选栏/卡片贴白卡边框。
+ * 统一为：≥1280 左右 32px 上下 24px；1024–1279 档 24px。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .notice-binding-card,
+  .bookings-card,
+  .student-profile-card,
+  .learning-profile-card,
+  .schedule-section-card,
+  .quick-ask-card,
+  .legacy-wallet-card {
+    padding: var(--space-5);
+  }
+}
+
+@media (min-width: 1280px) {
+  .notice-binding-card,
+  .bookings-card,
+  .student-profile-card,
+  .learning-profile-card,
+  .schedule-section-card,
+  .quick-ask-card,
+  .legacy-wallet-card {
+    padding: var(--space-5) var(--space-6); /* 上下 24px · 左右 32px */
+  }
+
+  /* 模块头节奏：标题与副标题 8px，头部块与筛选栏/内容 20px */
+  .card-desc {
+    margin-top: var(--space-2);
+  }
+
+  .card-head {
+    margin-bottom: 20px;
+  }
+}
+
+/* ============================================================
+ * 桌面端园林背景优化（2026-10-12「景观清晰，内容柔和」，仅 ≥1024px 生效，≤767 手机端零改动）：
+ * 撤整层 opacity 0.45 与重白横幕，恢复 hero.avif（2560×1440 源图）真实材质——
+ * 零 blur + contrast(1.05) saturate(0.95) 轻滤镜；顶部 400px 景观带，
+ * 末端 180px mask 渐隐融入 --bg-page；::after 改左→右分区蒙层
+ * （左文字区暖白保可读 → 右侧月洞门/竹林轻纱透景）。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .dash-backdrop {
+    height: 360px;
+    opacity: 1;
+    background-repeat: no-repeat;
+    filter: contrast(1.05) saturate(0.95);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
+  }
+
+  .dash-backdrop::after {
+    background: linear-gradient(90deg,
+      rgba(247, 248, 243, 0.76) 0%,
+      rgba(247, 248, 243, 0.50) 48%,
+      rgba(247, 248, 243, 0.28) 100%);
+  }
+}
+
+@media (min-width: 1280px) {
+  .dash-backdrop {
+    height: 400px;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+  }
+
+  .dash-backdrop::after {
+    background: linear-gradient(90deg,
+      rgba(247, 248, 243, 0.72) 0%,
+      rgba(247, 248, 243, 0.48) 48%,
+      rgba(247, 248, 243, 0.25) 100%);
+  }
+}

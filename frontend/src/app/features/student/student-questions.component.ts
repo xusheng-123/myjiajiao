@@ -552,6 +552,14 @@ const DRAFT_KEY = 'nur_student_question_draft';
       font-size: 0.82rem;
       padding: var(--space-1) var(--space-3);
     }
+
+    /* ============ 桌面宽屏（仅 ≥1024px 生效，手机端零改动）：统一 1560px 容器 ============ */
+    @media (min-width: 1024px) {
+      .questions-shell {
+        width: calc(100% - 80px);
+        max-width: 1560px;
+      }
+    }
   `],
 })
 export class StudentQuestionsComponent implements OnInit {

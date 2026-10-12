@@ -343,3 +343,81 @@
     padding-bottom: var(--space-2);
   }
 }
+
+/* ============================================================
+ * 桌面宽屏适配（仅 ≥1024px 生效，≤767px 手机端零改动）
+ * 统一规格：主容器 1560px / calc(100% - 80px) 居中；
+ * 面板内边距 24/32、指标卡 20px、Tab 栏与内容间距 20px、模块间 24px。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .dashboard-shell {
+    width: calc(100% - 80px);
+    max-width: 1560px;
+    gap: 24px; /* 相邻大型模块统一 24px */
+  }
+}
+
+@media (min-width: 1280px) {
+  .metric-grid {
+    gap: 20px;
+  }
+
+  /* 紧凑型数据卡片 20px 内边距 */
+  .metric-card {
+    padding: 20px;
+  }
+
+  .overview-section,
+  .tab-content {
+    padding: var(--space-5) var(--space-6); /* 上下 24px · 左右 32px */
+  }
+
+  /* Tab 切换栏与队列面板内容 20px */
+  .queues-container {
+    gap: 20px;
+  }
+
+  .tab-bar {
+    gap: var(--space-3);
+  }
+}
+
+/* ============================================================
+ * 桌面端园林背景优化（2026-10-12「景观清晰，内容柔和」运营端变体，
+ * 仅 ≥1024px 生效，≤767 手机端零改动）：摄影同样恢复真实材质
+ * （零 blur + contrast/saturate 轻滤镜），但运营端信息密度高——
+ * 景观带略矮（380px）、渐隐更快（152px）、蒙层略强，
+ * 让下方管理区域迅速过渡为干净浅色。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .dash-backdrop {
+    height: 340px;
+    opacity: 1;
+    background-repeat: no-repeat;
+    filter: contrast(1.05) saturate(0.95);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+  }
+
+  .dash-backdrop::after {
+    background: linear-gradient(90deg,
+      rgba(247, 248, 243, 0.80) 0%,
+      rgba(247, 248, 243, 0.56) 48%,
+      rgba(247, 248, 243, 0.32) 100%);
+  }
+}
+
+@media (min-width: 1280px) {
+  .dash-backdrop {
+    height: 380px;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 100%);
+  }
+
+  .dash-backdrop::after {
+    background: linear-gradient(90deg,
+      rgba(247, 248, 243, 0.78) 0%,
+      rgba(247, 248, 243, 0.54) 48%,
+      rgba(247, 248, 243, 0.30) 100%);
+  }
+}

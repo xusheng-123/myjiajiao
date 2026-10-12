@@ -205,3 +205,65 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ============================================================
+ * 桌面宽屏适配（仅 ≥1024px 生效，≤767px 手机端零改动）
+ * 统一规格：主容器 1560px / calc(100% - 80px) 居中；
+ * 双列卡片栅格间距 18px/24px，卡内子网格自动舒展。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .dashboard-shell {
+    width: calc(100% - 80px);
+    max-width: 1560px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-grid {
+    gap: 20px 24px;
+  }
+
+  .grid-column {
+    gap: 20px;
+  }
+}
+
+/* ============================================================
+ * 桌面端园林背景优化（2026-10-12「景观清晰，内容柔和」，仅 ≥1024px 生效，≤767 手机端零改动）：
+ * 撤整层 opacity 0.45 与重白横幕，恢复 hero.avif（2560×1440 源图）真实材质——
+ * 零 blur + contrast(1.05) saturate(0.95) 轻滤镜；顶部 400px 景观带
+ * （竹影/廊檐/粉墙更清晰），末端 180px mask 渐隐融入 --bg-page；
+ * ::after 改左→右分区蒙层（左欢迎区暖白保可读 → 右景观轻纱透景）。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .dash-backdrop {
+    height: 360px;
+    opacity: 1;
+    background-repeat: no-repeat;
+    filter: contrast(1.05) saturate(0.95);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
+  }
+
+  .dash-backdrop::after {
+    background: linear-gradient(90deg,
+      rgba(247, 248, 243, 0.76) 0%,
+      rgba(247, 248, 243, 0.50) 48%,
+      rgba(247, 248, 243, 0.28) 100%);
+  }
+}
+
+@media (min-width: 1280px) {
+  .dash-backdrop {
+    height: 400px;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+  }
+
+  .dash-backdrop::after {
+    background: linear-gradient(90deg,
+      rgba(247, 248, 243, 0.72) 0%,
+      rgba(247, 248, 243, 0.48) 48%,
+      rgba(247, 248, 243, 0.25) 100%);
+  }
+}

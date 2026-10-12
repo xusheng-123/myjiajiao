@@ -408,3 +408,148 @@
 .upcoming-time {
   color: var(--text-muted);
 }
+
+/* ============================================================
+ * 桌面宽屏适配（仅 ≥1024px 生效，≤767px 手机端零改动）
+ * 统一规格：主容器 1560px / calc(100% - 80px) 居中；
+ * ≥1280px 周报反馈双列、提示正文限制阅读宽度。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .dashboard-shell {
+    width: calc(100% - 80px);
+    max-width: 1560px;
+  }
+}
+
+@media (min-width: 1280px) {
+  /* 学习周报：导师反馈卡双列，长反馈正文保持合理阅读宽度 */
+  .feedback-cards-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) 24px;
+    align-items: start;
+  }
+
+  /* 宽屏下提示性正文限宽（任务书 §八：长段落 1000–1100px），空状态提示不受影响 */
+  .card-desc,
+  .quiet-note {
+    max-width: 1060px;
+  }
+
+  .empty-box .quiet-note {
+    max-width: none;
+  }
+
+  /* 子女卡与周报面板内边距放宽到 24px 档 */
+  .child-card {
+    padding: var(--space-5);
+  }
+}
+
+/* ============================================================
+ * 桌面排版体系（2026-10-12 整页精修，仅 ≥1024px 生效，≤767px 手机端零改动）：
+ * 模块 28px(上下)/32px(左右)；标题 22px/700；说明 15px/1.7；
+ * 统计/状态徽标 14px；按钮 15px/40px；通知卡（四端共享组件，
+ * 经 :host ::ng-deep 仅家长端作用域覆盖）20×24px、标题 16px。
+ * 中档 1024–1279 模块 24px。表格字号体系在 parent-dashboard-forms.css。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .dashboard-shell > section.nur-card {
+    padding: var(--space-5);
+  }
+
+  /* 通知中心为四端共享组件：:host 锚定保证覆盖不外溢到其他角色页面 */
+  :host ::ng-deep nur-notice-center .notice-toggle {
+    padding: 20px 24px;
+    font-size: 16px;
+  }
+
+  :host ::ng-deep nur-notice-center .notice-list {
+    padding: 16px 24px 20px;
+  }
+}
+
+/* 中宽档业务卡片 20px（≥1280 档为 24px，见上方既有规则） */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .child-card {
+    padding: 20px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-shell > section.nur-card {
+    padding: 28px 32px; /* 任务书：模块上下 28px · 左右 32px */
+  }
+
+  /* 字号层级：标题 22/700 → 子标题 16 → 说明 15 → 辅助 14 */
+  .card-title {
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .card-desc {
+    margin-top: var(--space-2);
+    font-size: 15px;
+  }
+
+  .quiet-note {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .count-badge,
+  .gold-badge {
+    font-size: 14px;
+  }
+
+  /* 头部块节奏：标题区域与内容 20px */
+  .card-head {
+    margin-bottom: 20px;
+  }
+
+  /* 桌面按钮：文字 15px、高度 40px */
+  .dashboard-shell .nur-btn--sm {
+    font-size: 15px;
+    min-height: 40px;
+  }
+}
+
+/* ============================================================
+ * 桌面端园林背景优化（2026-10-12「景观清晰，内容柔和」，仅 ≥1024px 生效，≤767 手机端零改动）：
+ * 撤整层 opacity 0.45 与重白横幕，恢复 hero.avif（2560×1440 源图）真实材质——
+ * 零 blur + contrast(1.05) saturate(0.95) 轻滤镜；顶部 400px 景观带
+ * （月洞门/竹影/粉墙恢复清晰），末端 180px mask 渐隐融入 --bg-page；
+ * ::after 改左→右分区蒙层（左欢迎区暖白保可读 → 右景观轻纱透景）。
+ * ============================================================ */
+@media (min-width: 1024px) {
+  .dash-backdrop {
+    height: 360px;
+    opacity: 1;
+    background-repeat: no-repeat;
+    filter: contrast(1.05) saturate(0.95);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
+  }
+
+  .dash-backdrop::after {
+    background: linear-gradient(90deg,
+      rgba(247, 248, 243, 0.76) 0%,
+      rgba(247, 248, 243, 0.50) 48%,
+      rgba(247, 248, 243, 0.28) 100%);
+  }
+}
+
+@media (min-width: 1280px) {
+  .dash-backdrop {
+    height: 400px;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+  }
+
+  .dash-backdrop::after {
+    background: linear-gradient(90deg,
+      rgba(247, 248, 243, 0.72) 0%,
+      rgba(247, 248, 243, 0.48) 48%,
+      rgba(247, 248, 243, 0.25) 100%);
+  }
+}

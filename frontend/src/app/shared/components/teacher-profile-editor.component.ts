@@ -17,7 +17,7 @@ interface Profile { school: string | null; highestDegree: string | null; yearsOf
       <button type="submit" [disabled]="busy()">{{ busy() ? '保存中…' : '保存资料' }}</button> <button type="button" (click)="editing.set(false)" [disabled]="busy()">返回</button>
     </form> }
   </section>`,
-  styles: [`.profile{padding:24px;margin:20px 0}label{display:block;margin:14px 0 5px}input,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--border-subtle,#ddd);border-radius:8px;background:var(--bg-card,#fff);color:inherit}button{padding:10px 16px;border:1px solid var(--border-subtle,#ddd);border-radius:8px;background:var(--bg-card,#fff);color:inherit}p{overflow-wrap:anywhere;line-height:1.7}`],
+  styles: [`.profile{padding:24px;margin:20px 0}label{display:block;margin:14px 0 5px}input,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--border-subtle,#ddd);border-radius:8px;background:var(--bg-card,#fff);color:inherit}button{padding:10px 16px;border:1px solid var(--border-subtle,#ddd);border-radius:8px;background:var(--bg-card,#fff);color:inherit}p{overflow-wrap:anywhere;line-height:1.7}@media (min-width:1024px){.profile{padding:24px 32px}.profile form{max-width:920px}}`],
 })
 export class TeacherProfileEditorComponent implements OnInit {
   private readonly http=inject(HttpClient);

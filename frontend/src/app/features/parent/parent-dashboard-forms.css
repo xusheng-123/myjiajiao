@@ -275,3 +275,100 @@
   font-size: 0.88rem;
   margin: var(--space-2) 0 0;
 }
+
+/* ============================================================
+ * 桌面间距精修（仅 ≥1024px 生效，≤767px 手机端零改动）：
+ * 绑定表单 / 钱包概览 / 订单查询条等内层业务卡，
+ * ≥1280 档 24px、1024–1279 档 20px；充值按钮组间距 12px。
+ * ============================================================ */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .bind-new-card,
+  .wallet-overview-row,
+  .order-select-bar {
+    padding: 20px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .bind-new-card,
+  .wallet-overview-row,
+  .order-select-bar {
+    padding: var(--space-5);
+  }
+
+  .topup-group {
+    gap: var(--space-3);
+  }
+
+  /* ── 桌面字号体系（任务书 §一）：表格 15px / 表头 15px/600 / 标签 14px / 金额 17px ── */
+  .txn-table {
+    font-size: 15px;
+  }
+
+  .txn-table th {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  /* 单元格 16×18 + 行高 1.7 → 行高 ≥56px（任务书：钱包表 ≥54、订单表 ≥56） */
+  .txn-table th,
+  .txn-table td {
+    padding: 16px 18px;
+    line-height: 1.7;
+  }
+
+  /* 金额 / 余额 / 订单号等数字列对齐 */
+  .txn-table td {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .type-pill,
+  .status-pill {
+    font-size: 14px;
+  }
+
+  .memo-col,
+  .guide-tag,
+  .paid-done-note,
+  .form-label,
+  .form-status,
+  .sandbox-note-card {
+    font-size: 14px;
+  }
+
+  .balance-label {
+    font-size: 15px;
+  }
+
+  .font-mono {
+    font-size: 15px;
+  }
+
+  .amount-col {
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bind-title {
+    font-size: 16px;
+  }
+
+  /* 家庭订单表列宽：订单号 30% / 金额 22% / 状态 20% / 操作 28% */
+  .family-orders-block .txn-table th:nth-child(1) { width: 30%; }
+  .family-orders-block .txn-table th:nth-child(2) { width: 22%; }
+  .family-orders-block .txn-table th:nth-child(3) { width: 20%; }
+  .family-orders-block .txn-table th:nth-child(4) { width: 28%; }
+
+  /* 绑定表单节奏：标题-说明 12px；说明-输入区 20px（gap 12 + margin-top 8）；输入框 48px */
+  .bind-new-card {
+    gap: var(--space-3);
+  }
+
+  .bind-form-row {
+    margin-top: var(--space-2);
+  }
+
+  .bind-input {
+    min-height: 48px;
+  }
+}
