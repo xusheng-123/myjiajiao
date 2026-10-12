@@ -44,8 +44,11 @@ function resolveMockResponse(req: HttpRequest<unknown>): unknown {
   }
 
   if (url.includes('/identity/auth/login') || url.includes('/identity/auth/register')) {
-    const body = (req.body as Record<string, any>) || {};
-    const role = body.role || 'STUDENT';
+    interface AuthBody {
+      role?: string;
+    }
+    const body = (req.body as AuthBody | null) ?? null;
+    const role = body?.role ?? 'STUDENT';
     const names: Record<string, string> = {
       STUDENT: '林微雨 (演示学员)',
       PARENT: '林家长 (演示家长)',
