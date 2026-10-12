@@ -7,6 +7,7 @@
   min-height: 100vh;
   position: relative;
   background: var(--bg-page);
+  overflow-x: clip;
 }
 
 /* ---------- 园林摄影背景（雨后月洞门，生图素材 login-garden） ---------- */
@@ -34,16 +35,17 @@
   to { opacity: 1; }
 }
 
-/* ---------- 顶部导航（浅色水榭） ---------- */
+/* ---------- 顶部导航（浅色水榭，与主区共用 1680 容器，返回按钮右缘自然对齐卡片右缘） ---------- */
 .garden-nav {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: var(--container-max);
+  max-width: 1680px;
+  min-height: 76px;
   margin: 0 auto;
-  padding: 18px var(--space-5);
+  padding: 0 40px;
 }
 
 .brand-logo-wrap {
@@ -113,24 +115,26 @@
   background: var(--color-gold);
 }
 
-/* ---------- 主区双栏（品牌区落画面中留白墙，登录卡落右侧净墙） ---------- */
+/* ---------- 主区双栏（2048 基准栅格：品牌 860 + 间距 100 + 卡片 640 = 1600 有效宽） ---------- */
 .hero-chamber {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(480px, 560px);
+  grid-template-columns: minmax(0, 860px) minmax(480px, 640px);
+  column-gap: 100px;
   align-items: center;
-  gap: clamp(28px, 4vw, 56px);
-  max-width: var(--container-max);
-  min-height: calc(100vh - 72px);
+  max-width: 1680px;
+  min-height: calc(100vh - 76px);
+  min-height: calc(100svh - 76px);
   margin: 0 auto;
-  padding: var(--space-7) var(--space-5) var(--space-8);
+  padding: 32px 40px 48px;
 }
 
 /* ---------- 品牌叙事区 ---------- */
 /* 柔光留白：文字区背后的羽化光晕，压住院景保证阅读舒适（无卡片硬边） */
 .brand-story {
   position: relative;
+  padding-left: 205px;
 }
 
 .brand-story::before {
@@ -301,15 +305,39 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 1024px) {
+/* ---------- 1281–1600px：双栏紧凑 ---------- */
+@media (max-width: 1600px) {
+  .garden-nav {
+    padding: 0 32px;
+  }
+
+  .hero-chamber {
+    grid-template-columns: minmax(0, 1fr) minmax(480px, 580px);
+    column-gap: clamp(40px, 4vw, 64px);
+    padding: 32px 32px 48px;
+  }
+
+  .brand-story {
+    padding-left: clamp(40px, 9vw, 145px);
+  }
+}
+
+/* ---------- 641–1280px：上下单栏，内容居中，页面自然滚动 ---------- */
+@media (max-width: 1280px) {
   .hero-chamber {
     grid-template-columns: 1fr;
-    gap: var(--space-7);
+    row-gap: 32px;
     min-height: 0;
   }
 
   .brand-story {
+    padding-left: 0;
     text-align: center;
+  }
+
+  /* 单栏满宽时收敛柔光留白的外溢，避免横向撑出视口 */
+  .brand-story::before {
+    inset: -40px -24px;
   }
 
   .hero-aux-line,
@@ -327,7 +355,29 @@
   }
 }
 
-@media (max-width: 768px) {
+/* ---------- ≤640px：手机单栏，表单优先 ---------- */
+@media (max-width: 640px) {
+  .garden-nav {
+    min-height: 64px;
+    padding: 0 20px;
+  }
+
+  /* 窄屏导航防折行：隐藏英文标，按钮收紧 */
+  .logo-en,
+  .logo-slash {
+    display: none;
+  }
+
+  .nav-logo-text,
+  .nav-auth-btn {
+    white-space: nowrap;
+  }
+
+  .nav-auth-btn {
+    min-height: 40px;
+    padding: 0 14px;
+  }
+
   .portal-backdrop {
     background-position: 22% center;
     background-image:
@@ -336,6 +386,10 @@
     background-image:
       linear-gradient(180deg, rgba(242, 243, 238, 0.62), rgba(242, 243, 238, 0.45)),
       image-set(url('/assets/auth/login-garden-mobile.avif') type('image/avif'), url('/assets/auth/login-garden-mobile.webp') type('image/webp'));
+  }
+
+  .hero-chamber {
+    padding: 24px 20px 40px;
   }
 
   .metrics-shrine-grid {

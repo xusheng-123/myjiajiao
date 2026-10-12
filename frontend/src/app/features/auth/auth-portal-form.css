@@ -1,25 +1,32 @@
-/* 统一鉴权门户 · 登录卡与表单（自 auth-portal.component.css 拆分，2026-10-12 预算治理 + 玻面卡深化）
+/* 统一鉴权门户 · 登录卡与表单（自 auth-portal.component.css 拆分，2026-10-12 预算治理 + 玻面卡深化；
+   2026-10-12 布局精修按用户规格书参数化：卡片 640/690、表单单列、四档响应式）
    交互结构不变：角色 Tab / 双通道 / 注册入驻 / 就地容错。 */
 
 /* ---------- 登录素笺卡（玻面白卡，浮于右侧净墙） ---------- */
 .portal-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.86);
+  min-height: 690px;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px) saturate(1.06);
   -webkit-backdrop-filter: blur(16px) saturate(1.06);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: var(--radius-card);
-  padding: clamp(24px, 3vw, 36px);
-  box-shadow:
-    0 24px 64px rgba(30, 58, 49, 0.14),
-    0 4px 16px rgba(30, 58, 49, 0.08);
+  border: 1px solid rgba(80, 110, 95, 0.1);
+  border-radius: 22px;
+  padding: 40px 44px 32px;
+  box-shadow: 0 18px 48px rgba(38, 62, 50, 0.1);
+}
+
+/* 卡片入场：240ms ease-out（规格书微交互档） */
+.portal-card.hero-rise {
+  animation-duration: 240ms;
+  animation-timing-function: ease-out;
 }
 
 .portal-title {
   margin: 0;
   font-family: var(--font-serif);
   font-weight: 600;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
+  line-height: 36px;
   letter-spacing: 0.12em;
   color: var(--text-title);
 }
@@ -28,11 +35,12 @@
   margin: 8px 0 0;
   color: var(--color-gold-text);
   font-family: var(--font-serif);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+  line-height: 22px;
   letter-spacing: 0.14em;
 }
 
-/* ---------- 角色 Tab（分段控件） ---------- */
+/* ---------- 角色 Tab（分段控件，栏高 44px = 内边距 4 + 按钮 36） ---------- */
 .role-tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -44,7 +52,7 @@
 }
 
 .role-tab {
-  min-height: 40px;
+  min-height: 36px;
   border: none;
   border-radius: var(--radius-pill);
   background: transparent;
@@ -61,16 +69,16 @@
   box-shadow: var(--shadow-subtle);
 }
 
-/* ---------- 通道切换 ---------- */
+/* ---------- 通道切换（按钮 36px 高，间距 8px） ---------- */
 .channel-switch {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 8px;
   margin-top: var(--space-4);
 }
 
 .channel-pill {
-  min-height: 38px;
+  min-height: 36px;
   padding: 0 var(--space-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-pill);
@@ -98,33 +106,35 @@
   cursor: not-allowed;
 }
 
-/* ---------- 表单 ---------- */
+/* ---------- 表单（账号/密码上下单列，字段间距 18px） ---------- */
 .auth-form {
   margin-top: var(--space-5);
 }
 
-/* 宽卡双列字段对（账号+密码 / 称呼+密码 / 院校+学历），窄屏回落单列 */
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-}
-
 .field {
-  margin-bottom: var(--space-4);
+  margin-bottom: 18px;
 }
 
 .field label {
   display: block;
   margin-bottom: 6px;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-title);
 }
 
 .field input {
   width: 100%;
-  min-height: 48px;
+  min-height: 56px;
+  padding: var(--space-3) 16px;
+  border: 1px solid #d5ded7;
+  border-radius: 12px;
+  font-size: 0.94rem;
+  transition: border-color 160ms ease-out, background-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+
+.field input:focus {
+  border-color: #527c68;
 }
 
 .field-hint {
@@ -141,7 +151,7 @@
 }
 
 .btn-send-code {
-  min-height: 48px;
+  min-height: 56px;
   padding: 0 var(--space-4);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-control);
@@ -179,20 +189,20 @@
 .form-status--error { background: var(--color-danger-bg); color: var(--color-danger); }
 .form-status--info { background: var(--color-primary-soft); color: var(--color-primary); }
 
-/* ---------- 提交按钮（黛绿胶囊，方向 D 起影） ---------- */
+/* ---------- 提交按钮（黛绿胶囊；末字段 18px + 此处 6px = 与表单间距 24px） ---------- */
 .btn-submit {
   width: 100%;
-  min-height: 52px;
-  margin-top: var(--space-2);
+  min-height: 56px;
+  margin-top: 6px;
   border: none;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary);
+  border-radius: 28px;
+  background: #205441;
   color: #fff;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   box-shadow: var(--shadow-primary);
-  transition: background-color 200ms var(--ease), transform 200ms var(--ease), box-shadow 200ms var(--ease);
+  transition: background-color 180ms ease-out, transform 180ms ease-out, box-shadow 180ms ease-out;
 }
 
 .btn-submit:hover:not(:disabled) {
@@ -213,27 +223,40 @@
 }
 
 .portal-footnote {
-  margin: var(--space-5) 0 0;
-  font-size: 0.76rem;
+  margin: 24px 0 0;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  line-height: 1.8;
+  line-height: 20px;
   text-align: center;
 }
 
-@media (max-width: 1024px) {
+/* ---------- 641–1280px：单栏居中，卡片上限 560px，高度随内容 ---------- */
+@media (max-width: 1280px) {
   .portal-card {
     max-width: 560px;
+    min-height: 0;
     margin: 0 auto;
   }
 }
 
-@media (max-width: 768px) {
+/* ---------- ≤640px：卡片通栏，表单优先于品牌区 ---------- */
+@media (max-width: 640px) {
+  .portal-card {
+    order: -1;
+    max-width: none;
+    border-radius: 18px;
+    padding: 28px 22px;
+  }
+
   .role-tabs {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .field-row {
-    grid-template-columns: 1fr;
-    gap: 0;
+  .field input {
+    min-height: 52px;
+  }
+
+  .btn-submit {
+    min-height: 52px;
   }
 }
