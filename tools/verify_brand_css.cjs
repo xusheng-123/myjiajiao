@@ -1,13 +1,13 @@
 // Read-only comparison against the accepted brand baseline; requires installed frontend dependencies.
-// 基线更新记录：096e474（阶段7 竹林暗色收口）→ 38682ba（2026-10-11 方向 D「黛绿暖金」全站重构，用户授权品牌变更）→ 16f13f1（2026-10-12 导师匹配页内页深化：园林背景带+右栏+导师卡信息带，对齐用户提供的内页参考图）。
-// 今后对 landing/auth/match 三个组件 CSS 与 brand-presentation.css 的改动仍须保持与本基线集合等价（纯增量）。
+// 基线更新记录：096e474（阶段7 竹林暗色收口）→ 38682ba（2026-10-11 方向 D「黛绿暖金」全站重构，用户授权品牌变更）→ 16f13f1（2026-10-12 导师匹配页内页深化：园林背景带+右栏+导师卡信息带，对齐用户提供的内页参考图）→ 600d4e0（2026-10-12 登录门户园林摄影背景深化，用户授权：生图 login-garden + 左区提亮柔光留白；auth 样式拆分为 component.css + auth-portal-form.css 两件，files 清单同步纳入后者）。
+// 今后对 landing/auth/match 三个组件 CSS（含 auth-portal-form.css）与 brand-presentation.css 的改动仍须保持与本基线集合等价（纯增量）。
 const fs = require('node:fs');
 const cp = require('node:child_process');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const postcss = require(path.join(root, 'frontend/node_modules/postcss'));
-const baseline = process.argv[2] || '16f13f1';
-const files = ['auth/auth-portal.component.css', 'landing/landing.component.css', 'match/match.component.css']
+const baseline = process.argv[2] || '600d4e0';
+const files = ['auth/auth-portal.component.css', 'auth/auth-portal-form.css', 'landing/landing.component.css', 'match/match.component.css']
   .map(file => 'frontend/src/app/features/' + file);
 function declarations(css) {
   const result = [];
