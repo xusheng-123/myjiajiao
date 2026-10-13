@@ -71,7 +71,7 @@
 ### 版本保护（2026-10-09 新增）
 | 项 | 状态 | 说明 |
 |---|---|---|
-| 本地 Git 仓库 | ✅ | 基线 `9631f8d`（480 文件）+ G3 `7979522` + G7 `3f6da7d`；identity 本地署名。**2026-10-11 已添加远程** `origin = https://github.com/xusheng-123/myjiajiao.git`，main 全历史已推送并设跟踪，远程 HEAD=`bd8f054` 与本地一致（推送账号 xusheng-123，URL 内嵌用户名区分本机缓存的另一账号 wohaoshuai-666） |
+| 本地 Git 仓库 | ✅ | 基线 `9631f8d`（480 文件）+ G3 `7979522` + G7 `3f6da7d`；identity 本地署名。**2026-10-11 已添加远程** `origin = https://github.com/xusheng-123/myjiajiao.git`，main 全历史已推送并设跟踪，2026-10-13 复核远程与本地一致（推送账号 xusheng-123，URL 内嵌用户名区分本机缓存的另一账号 wohaoshuai-666；远程另有他分会话推送的分支 feat/static-showcase-mode，未触碰） |
 | .gitignore | ✅ | 排除 node_modules/dist/target/日志/deploy 备份与部署包/.env（.env.example 反排除保留）/运行期上传文件 backend/data/files/（历史已跟踪文件不受影响）/__pycache__ |
 | 凭据核查 | ✅ | application.yml 密钥全部 `${VAR:dev默认}` 注入，仓库内仅开发占位值；无硬编码真实凭据 |
 | Sites 前端预览 | ✅ | 2026-10-11最新私有静态版本已更新（部署succeeded）：`https://nurture-platform-preview.kelly-cooper-4963.chatgpt.site`；Angular 前端静态包，构建提交 `537ac59f2aba9d31b885f6b4d02c43cf69bd7014`。后端 API 未部署，页面已显式标注受影响功能 |
@@ -135,6 +135,8 @@
 ## 4. 当前工作现场（2026-10-12 首页 2–9 屏清晰度统一 + 四端园林背景 + 家长端整页排版 + 间距精修 + 第二屏定稿 + 四角色宽屏 + 页脚晨雾过渡多轮快照）
 
 **推送轮（2026-10-12，全量更新 GitHub origin=xusheng-123/myjiajiao，main=remake__front=6d26175 已推送）**：四轮待提交前端改动入库 34819ac（园林背景/家长排版/间距/宽屏 11 文件 +602/−1，合并态 ng build 零警告）→ 验收工具与快照 338af03 → 证据截图 6d26175（约 45M）→ .gitignore 忽略 .edge-tmp-*/（85a8a8a）；main 快进 93dda8c→6d26175 后双分支推送，ls-remote 验证一致。不入库：根目录 package.json/package-lock.json（杂散待定夺）与 gpt-image-2.5_test.png。⚠️ 交付前全功能验收轮（另一会话）进行中，其 HANDOFF 批注未提交，待其自行提交推送。
+
+**推送轮（2026-10-13，同步更新 GitHub origin=xusheng-123/myjiajiao，基点 main=5e6fd5d）**：用户指令「把最新版推送到 GitHub 做一次更新」。实测本地 main=origin/main=5e6fd5d（上轮推送已含全部已提交内容），无积压提交；本次实际入库 `测试账号.md`（四角色本机种子账号+登录步骤，public 仓库下均为本地开发数据非生产凭据）+ 本轮 CHANGELOG/HANDOFF 回写。沿袭不入库：根目录 package.json/package-lock.json（杂散待定夺）、gpt-image-2.5_test.png、启动*.bat（历来未跟踪）。推送后 ls-remote 验证一致；远程另见他分会话分支 feat/static-showcase-mode，未触碰。上轮⚠️「验收轮 HANDOFF 批注未提交」经实测工作树已干净（该批注未出现在任何跟踪文件或新提交中）。
 
 **最新轮（首页清晰度二轮「图片保持原摄影感，文字衬托加回」，2026-10-12，已提交 c97d33e+锁基线 ff5b0d3+探针 080c45d+文档 acf13ef）**：用户在清晰度统一轮交付后先指令「执行1和2，把对应的屏的磨砂感全部去掉」，执行中定稿为「把文字后面的磨砂衬托加回来，只让图片保持原摄影感」。落地仅动 landing-sections.css/landing-sections-2.css 两锁文件（+33/−33）：桌面档 2–9 屏 background-image 整屏 linear-gradient 白面纱全部撤除（含 process 双层横向纱，background-position 收敛单值），背景即纯摄影图；文字背后羽化衬托全部保留原值（标题罩 0.58×5、步骤罩 0.52、vision 罩 0.72、pill 底 0.72，均未动）；≤767 移动档面纱零改动；hero/文字排版/结构零改动。中途曾按「全部去掉」落地 text-shadow 光晕替代方案，用户改口后整体撤销。验收：探针断言升级后全绿——桌面八屏 veil stops 清零、7 处衬托 ::before/元素级 backgroundColor 与设计值全等且 backdrop-filter==none（修掉上轮伪元素读数盲区）、secTop/secH 与基线逐字段相等、hero 对比裁到本体 900px（视口底部 50px 为第二屏顶部条带属下一屏合法变化；本体 corr=1.0/mean 0.16/over32 0.018%）；视觉验收代理 12 张 11 pass（唯一 fail=第 8 屏愿景大标题「入土三/分」孤字折行，基线已存在的既有排版，本轮文字冻结未动待指令）；ng build 零警告；品牌锁 argv(c97d33e) PASS 1006 → 基线 6247479→c97d33e 无参 PASS。新坑：逐屏视口截图「零改动」比对必须裁到本屏 secH，否则下一屏顶部条带的合法变化伪判当前屏。⚠️ 本轮文档提交 acf13ef 因 `git commit -- <paths>` 取工作树全量，把并行会话已定稿未提交的四角色园林/家长端排版/间距精修/宽屏改造四条 CHANGELOG 条目与 HANDOFF §4/§7 段落一并带入（docs-only、内容准确、其代码文件仍未提交不受影响）——共享文档提交须用 `git apply --cached` 择 hunk 后裸 `git commit`（不带 pathspec）。
 
