@@ -113,7 +113,14 @@ export interface CompareTeacher {
     }
   `,
   styles: [`
+    :host {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+    }
+
     .compare-card {
+      min-width: 0;
       margin: var(--space-5) 0;
       padding: var(--space-5);
       background: var(--bg-card);
@@ -154,6 +161,8 @@ export interface CompareTeacher {
     }
 
     .scroll-wrapper {
+      width: 100%;
+      min-width: 0;
       max-width: 100%;
       overflow-x: auto;
       border: 1px solid var(--line);

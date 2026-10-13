@@ -12,6 +12,8 @@ import com.nurture.learning.infra.LessonRecordRepository;
 import com.nurture.learning.infra.QuestionRepository;
 import com.nurture.messaging.app.MessagingApplicationService;
 import com.nurture.scheduling.app.SchedulingApplicationService;
+import com.nurture.shared.security.CallerContext;
+import com.nurture.shared.security.CallerRole;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -170,7 +172,11 @@ public class LearningApplicationService {
         m.put("performance", r.getPerformance());
         m.put("problems", r.getProblems());
         m.put("nextSuggestion", r.getNextSuggestion());
-        m.put("note", r.getNote());
+        var caller = CallerContext.get();
+        if (caller != null && caller.is(CallerRole.TEACHER)
+                && caller.accountId().equals(r.getTeacherId())) {
+            m.put("note", r.getNote());
+        }
         m.put("createdAt", r.getCreatedAt().toString());
         return m;
     }

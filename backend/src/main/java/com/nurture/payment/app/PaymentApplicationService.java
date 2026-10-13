@@ -38,6 +38,8 @@ public class PaymentApplicationService {
     private final SettlementApplicationService settlementService;
     private final MessagingApplicationService messagingService;
     private final AuditService auditService;
+    @org.springframework.beans.factory.annotation.Value("${nurture.payment.sandbox.enabled:true}")
+    private boolean sandboxEnabled = true;
 
     public PaymentApplicationService(PaymentAttemptRepository attemptRepository,
                                      List<PaymentGateway> gateways,
@@ -196,10 +198,14 @@ public class PaymentApplicationService {
     }
 
     private PaymentGateway gatewayOf(PaymentAttempt.PaymentChannel channel) {
-        return gateways.stream()
+        PaymentGateway gateway = gateways.stream()
                 .filter(g -> g.channelName().equalsIgnoreCase(channel.name()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("未接入支付渠道: " + channel));
+        if (!sandboxEnabled && gateway instanceof SimulatedPaymentGateway) {
+            throw new IllegalStateException("沙箱演示支付已关闭，请使用运营线下收款确认");
+        }
+        return gateway;
     }
 
     private PaymentAttempt.PaymentChannel parseChannel(String name) {
